@@ -1194,6 +1194,70 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  // Staff-recorded Venmo / PayPal (P2P) after you see the money in the app—no webhooks.
+  const P2pRecordBody = z.object({
+    method: z.enum(['venmo', 'paypal']),
+    amountCents: z.number().int().positive().max(100_000_000),
+    memo: z.string().max(2000).optional(),
+  })
+
+  protectedScope.get(
+    '/v1/provider/p2p-payments',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const rows = await prisma.payment.findMany({
+        where: {
+          providerId: req.user.sub,
+          method: { in: ['manual_venmo', 'manual_paypal'] },
+          deletedAt: null,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        select: {
+          id: true,
+          method: true,
+          status: true,
+          amountCents: true,
+          currency: true,
+          p2pMemo: true,
+          createdAt: true,
+        },
+      })
+      return { items: rows }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/provider/p2p-payments',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const body = P2pRecordBody.parse((req as any).body)
+      const method = body.method === 'paypal' ? 'manual_paypal' : 'manual_venmo'
+      const row = await prisma.payment.create({
+        data: {
+          method,
+          status: 'succeeded',
+          amountCents: body.amountCents,
+          currency: 'usd',
+          itemType: 'other',
+          itemId: null,
+          providerId: req.user.sub,
+          patientId: null,
+          p2pMemo: body.memo?.trim() || null,
+        },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'payment',
+        entityId: row.id,
+        action: 'p2p_payment_recorded',
+        after: row,
+        ip: reqIp(req),
+      })
+      return { payment: row }
+    },
+  )
+
   // Provider: appointments & orders queues
   protectedScope.get(
     '/v1/provider/appointments',
@@ -1334,17 +1398,59 @@ await app.register(async (protectedScope) => {
       const orders = await prisma.order.findMany({
         where: { providerId: req.user.sub, deletedAt: null },
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          category: true,
-          item: true,
-          request: true,
-          status: true,
-          createdAt: true,
-          patient: { select: { id: true, displayName: true, firstName: true, lastName: true, birthdate: true } },
+        take: 100,
+        include: {
+          items: { orderBy: { createdAt: 'asc' } },
+          patient: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              birthdate: true,
+            },
+          },
         },
       })
-      return { orders }
+      const partnerIds = [
+        ...new Set(orders.map((o) => o.pharmacyPartnerId).filter((x): x is string => Boolean(x))),
+      ]
+      const partners =
+        partnerIds.length > 0
+          ? await prisma.pharmacyPartner.findMany({
+              where: { id: { in: partnerIds } },
+              select: { id: true, name: true, slug: true },
+            })
+          : []
+      const byPartner = new Map(partners.map((p) => [p.id, p]))
+      const withPartners = orders.map((o) => ({
+        id: o.id,
+        category: o.category,
+        item: o.item,
+        request: o.request,
+        status: o.status,
+        createdAt: o.createdAt,
+        shippingAddress1: o.shippingAddress1,
+        shippingAddress2: o.shippingAddress2,
+        shippingCity: o.shippingCity,
+        shippingState: o.shippingState,
+        shippingPostalCode: o.shippingPostalCode,
+        shippingCountry: o.shippingCountry,
+        shippingCents: o.shippingCents,
+        shippingInsuranceCents: o.shippingInsuranceCents,
+        agreedToShippingTerms: o.agreedToShippingTerms,
+        contactPermission: o.contactPermission,
+        signatureName: o.signatureName,
+        signatureDate: o.signatureDate,
+        items: o.items,
+        patient: o.patient,
+        pharmacyPartner: o.pharmacyPartnerId
+          ? (byPartner.get(o.pharmacyPartnerId) ?? { id: o.pharmacyPartnerId, name: 'Catalog', slug: '—' })
+          : null,
+      }))
+      return { orders: withPartners }
     },
   )
 
@@ -1478,6 +1584,11 @@ await app.register(async (protectedScope) => {
     signatureName: z.string().min(2).max(120),
     signatureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     shippingInsurance: z.boolean().default(false),
+    /** Optional: checkout form override; if all set, used as order ship-to instead of the patient profile. */
+    shippingAddress1: z.string().min(1).max(200).optional(),
+    shippingCity: z.string().min(1).max(120).optional(),
+    shippingState: z.string().min(1).max(32).optional(),
+    shippingPostalCode: z.string().min(1).max(20).optional(),
   })
 
   protectedScope.post(
@@ -1525,6 +1636,8 @@ await app.register(async (protectedScope) => {
       const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
       const total = subtotal + shippingCents + shippingInsuranceCents
 
+      const hasShip =
+        (body.shippingAddress1 && body.shippingCity && body.shippingState && body.shippingPostalCode) || null
       const order = await prisma.order.create({
         data: {
           category: 'glp1',
@@ -1534,11 +1647,11 @@ await app.register(async (protectedScope) => {
           pharmacyPartnerId: partner.id,
           patientId: patient.id,
           providerId: provider.id,
-          shippingAddress1: patient.address1 || '',
+          shippingAddress1: hasShip ? body.shippingAddress1!.trim() : patient.address1 || '',
           shippingAddress2: patient.address2 || '',
-          shippingCity: patient.city || '',
-          shippingState: patient.state || '',
-          shippingPostalCode: patient.postalCode || '',
+          shippingCity: hasShip ? body.shippingCity!.trim() : patient.city || '',
+          shippingState: hasShip ? body.shippingState!.trim() : patient.state || '',
+          shippingPostalCode: hasShip ? body.shippingPostalCode!.trim() : patient.postalCode || '',
           shippingCountry: patient.country || 'US',
           shippingCents,
           shippingInsuranceCents,

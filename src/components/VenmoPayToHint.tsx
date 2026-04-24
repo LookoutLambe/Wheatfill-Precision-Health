@@ -13,37 +13,35 @@ export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
   const venmoUrl = resolvedCatalogVenmoPayUrl()
   const paypalUrl = CATALOG_PAYPAL.payUrl
 
+  const secondaryLinks = (
+    <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, marginTop: 8, marginBottom: 0 }}>
+      <a href={venmoUrl} target="_blank" rel="noopener noreferrer">
+        Venmo ({CATALOG_VENMO.handle})
+      </a>
+      {STRIPE_CHECKOUT_URL ? (
+        <>
+          {' '}
+          ·{' '}
+          <a href={STRIPE_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+            Card (Stripe)
+          </a>
+        </>
+      ) : null}
+    </p>
+  )
+
   const btnRow = (
-    <div className="btnRow" style={{ marginTop: 10, flexWrap: 'wrap', gap: 10 }}>
+    <div style={{ marginTop: 10 }}>
       <a
-        href={venmoUrl}
+        href={paypalUrl}
         className="btn btnPrimary"
         target="_blank"
         rel="noopener noreferrer"
-        style={{ textDecoration: 'none' }}
+        style={{ textDecoration: 'none', display: 'inline-block' }}
       >
-        Pay on Venmo ({CATALOG_VENMO.handle})
+        Check out
       </a>
-      <a
-        href={paypalUrl}
-        className="btn catalogOutlineBtn"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ textDecoration: 'none' }}
-      >
-        Pay on PayPal
-      </a>
-      {STRIPE_CHECKOUT_URL ? (
-        <a
-          href={STRIPE_CHECKOUT_URL}
-          className="btn catalogOutlineBtn"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ textDecoration: 'none' }}
-        >
-          Pay with card (Stripe)
-        </a>
-      ) : null}
+      {secondaryLinks}
     </div>
   )
 
@@ -52,9 +50,8 @@ export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
       <div className="venmoPayToHintPanel" style={style}>
         <div className="venmoPayToHintPanelTitle">Payment</div>
         <p className="venmoPayToHintPanelBody">
-          <strong>Venmo</strong>, <strong>PayPal</strong>, and <strong>Zelle</strong> to{' '}
-          <strong>{CATALOG_ZELLE_EMAIL}</strong> in your bank app, or <strong>card (Stripe)</strong> when a link is set
-          up—only after your team confirms the amount. PayPal opens to <strong>{CATALOG_PAYPAL.email}</strong>.
+          <strong>Check out</strong> with PayPal to the practice email (<strong>{CATALOG_PAYPAL.email}</strong>) after
+          your team confirms the amount. <strong>Zelle</strong> to the same address in your bank app is fine too.
         </p>
         {btnRow}
       </div>
@@ -67,13 +64,13 @@ export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
         className="muted"
         style={{ fontSize: 13, lineHeight: 1.5, marginTop: 10, marginBottom: 0 }}
       >
-        <strong>Venmo</strong>, <strong>PayPal</strong>, <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
+        Use <strong>Check out</strong> to pay with PayPal (opens your pay flow). <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
         {STRIPE_CHECKOUT_URL ? (
           <>
-            , <strong>card (Stripe)</strong>
+            , or <strong>card (Stripe)</strong>
           </>
         ) : null}{' '}
-        — only when the team confirms the amount. PayPal pay page: {CATALOG_PAYPAL.email}.
+        — only when the team confirms the amount. Venmo link is below.
       </p>
       {btnRow}
     </div>

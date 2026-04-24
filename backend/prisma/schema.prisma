@@ -49,6 +49,8 @@ enum PaymentMethod {
   stripe
   clover
   manual_venmo
+  /** Staff-recorded PayPal (e.g. link checkout); not from PayPal webhooks. */
+  manual_paypal
 }
 
 enum ProviderPaymentProvider {
@@ -287,10 +289,14 @@ model Payment {
   cloverCheckoutSessionId String?
   cloverCheckoutHref      String?
 
-  patientId  String
+  /** P2P / off-system payments: optional when the payer is not a named portal patient. */
+  patientId  String?
   providerId String
-  patient    User @relation("PaymentsAsPatient", fields: [patientId], references: [id])
-  provider   User @relation("PaymentsAsProvider", fields: [providerId], references: [id])
+  patient    User? @relation("PaymentsAsPatient", fields: [patientId], references: [id])
+  /** Optional note: payer name, order ref, or how you matched the pay app. */
+  p2pMemo    String? @map("p2p_memo")
+
+  provider   User   @relation("PaymentsAsProvider", fields: [providerId], references: [id])
 
   appointmentId String?
   appointment   Appointment? @relation("PaymentAppointment", fields: [appointmentId], references: [id])

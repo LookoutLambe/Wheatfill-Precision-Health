@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from './CatalogVialThumb'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -56,7 +56,8 @@ export default function CatalogCartDrawer({
     setCart(readCartForSlug(slug))
   }, [slug])
 
-  useEffect(() => {
+  // Layout: apply slug-to-cart before the write effect runs so we do not persist wrong/stale state.
+  useLayoutEffect(() => {
     syncFromStorage()
   }, [slug, syncFromStorage])
 
@@ -229,7 +230,7 @@ export default function CatalogCartDrawer({
                     style={{ width: '100%', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
                     onClick={closeCart}
                   >
-                    View cart
+                    Continue to checkout
                   </Link>
                 </div>
                 <p className="pharmacyDrawerSecure">

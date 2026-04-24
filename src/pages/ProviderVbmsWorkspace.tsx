@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { API_URL, apiDelete, apiGet, apiPatch, getToken } from '../api/client'
+import { API_URL, apiDelete, apiGet, apiPatch, apiPost, getToken } from '../api/client'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   getMarketingIntegrations,
@@ -12,7 +12,7 @@ import {
 import { loadMarketingWorkspaceState, saveMarketingWorkspaceState } from '../marketing/workspaceStore'
 
 type DemoPatient = { id: string; label: string }
-type DemoAppt = { id: string; patientId: string; type: string; when: string; status: string }
+type DemoAppt = { id: string; patientId: string; patientName?: string; type: string; when: string; status: string }
 type DemoMsg = {
   id: string
   from: string
@@ -22,7 +22,52 @@ type DemoMsg = {
   when: string
   status: 'new' | 'handled'
 }
-type DemoOrder = { id: string; patientId: string; item: string; when: string; status: string }
+type ProviderOrderRow = {
+  id: string
+  category: string
+  item: string | null
+  request: string
+  status: string
+  createdAt: string
+  shippingAddress1: string
+  shippingAddress2: string
+  shippingCity: string
+  shippingState: string
+  shippingPostalCode: string
+  shippingCountry: string
+  shippingCents: number
+  shippingInsuranceCents: number
+  agreedToShippingTerms: boolean
+  contactPermission: boolean
+  signatureName: string
+  signatureDate: string | null
+  items: Array<{
+    id: string
+    name: string
+    productSku: string
+    quantity: number
+    unitPriceCents: number
+  }>
+  patient: {
+    id: string
+    displayName: string
+    firstName: string | null
+    lastName: string | null
+    email: string | null
+    phone: string | null
+  }
+  pharmacyPartner: { id: string; name: string; slug: string } | null
+}
+
+type P2pPaymentRow = {
+  id: string
+  method: string
+  status: string
+  amountCents: number
+  currency: string
+  p2pMemo: string | null
+  createdAt: string
+}
 
 function seedWorkspacePatients(): DemoPatient[] {
   return [
@@ -53,18 +98,29 @@ export default function ProviderVbmsWorkspace() {
   const demoPatients = useMemo(() => seedWorkspacePatients(), [])
   const initialWs = useMemo(() => loadMarketingWorkspaceState(), [])
   const [appts, setAppts] = useState<DemoAppt[]>(initialWs.appts)
-  const [orders] = useState<DemoOrder[]>([])
+  const [orders, setOrders] = useState<ProviderOrderRow[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [ordersError, setOrdersError] = useState<string | null>(null)
   const [msgs, setMsgs] = useState<DemoMsg[]>([])
+  const [inboxNameCache, setInboxNameCache] = useState<Record<string, string>>(() => initialWs.inboxNameCache)
   const [inboxError, setInboxError] = useState<string | null>(null)
   const [inboxLoading, setInboxLoading] = useState(false)
+  const [p2pItems, setP2pItems] = useState<P2pPaymentRow[]>([])
+  const [p2pLoading, setP2pLoading] = useState(false)
+  const [p2pError, setP2pError] = useState<string | null>(null)
+  const [p2pDollars, setP2pDollars] = useState('')
+  const [p2pMethod, setP2pMethod] = useState<'venmo' | 'paypal'>('paypal')
+  const [p2pMemo, setP2pMemo] = useState('')
+  const [p2pRecording, setP2pRecording] = useState(false)
   const [blackouts, setBlackouts] = useState<string[]>(initialWs.blackouts)
 
   const [qsPatient, setQsPatient] = useState(initialWs.qsPatient)
+  const [qsCustomName, setQsCustomName] = useState(initialWs.qsCustomName)
   const [qsType, setQsType] = useState<'New Patient Consultation' | 'Follow-Up Consultation'>(initialWs.qsType)
   const [qsWhen, setQsWhen] = useState(initialWs.qsWhen)
 
-  const workspacePersistRef = useRef({ appts, blackouts, qsPatient, qsType, qsWhen })
-  workspacePersistRef.current = { appts, blackouts, qsPatient, qsType, qsWhen }
+  const workspacePersistRef = useRef({ appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache })
+  workspacePersistRef.current = { appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache }
 
   useEffect(() => {
     saveMarketingWorkspaceState({
@@ -72,15 +128,26 @@ export default function ProviderVbmsWorkspace() {
       appts,
       blackouts,
       qsPatient,
+      qsCustomName,
       qsType,
       qsWhen,
+      inboxNameCache,
     })
-  }, [appts, blackouts, qsPatient, qsType, qsWhen])
+  }, [appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache])
 
   useEffect(() => {
     return () => {
       const s = workspacePersistRef.current
-      saveMarketingWorkspaceState({ v: 1, appts: s.appts, blackouts: s.blackouts, qsPatient: s.qsPatient, qsType: s.qsType, qsWhen: s.qsWhen })
+      saveMarketingWorkspaceState({
+        v: 1,
+        appts: s.appts,
+        blackouts: s.blackouts,
+        qsPatient: s.qsPatient,
+        qsCustomName: s.qsCustomName,
+        qsType: s.qsType,
+        qsWhen: s.qsWhen,
+        inboxNameCache: s.inboxNameCache,
+      })
     }
   }, [])
 
@@ -116,17 +183,25 @@ export default function ProviderVbmsWorkspace() {
           createdAt: string
         }>
       }>('/v1/provider/team-inbox', tok)
-      setMsgs(
-        r.items.map((row) => ({
-          id: row.id,
-          from: [row.fromName, row.fromEmail && row.fromEmail.trim() ? `<${row.fromEmail}>` : ''].filter(Boolean).join(' '),
-          fromName: (row.fromName || '').trim(),
-          category: row.kind,
-          body: row.body,
-          when: new Date(row.createdAt).toLocaleString(),
-          status: row.status === 'handled' ? 'handled' : 'new',
-        })),
-      )
+      const next = r.items.map((row) => ({
+        id: row.id,
+        from: [row.fromName, row.fromEmail && row.fromEmail.trim() ? `<${row.fromEmail}>` : ''].filter(Boolean).join(' '),
+        fromName: (row.fromName || '').trim(),
+        category: row.kind,
+        body: row.body,
+        when: new Date(row.createdAt).toLocaleString(),
+        status: (row.status === 'handled' ? 'handled' : 'new') as DemoMsg['status'],
+      }))
+      setMsgs(next)
+      setInboxNameCache((prev) => {
+        const n = { ...prev }
+        for (const m of next) {
+          if (!m.fromName.trim().length) continue
+          const shortDate = m.when.split(',')[0]?.trim() || ''
+          n[m.id] = shortDate ? `${m.fromName} (${shortDate})` : m.fromName
+        }
+        return n
+      })
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
@@ -146,15 +221,80 @@ export default function ProviderVbmsWorkspace() {
     if (isMarketingProviderAuthed()) void loadTeamInbox()
   }, [loadTeamInbox])
 
-  const newCount = msgs.filter((m) => m.status === 'new').length
-  const requestedCount = appts.filter((a) => a.status === 'Requested').length
-  const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
-  const requested = appts.filter((a) => a.status === 'Requested')
-  const scheduled = appts.filter((a) => a.status !== 'Requested')
+  const loadP2pPayments = useCallback(async () => {
+    const tok = getToken()
+    if (!tok) {
+      setP2pItems([])
+      return
+    }
+    setP2pLoading(true)
+    setP2pError(null)
+    try {
+      const r = await apiGet<{ items: P2pPaymentRow[] }>('/v1/provider/p2p-payments', tok)
+      setP2pItems(r.items || [])
+    } catch (e: any) {
+      const msg = String(e?.message || e)
+      if (/401|unauthorized|Unauthorized/i.test(msg)) {
+        setP2pError('Sign in again to load recorded payments.')
+        setMarketingProviderAuthed(false)
+        navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
+      } else {
+        setP2pError(msg)
+        setP2pItems([])
+      }
+    } finally {
+      setP2pLoading(false)
+    }
+  }, [navigate])
 
-  /** Inbox and contact names become Quick schedule options (id `inbox:<row id>`). */
+  useEffect(() => {
+    if (isMarketingProviderAuthed()) void loadP2pPayments()
+  }, [loadP2pPayments])
+
+  const loadOrders = useCallback(async () => {
+    const tok = getToken()
+    if (!tok) {
+      setOrders([])
+      return
+    }
+    setOrdersLoading(true)
+    setOrdersError(null)
+    try {
+      const r = await apiGet<{ orders: ProviderOrderRow[] }>('/v1/provider/orders', tok)
+      setOrders(
+        (r.orders || []).map((o) => ({
+          ...o,
+          createdAt: typeof o.createdAt === 'string' ? o.createdAt : (o as any).createdAt,
+        })),
+      )
+    } catch (e: any) {
+      const msg = String(e?.message || e)
+      if (/401|unauthorized|Unauthorized/i.test(msg)) {
+        setOrdersError('Session expired. Sign in again.')
+        setMarketingProviderAuthed(false)
+        navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
+      } else {
+        setOrdersError(msg)
+        setOrders([])
+      }
+    } finally {
+      setOrdersLoading(false)
+    }
+  }, [navigate])
+
+  useEffect(() => {
+    if (isMarketingProviderAuthed()) void loadOrders()
+  }, [loadOrders])
+
+  const newCount = msgs.filter((m) => m.status === 'new').length
+  const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
+
+  /**
+   * Inbox rows plus cached names for messages that were deleted on the server but are still
+   * referenced in the preview schedule or Quick schedule.
+   */
   const inboxRequestPatients = useMemo((): DemoPatient[] => {
-    return msgs
+    const fromMsgs: DemoPatient[] = msgs
       .filter((m) => m.fromName.trim().length > 0)
       .map((m) => {
         const shortDate = m.when.split(',')[0]?.trim() || ''
@@ -163,13 +303,77 @@ export default function ProviderVbmsWorkspace() {
           label: shortDate ? `${m.fromName} (${shortDate})` : m.fromName,
         }
       })
-  }, [msgs])
+    const activeIds = new Set(msgs.map((m) => m.id))
+    const fromCache: DemoPatient[] = Object.keys(inboxNameCache)
+      .filter((id) => !activeIds.has(id) && (inboxNameCache[id] || '').trim().length > 0)
+      .map((id) => ({ id: `inbox:${id}`, label: inboxNameCache[id] }))
+    return [...fromMsgs, ...fromCache]
+  }, [msgs, inboxNameCache])
 
   const allPatientOptions = useMemo((): DemoPatient[] => {
     return [...inboxRequestPatients, ...demoPatients]
   }, [inboxRequestPatients, demoPatients])
 
-  const workspacePatientLabel = (patientId: string) => allPatientOptions.find((p) => p.id === patientId)?.label || '—'
+  const labelForPatientId = (patientId: string) => {
+    if (['p1', 'p2', 'p3'].includes(patientId)) {
+      return demoPatients.find((p) => p.id === patientId)?.label || '—'
+    }
+    if (patientId.startsWith('inbox:')) {
+      const raw = patientId.slice(7)
+      if (inboxNameCache[raw]) return inboxNameCache[raw]
+      const m = msgs.find((x) => x.id === raw)
+      if (m?.fromName) {
+        const shortDate = m.when.split(',')[0]?.trim() || ''
+        return shortDate ? `${m.fromName} (${shortDate})` : m.fromName
+      }
+      return '—'
+    }
+    if (patientId.startsWith('custom:')) {
+      return '—'
+    }
+    return '—'
+  }
+
+  const rowPatientLabel = (a: DemoAppt) => (a.patientName?.trim() ? a.patientName.trim() : labelForPatientId(a.patientId))
+
+  const formatOrderPatient = (o: ProviderOrderRow) => {
+    const p = o.patient
+    const n = [p?.firstName, p?.lastName].filter(Boolean).join(' ').trim()
+    if (n) return n
+    if (p?.displayName?.trim()) return p.displayName.trim()
+    if (p?.email?.trim()) return p.email.trim()
+    return p?.id ? `${p.id.slice(0, 8)}…` : '—'
+  }
+
+  const formatShipTo = (o: ProviderOrderRow) => {
+    const line1 = (o.shippingAddress1 || '').trim()
+    const line2 = (o.shippingAddress2 || '').trim()
+    const citySt = [o.shippingCity, o.shippingState, o.shippingPostalCode].filter((x) => (x || '').trim()).join(', ')
+    const parts = [line1, line2, citySt, (o.shippingCountry || '').trim() && o.shippingCountry !== 'US' ? o.shippingCountry : ''].filter(
+      Boolean,
+    ) as string[]
+    return parts.length ? parts.join(' · ') : '—'
+  }
+
+  const orderLineItemsSummary = (o: ProviderOrderRow) =>
+    o.items.length
+      ? o.items.map((it) => `${it.name} (×${it.quantity})`).join(' · ')
+      : o.request || o.item || '—'
+
+  const orderSubtotalCents = (o: ProviderOrderRow) =>
+    o.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0)
+
+  const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed') => {
+    const tok = getToken()
+    if (!tok) return
+    setOrdersError(null)
+    try {
+      await apiPatch(`/v1/provider/orders/${encodeURIComponent(id)}/status`, { status }, tok)
+      await loadOrders()
+    } catch (e: any) {
+      setOrdersError(String(e?.message || e))
+    }
+  }
 
   useEffect(() => {
     if (allPatientOptions.some((p) => p.id === qsPatient)) return
@@ -280,6 +484,11 @@ export default function ProviderVbmsWorkspace() {
                               className="btn"
                               title="Select this person in Quick schedule; fills date/time from the request when available"
                               onClick={() => {
+                                if (m.fromName.trim()) {
+                                  const shortDate = m.when.split(',')[0]?.trim() || ''
+                                  const label = shortDate ? `${m.fromName} (${shortDate})` : m.fromName
+                                  setInboxNameCache((prev) => ({ ...prev, [m.id]: label }))
+                                }
                                 setQsPatient(`inbox:${m.id}`)
                                 if (m.category === 'online_booking') {
                                   const { visitType, whenText } = parseInboxBodyForQuickSchedule(m.body)
@@ -352,40 +561,6 @@ export default function ProviderVbmsWorkspace() {
           ) : null}
         </section>
 
-        <section className="card cardAccentNavy">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Requested</h2>
-            <span className="pill">Queue</span>
-          </div>
-          <div className="divider" />
-          {requested.length === 0 ? (
-            <p className="muted">No visit requests in the sample queue yet.</p>
-          ) : (
-            <div className="tableWrap">
-              <table className="table" aria-label="Requested visits sample queue">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>When</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requested.map((a) => (
-                    <tr key={a.id}>
-                      <td className="muted">{workspacePatientLabel(a.patientId)}</td>
-                      <td>{a.type}</td>
-                      <td className="muted">{a.when}</td>
-                      <td className="muted">{a.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
@@ -393,10 +568,10 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
-            Requested: <b>{requestedCount}</b> · Scheduled: <b>{scheduledCount}</b> · Total: <b>{appts.length}</b>
+            Scheduled: <b>{scheduledCount}</b> · Total: <b>{appts.length}</b>
           </div>
           <div className="divider" />
-          {scheduled.length === 0 ? (
+          {appts.length === 0 ? (
             <p className="muted">No scheduled visits yet.</p>
           ) : (
             <div className="tableWrap">
@@ -407,12 +582,13 @@ export default function ProviderVbmsWorkspace() {
                     <th>Type</th>
                     <th>When</th>
                     <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {scheduled.map((a) => (
+                  {appts.map((a) => (
                     <tr key={a.id}>
-                      <td className="muted">{workspacePatientLabel(a.patientId)}</td>
+                      <td className="muted">{rowPatientLabel(a)}</td>
                       <td>{a.type}</td>
                       <td className="muted">{a.when}</td>
                       <td>
@@ -425,11 +601,23 @@ export default function ProviderVbmsWorkspace() {
                           }}
                           style={{ padding: '8px 10px' }}
                         >
-                          <option value="Requested">Requested</option>
                           <option value="Scheduled">Scheduled</option>
                           <option value="Completed">Completed</option>
                           <option value="Cancelled">Cancelled</option>
                         </select>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                          onClick={() => {
+                            if (!window.confirm('Remove this row from the preview list? (Only this browser; not the API inbox.)')) return
+                            setAppts((prev) => prev.filter((x) => x.id !== a.id))
+                          }}
+                        >
+                          Remove
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -447,7 +635,7 @@ export default function ProviderVbmsWorkspace() {
           <p className="muted" style={{ margin: '8px 0 0', fontSize: 13 }}>
             People who used <strong>Book</strong> or <strong>Contact</strong> appear under &ldquo;From public
             requests.&rdquo; After you add them to your real calendar, pick one here to track the visit in this
-            preview list.
+            preview list—or use <strong>Add name by hand</strong> for a call, walk-in, or anyone not in the list.
           </p>
           <div className="divider" />
           <div className="formRow">
@@ -455,7 +643,17 @@ export default function ProviderVbmsWorkspace() {
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 Patient
               </div>
-              <select className="select" value={qsPatient} onChange={(e) => setQsPatient(e.target.value)}>
+              <select
+                className="select"
+                value={qsPatient}
+                onChange={(e) => setQsPatient(e.target.value)}
+                style={{ opacity: qsCustomName.trim() ? 0.65 : 1 }}
+                title={
+                  qsCustomName.trim()
+                    ? 'The text field Add name by hand is used for this add; clear it to use this dropdown.'
+                    : undefined
+                }
+              >
                 {inboxRequestPatients.length > 0 ? (
                   <optgroup label="From public requests (book & contact)">
                     {inboxRequestPatients.map((p) => (
@@ -486,6 +684,21 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <label style={{ display: 'block', marginTop: 12 }}>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Add name by hand (optional)
+            </div>
+            <input
+              className="input"
+              value={qsCustomName}
+              onChange={(e) => setQsCustomName(e.target.value)}
+              placeholder="e.g. phone or walk-in — overrides Patient above if filled"
+              autoComplete="name"
+            />
+            <p className="muted" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+              When this field has text, it is used for the name on the list instead of the patient dropdown.
+            </p>
+          </label>
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
               When
             </div>
             <input className="input" value={qsWhen} onChange={(e) => setQsWhen(e.target.value)} placeholder="May 02, 2026 10:00 AM" />
@@ -497,7 +710,35 @@ export default function ProviderVbmsWorkspace() {
               style={{ width: '100%' }}
               onClick={() => {
                 const id = `a_${Math.random().toString(16).slice(2)}`
-                setAppts((prev) => [{ id, patientId: qsPatient, type: qsType, when: qsWhen.trim() || '—', status: 'Scheduled' }, ...prev])
+                const custom = qsCustomName.trim()
+                if (custom) {
+                  setAppts((prev) => [
+                    {
+                      id,
+                      patientId: `custom:${id}`,
+                      patientName: custom,
+                      type: qsType,
+                      when: qsWhen.trim() || '—',
+                      status: 'Scheduled',
+                    },
+                    ...prev,
+                  ])
+                  setQsCustomName('')
+                  return
+                }
+                const pl = allPatientOptions.find((p) => p.id === qsPatient)
+                const nameSnap = (pl?.label || labelForPatientId(qsPatient)).trim() || '—'
+                setAppts((prev) => [
+                  {
+                    id,
+                    patientId: qsPatient,
+                    patientName: nameSnap,
+                    type: qsType,
+                    when: qsWhen.trim() || '—',
+                    status: 'Scheduled',
+                  },
+                  ...prev,
+                ])
               }}
             >
               Schedule
@@ -560,15 +801,145 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments (preview)</h2>
-            <span className="pill">Venmo · PayPal</span>
+            <span className="pill">Check out · P2P log</span>
           </div>
           <div className="divider" />
           <p className="muted">
-            Catalog checkout uses <b>Venmo</b> (or <b>PayPal</b> to the site’s pay-to email) after the practice confirms
-            amount and recipient with the patient. Optional card processors (Stripe/Clover) can be wired later for other
-            flows.
+            <strong>Check out</strong> opens PayPal to the practice email after you confirm the amount with the patient.
+            Venmo and Zelle are still available from the links below. When you see the payment in your app, record it here
+            so it is stored on the <strong>API</strong> for this team (same session as the inbox).
           </p>
           <VenmoPayToHint style={{ marginTop: 10 }} />
+          <div className="divider" />
+          <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
+            <strong>Record a payment you already received</strong> (after the fact; not automatic from PayPal or Venmo).
+          </p>
+          <div className="formRow" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Amount (USD)
+              </div>
+              <input
+                className="input"
+                value={p2pDollars}
+                onChange={(e) => setP2pDollars(e.target.value)}
+                placeholder="e.g. 125.00"
+                inputMode="decimal"
+                style={{ minWidth: 120 }}
+              />
+            </label>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                How they paid
+              </div>
+              <select className="select" value={p2pMethod} onChange={(e) => setP2pMethod(e.target.value as 'venmo' | 'paypal')}>
+                <option value="paypal">PayPal</option>
+                <option value="venmo">Venmo</option>
+              </select>
+            </label>
+            <label style={{ flex: '1 1 200px' }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Note (optional)
+              </div>
+              <input
+                className="input"
+                value={p2pMemo}
+                onChange={(e) => setP2pMemo(e.target.value)}
+                placeholder="Name, order ref, etc."
+                style={{ width: '100%' }}
+              />
+            </label>
+            <button
+              type="button"
+              className="btn btnPrimary"
+              disabled={p2pRecording || !getToken()}
+              onClick={() => {
+                const raw = p2pDollars.replace(/[$,\s]/g, '').trim()
+                const n = parseFloat(raw)
+                if (!Number.isFinite(n) || n <= 0) {
+                  setP2pError('Enter a valid amount greater than zero.')
+                  return
+                }
+                const amountCents = Math.round(n * 100)
+                if (amountCents < 1) {
+                  setP2pError('Amount is too small.')
+                  return
+                }
+                setP2pError(null)
+                setP2pRecording(true)
+                ;(async () => {
+                  const tok = getToken()
+                  if (!tok) return
+                  try {
+                    await apiPost(
+                      '/v1/provider/p2p-payments',
+                      {
+                        method: p2pMethod,
+                        amountCents,
+                        memo: p2pMemo.trim() || undefined,
+                      },
+                      tok,
+                    )
+                    setP2pDollars('')
+                    setP2pMemo('')
+                    await loadP2pPayments()
+                  } catch (e: any) {
+                    setP2pError(String(e?.message || e))
+                  } finally {
+                    setP2pRecording(false)
+                  }
+                })()
+              }}
+            >
+              {p2pRecording ? 'Saving…' : 'Record payment'}
+            </button>
+          </div>
+          {p2pError ? (
+            <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, marginTop: 8, marginBottom: 0 }}>
+              {p2pError}
+            </p>
+          ) : null}
+          <div className="divider" />
+          <div className="btnRow" style={{ marginBottom: 8 }}>
+            <button type="button" className="btn" disabled={p2pLoading || !getToken()} onClick={() => void loadP2pPayments()}>
+              {p2pLoading ? 'Loading…' : 'Refresh list'}
+            </button>
+          </div>
+          {p2pItems.length === 0 && !p2pLoading ? (
+            <p className="muted" style={{ margin: 0 }}>
+              No P2P payments recorded yet. After someone uses Check out or Venmo, log the amount here.
+            </p>
+          ) : null}
+          {p2pItems.length > 0 ? (
+            <div className="tableWrap">
+              <table className="table" aria-label="Recorded P2P payments">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Method</th>
+                    <th>Amount</th>
+                    <th>Note</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {p2pItems.map((row) => (
+                    <tr key={row.id}>
+                      <td className="muted">{new Date(row.createdAt).toLocaleString()}</td>
+                      <td className="muted">
+                        {row.method === 'manual_paypal' ? 'PayPal' : row.method === 'manual_venmo' ? 'Venmo' : row.method}
+                      </td>
+                      <td>
+                        {((row.amountCents || 0) / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                      </td>
+                      <td>{row.p2pMemo || '—'}</td>
+                      <td className="muted">{row.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </section>
 
         <section className="card cardAccentSoft">
@@ -589,35 +960,114 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentRed">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
-            <span className="pill pillRed">Order Now</span>
+            <div className="btnRow" style={{ margin: 0 }}>
+              <span className="pill pillRed">Order Now</span>
+              <button type="button" className="btn" disabled={ordersLoading || !getToken()} onClick={() => void loadOrders()}>
+                {ordersLoading ? 'Loading…' : 'Refresh'}
+              </button>
+            </div>
           </div>
           <div className="divider" />
-          {orders.length === 0 ? (
-            <p className="muted">No orders yet.</p>
-          ) : (
-            <div className="tableWrap">
-              <table className="table" aria-label="Orders">
-                <thead>
-                  <tr>
-                    <th>When</th>
-                    <th>Patient</th>
-                    <th>Item</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((o) => (
-                    <tr key={o.id}>
-                      <td className="muted">{o.when}</td>
-                      <td className="muted">{workspacePatientLabel(o.patientId)}</td>
-                      <td>{o.item}</td>
-                      <td className="muted">{o.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <p className="muted" style={{ marginTop: 0, fontSize: 14, lineHeight: 1.45 }}>
+            When a patient checks out on the <strong>Order Now</strong> catalog (signed in), their <strong>line items</strong>,{' '}
+            <strong>ship-to</strong>, and <strong>agreements / typed signature</strong> are stored on the API and show here
+            so the team knows exactly what to place and where to send it. Update status as you work the order.
+          </p>
+          <div className="divider" />
+          {ordersError ? (
+            <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, margin: '0 0 10px' }}>
+              {ordersError}
+            </p>
+          ) : null}
+          {getToken() && !ordersLoading && orders.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>
+              No patient-submitted orders yet. They appear when a patient completes checkout (with a signed order on the
+              site) and you are on the <strong>same</strong> practice user the API assigned to the order.
+            </p>
+          ) : null}
+          {orders.length > 0 ? (
+            <div
+              className="vbmsOrderList"
+              style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}
+            >
+              {orders.map((o) => (
+                <div
+                  key={o.id}
+                  className="card cardAccentSoft"
+                  style={{ margin: 0, boxShadow: 'none', border: '1px solid rgba(10, 30, 63, 0.12)' }}
+                >
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                    <div>
+                      <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>{orderLineItemsSummary(o)}</div>
+                      <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
+                        {new Date(o.createdAt).toLocaleString()} · {o.pharmacyPartner ? o.pharmacyPartner.name : o.request}
+                      </div>
+                    </div>
+                    <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
+                      Status
+                      <select
+                        className="select"
+                        value={o.status}
+                        onChange={(e) =>
+                          void updateOrderStatus(o.id, e.target.value as 'new' | 'in_review' | 'ordered' | 'closed')
+                        }
+                        aria-label={`Status for order ${o.id}`}
+                      >
+                        <option value="new">new</option>
+                        <option value="in_review">in review</option>
+                        <option value="ordered">ordered</option>
+                        <option value="closed">closed</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="divider" style={{ margin: '12px 0' }} />
+                  <div className="muted" style={{ fontSize: 14, lineHeight: 1.5 }}>
+                    <div>
+                      <strong>Patient</strong> — {formatOrderPatient(o)}
+                      {o.patient?.email ? (
+                        <span>
+                          {' '}
+                          · <a href={`mailto:${o.patient.email}`}>{o.patient.email}</a>
+                        </span>
+                      ) : null}
+                      {o.patient?.phone ? <span> · {o.patient.phone}</span> : null}
+                    </div>
+                    {o.items.length > 0 ? (
+                      <div style={{ marginTop: 8 }}>
+                        <strong>Subtotal (listed)</strong> —{' '}
+                        {(orderSubtotalCents(o) / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                        {o.shippingInsuranceCents > 0 ? (
+                          <span> · insurance {(o.shippingInsuranceCents / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}</span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Ship to</strong> — {formatShipTo(o)}
+                    </div>
+                    <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(10, 30, 63, 0.04)', borderRadius: 8 }}>
+                      <div style={{ fontWeight: 800, marginBottom: 6, fontSize: 13, color: 'var(--navy)' }}>
+                        Consents and signature (for fulfillment)
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '1.1em', lineHeight: 1.5 }}>
+                        <li>
+                          Medication shipping terms: <strong>{o.agreedToShippingTerms ? 'Agreed' : '—'}</strong>
+                        </li>
+                        <li>
+                          Contact for order: <strong>{o.contactPermission ? 'Authorized' : '—'}</strong>
+                        </li>
+                        <li>
+                          Typed signature: <strong>{(o.signatureName || '').trim() || '—'}</strong>
+                          {o.signatureDate
+                            ? ` · ${new Date(o.signatureDate).toLocaleDateString()}`
+                            : ' · (no date)'}
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          ) : null}
         </section>
 
         <section className="card cardAccentSoft">

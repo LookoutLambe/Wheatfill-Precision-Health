@@ -23,7 +23,7 @@ function demoSeed() {
   ]
 
   const appts: DemoAppt[] = [
-    { id: 'a1', patientId: 'p1', type: 'New Patient Consultation', when: 'Apr 28, 2026 10:00 AM', status: 'Requested' },
+    { id: 'a1', patientId: 'p1', type: 'New Patient Consultation', when: 'Apr 28, 2026 10:00 AM', status: 'Scheduled' },
     { id: 'a2', patientId: 'p2', type: 'Follow-Up Consultation', when: 'Apr 29, 2026 2:15 PM', status: 'Scheduled' },
     { id: 'a3', patientId: 'p3', type: 'Follow-Up Consultation', when: 'May 01, 2026 9:30 AM', status: 'Completed' },
   ]
@@ -59,10 +59,7 @@ export default function MarketingProviderDemoDashboard() {
   }, [navigate])
 
   const newCount = msgs.filter((m) => m.status === 'new').length
-  const requestedCount = appts.filter((a) => a.status === 'Requested').length
   const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
-  const requested = appts.filter((a) => a.status === 'Requested')
-  const scheduled = appts.filter((a) => a.status !== 'Requested')
 
   const workspacePatientLabel = (patientId: string) => workspacePatients.find((p) => p.id === patientId)?.label || '—'
 
@@ -138,40 +135,6 @@ export default function MarketingProviderDemoDashboard() {
           )}
         </section>
 
-        <section className="card cardAccentNavy">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Requested</h2>
-            <span className="pill">Queue</span>
-          </div>
-          <div className="divider" />
-          {requested.length === 0 ? (
-            <p className="muted">No appointment requests.</p>
-          ) : (
-            <div className="tableWrap">
-              <table className="table" aria-label="Requested appointments">
-                <thead>
-                  <tr>
-                    <th>Patient</th>
-                    <th>Type</th>
-                    <th>When</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {requested.map((a) => (
-                    <tr key={a.id}>
-                      <td className="muted">{workspacePatientLabel(a.patientId)}</td>
-                      <td>{a.type}</td>
-                      <td className="muted">{a.when}</td>
-                      <td className="muted">{a.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
@@ -179,10 +142,10 @@ export default function MarketingProviderDemoDashboard() {
           </div>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
-            Requested: <b>{requestedCount}</b> · Scheduled: <b>{scheduledCount}</b> · Total: <b>{appts.length}</b>
+            Scheduled: <b>{scheduledCount}</b> · Total: <b>{appts.length}</b>
           </div>
           <div className="divider" />
-          {scheduled.length === 0 ? (
+          {appts.length === 0 ? (
             <p className="muted">No scheduled visits yet.</p>
           ) : (
             <div className="tableWrap">
@@ -196,7 +159,7 @@ export default function MarketingProviderDemoDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {scheduled.map((a) => (
+                  {appts.map((a) => (
                     <tr key={a.id}>
                       <td className="muted">{workspacePatientLabel(a.patientId)}</td>
                       <td>{a.type}</td>
@@ -211,7 +174,6 @@ export default function MarketingProviderDemoDashboard() {
                           }}
                           style={{ padding: '8px 10px' }}
                         >
-                          <option value="Requested">Requested</option>
                           <option value="Scheduled">Scheduled</option>
                           <option value="Completed">Completed</option>
                           <option value="Cancelled">Cancelled</option>

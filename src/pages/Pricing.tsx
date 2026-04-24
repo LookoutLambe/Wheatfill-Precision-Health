@@ -169,16 +169,15 @@ export default function Pricing() {
             </div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
-              For catalog-style orders (after the team confirms amount), we use <strong>Venmo</strong> (
-              <a href={resolvedCatalogVenmoPayUrl()} target="_blank" rel="noopener noreferrer">
-                pay here
-              </a>
-              , {CATALOG_VENMO.handle}), <strong>PayPal</strong> (
+              For catalog-style orders (after the team confirms amount), use{' '}
               <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
-                pay page
+                Check out
+              </a>{' '}
+              (PayPal, {CATALOG_PAYPAL.email}). You can also use <strong>Venmo</strong> (
+              <a href={resolvedCatalogVenmoPayUrl()} target="_blank" rel="noopener noreferrer">
+                {CATALOG_VENMO.handle}
               </a>
-              , {CATALOG_PAYPAL.email}
-              ), <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
+              ) or <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
               {STRIPE_CHECKOUT_URL ? (
                 <>
                   , and <strong>cards</strong> (

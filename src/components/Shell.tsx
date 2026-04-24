@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import CatalogCartDrawer from './CatalogCartDrawer'
+import CatalogCartDrawer, { type CartLineProduct } from './CatalogCartDrawer'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
+import { apiGet } from '../api/client'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
@@ -24,19 +25,65 @@ import {
 import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
-function headerCatalogSlugForPath(pathname: string): string | null {
-  if (pathname === '/pharmacy/mountain-view') return DEFAULT_CATALOG_PARTNER_SLUG
-  return null
+function mapCatalogHighlightToCart(): CartLineProduct[] {
+  return CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
+    sku: p.sku,
+    name: p.name,
+    subtitle: p.subtitle,
+    priceCents: p.priceCents,
+  }))
+}
+
+/**
+ * Which cart the header bag should reflect. Partner-specific when on that catalog; otherwise
+ * the primary (default) catalog so the bag is available on every page to track the usual storefront cart.
+ */
+function headerCatalogSlugForPath(pathname: string): string {
+  if (pathname === '/pharmacy/mountain-view' || pathname === '/order-now' || pathname === '/order-now/') {
+    return DEFAULT_CATALOG_PARTNER_SLUG
+  }
+  const m = /^\/order-now\/([^/]+)(?:\/summary)?$/.exec(pathname)
+  if (m) {
+    return m[1]
+  }
+  return DEFAULT_CATALOG_PARTNER_SLUG
 }
 
 export default function Shell() {
   const navigate = useNavigate()
   const location = useLocation()
   const headerCartSlug = useMemo(() => headerCatalogSlugForPath(location.pathname), [location.pathname])
-  const headerCartProducts = useMemo(
-    () => CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({ sku: p.sku, name: p.name, subtitle: p.subtitle, priceCents: p.priceCents })),
-    [],
-  )
+  const [headerCartProducts, setHeaderCartProducts] = useState<CartLineProduct[]>([])
+
+  useEffect(() => {
+    if (headerCartSlug === DEFAULT_CATALOG_PARTNER_SLUG) {
+      setHeaderCartProducts(mapCatalogHighlightToCart())
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const r = await apiGet<{
+          partner: { products: { sku: string; name: string; subtitle: string; priceCents: number }[] }
+        }>(`/v1/pharmacies/${encodeURIComponent(headerCartSlug)}`)
+        if (cancelled) return
+        setHeaderCartProducts(
+          r.partner.products.map((p) => ({
+            sku: p.sku,
+            name: p.name,
+            subtitle: p.subtitle,
+            priceCents: p.priceCents,
+          })),
+        )
+      } catch {
+        if (cancelled) return
+        setHeaderCartProducts([])
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [headerCartSlug])
   const integ = MARKETING_ONLY ? getMarketingIntegrations() : null
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
@@ -114,14 +161,12 @@ export default function Shell() {
             </NavLink>
 
             <div className="topNavRight">
-              {headerCartSlug ? (
-                <CatalogCartDrawer
-                  key={headerCartSlug}
-                  slug={headerCartSlug}
-                  products={headerCartProducts}
-                  placement="header"
-                />
-              ) : null}
+              <CatalogCartDrawer
+                key={headerCartSlug}
+                slug={headerCartSlug}
+                products={headerCartProducts}
+                placement="header"
+              />
               <button
                 type="button"
                 className="navMenuToggle"
@@ -285,15 +330,15 @@ export default function Shell() {
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
             <div className="footerFineprint">
-              Catalog pay (only as instructed): <strong>Venmo</strong>{' '}
+              Catalog (only as instructed):{' '}
+              <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700 }}>
+                Check out
+              </a>
+              {` (PayPal · ${CATALOG_PAYPAL.email})`} · <strong>Venmo</strong>{' '}
               <a href={catalogVenmoPayUrl} target="_blank" rel="noopener noreferrer">
                 {CATALOG_VENMO.handle}
-              </a>{' '}
-              <span className="muted">({catalogVenmoPayUrl})</span> · <strong>PayPal</strong>{' '}
-              <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer">
-                Pay on PayPal
-              </a>{' '}
-              <span className="muted">({CATALOG_PAYPAL.email})</span>. This site is the practice storefront—booking,
+              </a>
+              <span className="muted"> ({catalogVenmoPayUrl})</span>. This site is the practice storefront—booking,
               catalog, and how to reach the team.
             </div>
             <div className="footerFineprint">

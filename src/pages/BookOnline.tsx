@@ -5,6 +5,7 @@ import { MARKETING_ONLY } from '../config/mode'
 import { getMarketingIntegrations } from '../marketing/providerStore'
 import { bookAppointment, getPortalState, subscribePortalState } from '../data/portalStore'
 import { apiPost } from '../api/client'
+import ApiConnectionHint from '../components/ApiConnectionHint'
 import type { UiApptType } from '../medplum/scheduling'
 
 type Slot = { date: string; time: string }
@@ -81,11 +82,6 @@ export default function BookOnline() {
     ? getMarketingIntegrations().publicBookingUrl?.trim() || ''
     : ''
   const publicBookingFull = !MARKETING_ONLY ? publicSchedulingUrlForFullApp() : ''
-  useEffect(() => {
-    if (MARKETING_ONLY && publicBookingMarketing) {
-      window.location.replace(publicBookingMarketing)
-    }
-  }, [publicBookingMarketing])
   useEffect(() => {
     if (publicBookingFull) {
       window.location.replace(publicBookingFull)
@@ -173,17 +169,6 @@ export default function BookOnline() {
     return ''
   }, [selectedDate, slotsByDate, blackoutSet, bookedSet])
 
-  if (MARKETING_ONLY && publicBookingMarketing) {
-    return (
-      <div className="page" style={{ padding: 32, maxWidth: 560 }}>
-        <h1 style={{ margin: 0 }}>Book online</h1>
-        <p className="muted" style={{ marginTop: 12 }}>
-          Taking you to our scheduling page to complete your booking…
-        </p>
-      </div>
-    )
-  }
-
   if (publicBookingFull) {
     return (
       <div className="page" style={{ padding: 32, maxWidth: 560 }}>
@@ -191,35 +176,6 @@ export default function BookOnline() {
         <p className="muted" style={{ marginTop: 12 }}>
           Opening your scheduling link…
         </p>
-      </div>
-    )
-  }
-
-  if (MARKETING_ONLY) {
-    return (
-      <div className="page" style={{ maxWidth: 720 }}>
-        <div className="pageHeaderRow">
-          <div>
-            <h1 style={{ margin: 0 }}>Book online</h1>
-            <p className="muted pageSubtitle" style={{ marginTop: 8 }}>
-              Add your <strong>public booking</strong> URL in Team → Integrations so &quot;Book online&quot; opens your
-              scheduling page.
-            </p>
-          </div>
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
-          </Link>
-        </div>
-        <section className="card cardAccentSoft" style={{ marginTop: 16 }}>
-          <p className="muted" style={{ marginTop: 0 }}>
-            Open{' '}
-            <Link to="/provider/integrations" style={{ fontWeight: 800 }}>
-              Integrations
-            </Link>
-            , paste the URL where <strong>customers</strong> self-book (the public page—not an internal staff link),
-            then save.
-          </p>
-        </section>
       </div>
     )
   }
@@ -238,6 +194,18 @@ export default function BookOnline() {
           Home
         </Link>
       </div>
+
+      {MARKETING_ONLY && publicBookingMarketing ? (
+        <section className="card cardAccentSoft" style={{ marginTop: 12, marginBottom: 8 }}>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+            <strong>Optional:</strong> We also have a{' '}
+            <a href={publicBookingMarketing} target="_blank" rel="noopener noreferrer">
+              separate scheduling page
+            </a>
+            . The form on this page still posts your request to the team&rsquo;s workspace inbox.
+          </p>
+        </section>
+      ) : null}
 
       {step === 'choose' ? (
         <section className="card cardAccentSoft">
@@ -617,6 +585,15 @@ export default function BookOnline() {
             </div>
           </section>
         </div>
+      ) : null}
+
+      {MARKETING_ONLY ? (
+        <details className="muted" style={{ marginTop: 24, fontSize: 12, maxWidth: 720 }}>
+          <summary style={{ cursor: 'pointer' }}>Connection details (for the team)</summary>
+          <div style={{ marginTop: 8 }}>
+            <ApiConnectionHint />
+          </div>
+        </details>
       ) : null}
     </div>
   )
