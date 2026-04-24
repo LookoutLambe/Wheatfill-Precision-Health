@@ -4,6 +4,7 @@ import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
+import crypto from 'node:crypto'
 
 import { prisma } from './db'
 import { hashPassword, verifyPassword } from './auth/password'
@@ -17,8 +18,25 @@ const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
 const CLOVER_ENV = (process.env.CLOVER_ENV || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox'
 const CLOVER_MERCHANT_ID = process.env.CLOVER_MERCHANT_ID || ''
 const CLOVER_PRIVATE_KEY = process.env.CLOVER_PRIVATE_KEY || ''
+const CLOVER_WEBHOOK_SECRET = process.env.CLOVER_WEBHOOK_SECRET || ''
 const CLOVER_API_BASE =
   CLOVER_ENV === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
+
+function verifyCloverSignature(rawBody: string, header: string) {
+  // Clover-Signature: t=1642599079,v1=<hex>
+  const parts = Object.fromEntries(
+    header
+      .split(',')
+      .map((kv) => kv.trim().split('='))
+      .filter((x) => x.length === 2) as Array<[string, string]>,
+  )
+  const t = parts.t
+  const v1 = parts.v1
+  if (!t || !v1) return false
+  const payload = `${t}.${rawBody}`
+  const mac = crypto.createHmac('sha256', CLOVER_WEBHOOK_SECRET).update(payload).digest('hex')
+  return crypto.timingSafeEqual(Buffer.from(mac, 'utf8'), Buffer.from(v1, 'utf8'))
+}
 
 const app = Fastify({
   logger: true,
@@ -100,6 +118,45 @@ app.get('/v1/pharmacies/:slug', async (req, reply) => {
   })
   if (!partner || !partner.isActive) return reply.notFound('Pharmacy not found.')
   return { partner }
+})
+
+// Clover Hosted Checkout webhook (unauthenticated)
+app.post('/v1/billing/clover/webhook', async (req, reply) => {
+  if (!CLOVER_WEBHOOK_SECRET) return reply.badRequest('Clover webhook secret not configured.')
+  const sig = req.headers['clover-signature']
+  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Clover-Signature header.')
+
+  // We must validate against the raw body bytes. For now, we accept a string body if present.
+  // Production hardening: register a raw body parser for this route.
+  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
+  if (!verifyCloverSignature(rawBody, sig)) return reply.unauthorized('Invalid Clover signature.')
+
+  const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as any
+  const status = String(body?.Status || '').toUpperCase()
+  const typ = String(body?.Type || '').toUpperCase()
+  const checkoutSessionId = String(body?.Data || '')
+  if (!checkoutSessionId || typ !== 'PAYMENT') return { received: true }
+
+  if (status === 'APPROVED') {
+    const payment = await prisma.payment.findFirst({
+      where: { cloverCheckoutSessionId: checkoutSessionId },
+      select: { id: true, orderId: true },
+    })
+    await prisma.payment.updateMany({
+      where: { cloverCheckoutSessionId: checkoutSessionId },
+      data: { status: 'succeeded' },
+    })
+    if (payment?.orderId) {
+      await prisma.order.update({ where: { id: payment.orderId }, data: { status: 'ordered' } })
+    }
+  } else if (status === 'DECLINED') {
+    await prisma.payment.updateMany({
+      where: { cloverCheckoutSessionId: checkoutSessionId },
+      data: { status: 'failed' },
+    })
+  }
+
+  return { received: true }
 })
 
 const SignupBody = z.object({
@@ -265,6 +322,10 @@ await app.register(async (protectedScope) => {
         where: { id: req.user.sub },
         select: {
           id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
           address1: true,
           address2: true,
           city: true,
@@ -338,7 +399,12 @@ await app.register(async (protectedScope) => {
       }
 
       const cloverPayload = {
-        customer: {},
+        customer: {
+          firstName: patient.firstName || undefined,
+          lastName: patient.lastName || undefined,
+          email: patient.email || undefined,
+          phoneNumber: patient.phone || undefined,
+        },
         shoppingCart: {
           lineItems: [
             ...order.items.map((it) => ({

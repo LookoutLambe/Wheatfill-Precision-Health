@@ -203,7 +203,6 @@ export default function PharmacyPartner() {
                 style={{ opacity: !agree || !sigName.trim() || items.length === 0 ? 0.6 : 1, width: '100%' }}
                 onClick={() => {
                   setCheckoutError(null)
-                  const token = localStorage.getItem('wph_token_v1') || ''
                   apiPost<{ checkoutUrl: string | null }>(
                     '/v1/patient/orders/pharmacy',
                     {
@@ -215,11 +214,10 @@ export default function PharmacyPartner() {
                       signatureDate: sigDate,
                       shippingInsurance: insurance,
                     },
-                    token,
                   )
                     .then((r) => {
                       if (r.checkoutUrl) window.location.href = r.checkoutUrl
-                      else setCheckoutError('Stripe is not configured yet on the server (missing STRIPE_SECRET_KEY).')
+                      else setCheckoutError('Clover is not configured yet on the server (missing CLOVER keys).')
                     })
                     .catch((e) => setCheckoutError(String(e?.message || e)))
                 }}
