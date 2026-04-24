@@ -56,7 +56,7 @@ export default function ProviderIntegrations() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Configure where patients go for booking, portal, Order Now Catalog, and video; fulfillment partner name and
+            Configure Charm EHR links for booking and patient portal, plus Order Now Catalog and video; fulfillment partner name and
             catalog Venmo link shown on the public site; optional notes for card rails (Stripe/Clover in{' '}
             <Link to="/provider/payments">Payments</Link>).
           </p>
@@ -82,7 +82,7 @@ export default function ProviderIntegrations() {
 
       <section className="card cardAccentSoft" style={{ maxWidth: 980 }}>
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Practice links</h2>
+          <h2 style={{ margin: 0 }}>Charm EHR &amp; public links</h2>
           <span className="pill">Router</span>
         </div>
         <div className="divider" />
@@ -92,7 +92,7 @@ export default function ProviderIntegrations() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Practice Better scheduling URL (staff — paste your Practice Better booking link)
+              Charm EHR scheduling URL (staff — paste your Charm booking / scheduling link)
             </div>
             <input
               className="input"
@@ -103,7 +103,7 @@ export default function ProviderIntegrations() {
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient portal URL (Practice Better client portal)
+              Patient portal URL (Charm PHR / patient portal sign-in)
             </div>
             <input
               className="input"

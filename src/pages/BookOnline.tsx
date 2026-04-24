@@ -320,7 +320,7 @@ export default function BookOnline() {
                 {MARKETING_ONLY ? (
                   <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
                     This page uses the calendar below. Enter your name in the field under Notes to hold a time (saved
-                    in this browser only). For PHI and Practice Better scheduling, staff use the link in Provider&apos;s
+                    in this browser only). For PHI and Charm EHR scheduling, staff use the link in Provider&apos;s
                     Portal.
                   </div>
                 ) : !patientName ? (

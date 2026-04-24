@@ -42,7 +42,7 @@ export default function ProviderVbmsWorkspace() {
 
   const workspacePatientLabel = (patientId: string) => workspacePatients.find((p) => p.id === patientId)?.label || '—'
 
-  const practiceBetterSchedulingUrl = getMarketingIntegrations().bookingUrl.trim()
+  const charmSchedulingUrl = getMarketingIntegrations().bookingUrl.trim()
 
   return (
     <div className="page">
@@ -58,19 +58,19 @@ export default function ProviderVbmsWorkspace() {
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
-          {practiceBetterSchedulingUrl ? (
+          {charmSchedulingUrl ? (
             <a
-              href={practiceBetterSchedulingUrl}
+              href={charmSchedulingUrl}
               className="btn btnPrimary"
               style={{ textDecoration: 'none' }}
               target="_blank"
               rel="noopener noreferrer"
             >
-              Practice Better scheduling
+              Charm EHR scheduling
             </a>
           ) : (
             <Link to="/provider/integrations" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-              Set Practice Better URL
+              Set Charm scheduling URL
             </Link>
           )}
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>

@@ -182,7 +182,7 @@ function normalizeCatalogUrl(url: unknown): string {
   return s
 }
 
-/** Generic Practice Better homepage is not a patient booking page — use in provider portal only after pasting your real scheduling URL. */
+/** Generic vendor homepages are not real booking pages — paste your Charm EHR scheduling link from the practice. */
 function normalizeProviderBookingUrl(url: unknown): string {
   const s = String(url ?? '').trim()
   if (!s) return ''
@@ -192,9 +192,9 @@ function normalizeProviderBookingUrl(url: unknown): string {
 
 export function getMarketingIntegrations(): MarketingIntegrations {
   const defaults: MarketingIntegrations = {
-    // Provider-only: paste Brett's Practice Better scheduling URL in /provider/integrations (not used for public Book Online).
+    // Provider-only: paste Charm EHR scheduling URL in /provider/integrations (not used for public Book Online).
     bookingUrl: '',
-    patientPortalUrl: 'https://practicebetter.io/',
+    patientPortalUrl: '',
     // Empty = use same-origin /order-now (GitHub Pages + local marketing builds).
     pharmacyUrl: '',
     videoVisitUrl: 'https://doxy.me/',

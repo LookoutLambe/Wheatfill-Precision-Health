@@ -111,7 +111,7 @@ export default function ProviderLogin() {
 
         <div className="divider" />
         <p className="muted" style={{ margin: 0 }}>
-          This is a <b>configuration</b> provider area. Patient-facing actions should happen on your configured third‑party systems (for example Practice Better).
+          This is a <b>configuration</b> provider area. Patient-facing actions should happen on your configured systems (for example Charm EHR / PHR).
         </p>
       </section>
     </div>

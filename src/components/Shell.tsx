@@ -198,7 +198,7 @@ export default function Shell() {
               <a href={catalogVenmoPayUrl} target="_blank" rel="noopener noreferrer">
                 Pay here {CATALOG_VENMO.handle}
               </a>{' '}
-              <span className="muted">({catalogVenmoPayUrl})</span>. Patient portal: Practice Better.
+              <span className="muted">({catalogVenmoPayUrl})</span>. Patient portal: Charm EHR (PHR).
             </div>
             <div className="footerFineprint">
               <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>

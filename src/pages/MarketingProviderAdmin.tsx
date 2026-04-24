@@ -26,8 +26,8 @@ export default function MarketingProviderAdmin() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted pageSubtitle">
-            Configure booking, portal, Order Now Catalog, video, fulfillment partner name, catalog Venmo link, and
-            optional payment-rail notes.
+            Configure Charm EHR booking and patient portal, Order Now Catalog, video, fulfillment partner name, catalog
+            Venmo link, and optional payment-rail notes.
           </p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
@@ -65,13 +65,13 @@ export default function MarketingProviderAdmin() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Practice Better scheduling URL (provider only — not shown on public Book Online)
+              Charm EHR scheduling URL (provider only — not shown on public Book Online)
             </div>
             <input className="input" value={form.bookingUrl} onChange={(e) => setForm((p) => ({ ...p, bookingUrl: e.target.value }))} />
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient portal URL (Practice Better client portal)
+              Patient portal URL (Charm PHR / patient portal)
             </div>
             <input
               className="input"
@@ -162,11 +162,11 @@ export default function MarketingProviderAdmin() {
         <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Booking</h2>
-            <span className="pill">Practice Better</span>
+            <span className="pill">Charm EHR</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens your Practice Better scheduling page in a new tab for staff. Patients use <b>Book Online</b> on the site for the calendar.
+            Opens your Charm EHR scheduling page in a new tab for staff. Patients use <b>Book Online</b> on the site for the calendar.
           </p>
           <div className="divider" />
           <a
@@ -187,11 +187,11 @@ export default function MarketingProviderAdmin() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Patient portal</h2>
-            <span className="pill pillRed">Practice Better</span>
+            <span className="pill pillRed">Charm PHR</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens the Practice Better client portal (patients sign in on Practice Better).
+            Opens the Charm EHR patient portal (PHR); patients sign in with their Charm credentials.
           </p>
           <div className="divider" />
           <a
