@@ -15,7 +15,7 @@ export default function ProviderLogin() {
     return raw && raw.startsWith('/provider') ? raw : '/provider'
   }, [location.search])
 
-  const [username, setUsername] = useState(DEFAULT_USERNAME)
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -41,7 +41,7 @@ export default function ProviderLogin() {
 
         {!MEDPLUM_CLIENT_ID ? (
           <div style={{ color: '#7a0f1c', fontSize: 13, fontWeight: 900, textAlign: 'left' }}>
-            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>.
+            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>. This login only works on the full app deployment.
           </div>
         ) : null}
         {/* Provider email is intentionally not requested in UI for testing */}
@@ -129,7 +129,7 @@ export default function ProviderLogin() {
               })()
             }}
           >
-            Sign in
+            {busy ? 'Signing in…' : 'Sign in'}
           </button>
           <Link to="/signin" className="btn" style={{ textDecoration: 'none' }}>
             Sign in (standard)
@@ -138,7 +138,7 @@ export default function ProviderLogin() {
 
         <div className="divider" />
         <p className="muted" style={{ margin: 0 }}>
-          Default credentials: <b>brett</b> / <b>wheatfill</b>
+          If you don’t have access, contact your administrator.
         </p>
       </section>
     </div>

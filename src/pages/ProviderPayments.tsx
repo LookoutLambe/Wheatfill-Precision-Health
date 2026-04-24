@@ -29,8 +29,8 @@ export default function ProviderPayments() {
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<PaymentsStatus | null>(null)
 
-  const [username, setUsername] = useState('brett')
-  const [password, setPassword] = useState('wheatfill')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
 
   const [cloverEnv, setCloverEnv] = useState<'sandbox' | 'production'>('sandbox')
   const [cloverMerchantId, setCloverMerchantId] = useState('')
