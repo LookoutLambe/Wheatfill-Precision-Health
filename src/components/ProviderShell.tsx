@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import '../app.css'
+import '../App.css'
 import { setProviderAuthed } from '../provider/providerAuth'
 
 export default function ProviderShell() {
