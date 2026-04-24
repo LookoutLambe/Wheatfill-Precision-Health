@@ -6,9 +6,15 @@ import { getMarketingIntegrations } from '../marketing/providerStore'
 
 export default function Shell() {
   const integ = MARKETING_ONLY ? getMarketingIntegrations() : null
-  const appBook = integ?.bookingUrl || (APP_URL ? `${APP_URL}/book` : '/book')
-  const appPharmacy = integ?.pharmacyUrl || (APP_URL ? `${APP_URL}/pharmacy` : '/pharmacy')
-  const appPatient = integ?.patientPortalUrl || (APP_URL ? `${APP_URL}/patient` : '/patient')
+
+  // On GitHub Pages, absolute paths like "/book" point to the user site root and 404.
+  // Use Vite base URL for internal links (e.g. "/Wheatfill-Precision-Health/").
+  const base = (import.meta as any).env?.BASE_URL?.toString() || '/'
+  const internal = (p: string) => `${base.replace(/\/$/, '')}${p.startsWith('/') ? p : `/${p}`}`
+
+  const appBook = integ?.bookingUrl || (APP_URL ? `${APP_URL}/book` : internal('/book'))
+  const appPharmacy = integ?.pharmacyUrl || (APP_URL ? `${APP_URL}/pharmacy` : internal('/pharmacy'))
+  const appPatient = integ?.patientPortalUrl || (APP_URL ? `${APP_URL}/patient` : internal('/patient'))
   return (
     <div className="appShell">
       <header className="topNav">
