@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: wph_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wph
+      POSTGRES_PASSWORD: wph
+      POSTGRES_DB: wph
+    ports:
+      - "5432:5432"
+    volumes:
+      - wph_pgdata:/var/lib/postgresql/data
+
+volumes:
+  wph_pgdata:
+
