@@ -28,9 +28,6 @@ export default function MarketingProviderAdmin() {
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
             Back
           </Link>
-          <Link to="/provider/demo" className="btn btnAccent" style={{ textDecoration: 'none' }}>
-            Demo dashboard
-          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
@@ -111,6 +108,108 @@ export default function MarketingProviderAdmin() {
           </button>
         </div>
       </section>
+
+      <div className="cardGrid" style={{ marginTop: 16 }}>
+        <section className="card cardAccentNavy">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Booking</h2>
+            <span className="pill">EHR</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Opens your EHR booking page in a new tab (the EHR handles login + PHI).
+          </p>
+          <div className="divider" />
+          <a
+            className="btn btnPrimary"
+            style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            href={form.bookingUrl.trim() || '#'}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!form.bookingUrl.trim()}
+            onClick={(e) => {
+              if (!form.bookingUrl.trim()) e.preventDefault()
+            }}
+          >
+            {form.bookingUrl.trim() ? 'Open booking' : 'Add booking URL above'}
+          </a>
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Patient portal</h2>
+            <span className="pill pillRed">EHR</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Opens the patient portal URL (patients sign in on the EHR’s site).
+          </p>
+          <div className="divider" />
+          <a
+            className="btn btnAccent"
+            style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            href={form.patientPortalUrl.trim() || '#'}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!form.patientPortalUrl.trim()}
+            onClick={(e) => {
+              if (!form.patientPortalUrl.trim()) e.preventDefault()
+            }}
+          >
+            {form.patientPortalUrl.trim() ? 'Open patient portal' : 'Add portal URL above'}
+          </a>
+        </section>
+
+        <section className="card cardAccentRed">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Pharmacy</h2>
+            <span className="pill pillRed">Partner</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Opens the pharmacy partner portal (login stays on the pharmacy’s site).
+          </p>
+          <div className="divider" />
+          <a
+            className="btn btnPrimary"
+            style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            href={form.pharmacyUrl.trim() || '#'}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!form.pharmacyUrl.trim()}
+            onClick={(e) => {
+              if (!form.pharmacyUrl.trim()) e.preventDefault()
+            }}
+          >
+            {form.pharmacyUrl.trim() ? 'Open pharmacy portal' : 'Add pharmacy URL above'}
+          </a>
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Video visits</h2>
+            <span className="pill">Doxy.me</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Opens your waiting room link.
+          </p>
+          <div className="divider" />
+          <a
+            className="btn"
+            style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            href={form.videoVisitUrl.trim() || '#'}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!form.videoVisitUrl.trim()}
+            onClick={(e) => {
+              if (!form.videoVisitUrl.trim()) e.preventDefault()
+            }}
+          >
+            {form.videoVisitUrl.trim() ? 'Open video visit room' : 'Add video URL above'}
+          </a>
+        </section>
+      </div>
     </div>
   )
 }
