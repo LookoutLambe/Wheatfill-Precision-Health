@@ -1,0 +1,22 @@
+{
+  "name": "wph-medplum-cdk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "init:aws": "medplum aws init",
+    "cdk:bootstrap": "cdk bootstrap -c config=${MEDPLUM_CDK_CONFIG_FILE:-medplum.dev.config.json}",
+    "cdk:synth": "cdk synth -c config=${MEDPLUM_CDK_CONFIG_FILE:-medplum.dev.config.json}",
+    "cdk:diff": "cdk diff -c config=${MEDPLUM_CDK_CONFIG_FILE:-medplum.dev.config.json}",
+    "cdk:deploy": "cdk deploy --all -c config=${MEDPLUM_CDK_CONFIG_FILE:-medplum.dev.config.json}",
+    "aws:update-bucket-policies": "medplum aws update-bucket-policies ${MEDPLUM_ENV_NAME:-dev}",
+    "aws:deploy-app": "medplum aws deploy-app ${MEDPLUM_ENV_NAME:-dev}"
+  },
+  "dependencies": {
+    "@medplum/cdk": "^4.0.0",
+    "@medplum/cli": "^4.0.0",
+    "aws-cdk-lib": "^2.212.0",
+    "constructs": "^10.4.2"
+  }
+}
+

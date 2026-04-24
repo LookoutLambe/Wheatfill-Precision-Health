@@ -1,10 +1,12 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { isProviderAuthed } from '../provider/providerAuth'
+import { useMedplumApp } from '../medplum/provider'
 
 export default function ProviderGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation()
 
-  if (!isProviderAuthed()) {
+  const { loading, profile } = useMedplumApp()
+  if (loading) return null
+  if (!profile || profile.resourceType !== 'Practitioner') {
     const next = `${location.pathname}${location.search}${location.hash}`
     return <Navigate to={`/provider/login?next=${encodeURIComponent(next)}`} replace />
   }

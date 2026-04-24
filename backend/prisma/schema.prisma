@@ -51,6 +51,11 @@ enum PaymentMethod {
   manual_venmo
 }
 
+enum ProviderPaymentProvider {
+  stripe
+  clover
+}
+
 enum PaymentStatus {
   pending
   requires_action
@@ -128,6 +133,16 @@ model User {
   stripeOnboardingStatus   String? // e.g. 'pending','complete'
   stripeChargesEnabled     Boolean @default(false)
   stripePayoutsEnabled     Boolean @default(false)
+
+  // Provider payment processor selection (which provider to use for new payments)
+  activePaymentProvider ProviderPaymentProvider?
+
+  // Clover connection details (encrypted at rest in DB)
+  cloverEnv        String?
+  cloverMerchantId String?
+  cloverPrivateKeyEnc String?
+  cloverPrivateKeyIv  String?
+  cloverPrivateKeyTag String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

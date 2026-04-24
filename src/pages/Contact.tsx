@@ -1,29 +1,61 @@
-import { useEffect, useState } from 'react'
-import { addMessage, clearMessages, getMessages, subscribeMessages } from '../data/contactStore'
+import { useState } from 'react'
+import { apiPost } from '../api/client'
+import { APP_URL, MARKETING_ONLY } from '../config/mode'
 
 export default function Contact() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const [messages, setMessages] = useState(() => getMessages())
-  useEffect(() => subscribeMessages(() => setMessages(getMessages())), [])
+  if (MARKETING_ONLY) {
+    return (
+      <div className="page">
+        <div>
+          <h1 style={{ margin: 0 }}>Contact</h1>
+          <p className="muted pageSubtitle">
+            For privacy, please don’t send medical details from this page. Use the secure portal for messages.
+          </p>
+        </div>
+
+        <section className="card cardAccentNavy" style={{ maxWidth: 920 }}>
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Secure messaging</h2>
+            <span className="pill">Portal</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Use the patient portal to message the provider securely.
+          </p>
+          <div className="btnRow" style={{ marginTop: 12 }}>
+            {APP_URL ? (
+              <a className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }} href={`${APP_URL}/patient`}>
+                Open secure portal
+              </a>
+            ) : (
+              <span className="muted">Portal link not configured.</span>
+            )}
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
       <div>
         <h1 style={{ margin: 0 }}>Contact</h1>
         <p className="muted pageSubtitle">
-          Send a message or question. (Prototype form — stored locally in your browser.)
+          Send a message or question. Messages go to the provider inbox.
         </p>
       </div>
 
-      <div className="cardGrid">
-        <section className="card cardAccentNavy">
+      <div className="cardGrid" style={{ gridTemplateColumns: '1fr' }}>
+        <section className="card cardAccentNavy" style={{ maxWidth: 920 }}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Message</h2>
-            <span className="pill">Prototype</span>
+            <span className="pill">Secure</span>
           </div>
           <div className="divider" />
 
@@ -62,7 +94,12 @@ export default function Contact() {
 
           {sent ? (
             <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
-              Message saved (prototype).
+              Message sent.
+            </div>
+          ) : null}
+          {error ? (
+            <div style={{ marginTop: 10, color: '#7f1d1d', fontSize: 12, fontWeight: 800 }}>
+              {error}
             </div>
           ) : null}
 
@@ -73,12 +110,19 @@ export default function Contact() {
               disabled={!name.trim() || !email.trim() || !message.trim()}
               style={{ opacity: !name.trim() || !email.trim() || !message.trim() ? 0.6 : 1 }}
               onClick={() => {
-                addMessage({ name, email, message })
-                setName('')
-                setEmail('')
-                setMessage('')
-                setSent(true)
-                setTimeout(() => setSent(false), 1800)
+                ;(async () => {
+                  setError(null)
+                  try {
+                    await apiPost('/v1/public/contact', { name, email, message })
+                    setName('')
+                    setEmail('')
+                    setMessage('')
+                    setSent(true)
+                    setTimeout(() => setSent(false), 1800)
+                  } catch (e: any) {
+                    setError(String(e?.message || e))
+                  }
+                })()
               }}
             >
               Send
@@ -96,50 +140,6 @@ export default function Contact() {
               Clear
             </button>
           </div>
-        </section>
-
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Recent messages</h2>
-            <span className="pill pillRed">Local only</span>
-          </div>
-          <div className="divider" />
-
-          {messages.length === 0 ? (
-            <p className="muted">No messages yet.</p>
-          ) : (
-            <table className="table" aria-label="Contact messages">
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Message</th>
-                </tr>
-              </thead>
-              <tbody>
-                {messages.map((m) => (
-                  <tr key={m.id}>
-                    <td className="muted">
-                      {new Date(m.createdAt).toLocaleString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: '2-digit',
-                      })}
-                    </td>
-                    <td>{m.name}</td>
-                    <td className="muted">{m.email}</td>
-                    <td>{m.message}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          <div className="divider" />
-          <button type="button" className="btn" onClick={() => clearMessages()}>
-            Reset messages
-          </button>
         </section>
       </div>
     </div>

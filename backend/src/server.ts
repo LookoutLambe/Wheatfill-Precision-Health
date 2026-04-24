@@ -5,10 +5,14 @@ import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
 import crypto from 'node:crypto'
+import { MedplumClient } from '@medplum/core'
+import type { MedicationRequest } from '@medplum/fhirtypes'
+import Stripe from 'stripe'
 
 import { prisma } from './db'
 import { hashPassword, verifyPassword } from './auth/password'
 import { registerAuth, requireRole } from './auth/authz'
+import { decryptSecret, encryptSecret } from './crypto/secrets'
 
 const PORT = Number(process.env.PORT || 8080)
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5176'
@@ -21,6 +25,61 @@ const CLOVER_PRIVATE_KEY = process.env.CLOVER_PRIVATE_KEY || ''
 const CLOVER_WEBHOOK_SECRET = process.env.CLOVER_WEBHOOK_SECRET || ''
 const CLOVER_API_BASE =
   CLOVER_ENV === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
+
+const MEDPLUM_BASE_URL = (process.env.MEDPLUM_BASE_URL || 'https://api.medplum.com').replace(/\/$/, '')
+const MEDPLUM_CLIENT_ID = process.env.MEDPLUM_CLIENT_ID || ''
+const MEDPLUM_CLIENT_SECRET = process.env.MEDPLUM_CLIENT_SECRET || ''
+
+const DEFAULT_PROVIDER_USERNAME = (process.env.DEFAULT_PROVIDER_USERNAME || 'brett').trim().toLowerCase()
+const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
+
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
+const STRIPE_CONNECT_CLIENT_ID = process.env.STRIPE_CONNECT_CLIENT_ID || ''
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null
+
+const PROVIDER_PRACTITIONER_ID = process.env.PROVIDER_PRACTITIONER_ID || ''
+
+let medplumAdmin: MedplumClient | null = null
+async function getMedplumAdmin() {
+  if (medplumAdmin) return medplumAdmin
+  if (!MEDPLUM_CLIENT_ID || !MEDPLUM_CLIENT_SECRET) return null
+  const client = new MedplumClient({ baseUrl: MEDPLUM_BASE_URL })
+  await client.startClientLogin(MEDPLUM_CLIENT_ID, MEDPLUM_CLIENT_SECRET)
+  medplumAdmin = client
+  return client
+}
+
+function reqIp(req: any) {
+  return (req?.ip || req?.headers?.['x-forwarded-for'] || '').toString().slice(0, 120) || undefined
+}
+
+async function writeAudit(input: {
+  actorId: string
+  entityType: string
+  entityId: string
+  action: string
+  before?: unknown
+  after?: unknown
+  ip?: string
+}) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId: input.actorId,
+        entityType: input.entityType,
+        entityId: input.entityId,
+        action: input.action,
+        beforeJson: input.before as any,
+        afterJson: input.after as any,
+        ip: input.ip,
+      },
+    })
+  } catch (e) {
+    // Do not block clinical flows on audit write failures.
+    app.log.warn({ err: e }, 'audit_write_failed')
+  }
+}
 
 function verifyCloverSignature(rawBody: string, header: string) {
   // Clover-Signature: t=1642599079,v1=<hex>
@@ -36,6 +95,44 @@ function verifyCloverSignature(rawBody: string, header: string) {
   const payload = `${t}.${rawBody}`
   const mac = crypto.createHmac('sha256', CLOVER_WEBHOOK_SECRET).update(payload).digest('hex')
   return crypto.timingSafeEqual(Buffer.from(mac, 'utf8'), Buffer.from(v1, 'utf8'))
+}
+
+let providerSeeded = false
+async function ensureProviderSeed() {
+  if (providerSeeded) return
+  const existing = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+  if (existing) {
+    providerSeeded = true
+    return
+  }
+  const passwordHash = await hashPassword(DEFAULT_PROVIDER_PASSWORD)
+  await prisma.user.create({
+    data: {
+      role: 'provider',
+      username: DEFAULT_PROVIDER_USERNAME,
+      passwordHash,
+      displayName: 'Brett Wheatfill, FNP-C',
+      activePaymentProvider: CLOVER_MERCHANT_ID && CLOVER_PRIVATE_KEY ? 'clover' : null,
+      cloverEnv: CLOVER_MERCHANT_ID && CLOVER_PRIVATE_KEY ? CLOVER_ENV : null,
+      cloverMerchantId: CLOVER_MERCHANT_ID || null,
+      ...(CLOVER_PRIVATE_KEY
+        ? (() => {
+            try {
+              const enc = encryptSecret(CLOVER_PRIVATE_KEY)
+              return {
+                cloverPrivateKeyEnc: enc.enc,
+                cloverPrivateKeyIv: enc.iv,
+                cloverPrivateKeyTag: enc.tag,
+              }
+            } catch {
+              // If encryption key not present in dev, leave blank.
+              return {}
+            }
+          })()
+        : {}),
+    },
+  })
+  providerSeeded = true
 }
 
 const app = Fastify({
@@ -70,6 +167,7 @@ app.get('/health', async () => {
 
 app.get('/v1/health', async () => {
   await prisma.$queryRaw`SELECT 1`
+  await ensureProviderSeed()
   return { ok: true }
 })
 
@@ -101,12 +199,42 @@ async function ensurePharmacySeed() {
 
 app.get('/v1/pharmacies', async () => {
   await ensurePharmacySeed()
+  await ensureProviderSeed()
   const partners = await prisma.pharmacyPartner.findMany({
     where: { isActive: true },
     orderBy: { name: 'asc' },
     select: { slug: true, name: true },
   })
   return { partners }
+})
+
+app.get('/v1/public/availability', async (req) => {
+  await ensureProviderSeed()
+  const q = req.query as any
+  const start = typeof q.start === 'string' ? q.start : new Date().toISOString().slice(0, 10)
+  const days = Math.min(180, Math.max(1, Number(q.days || 60)))
+  const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+  if (!provider) return { blackouts: [], booked: [] }
+  const startDt = new Date(start)
+  const endDt = new Date(startDt.getTime() + days * 24 * 60 * 60 * 1000)
+
+  const blackouts = await prisma.blackoutDate.findMany({
+    where: { providerId: provider.id, date: { gte: startDt, lt: endDt } },
+    select: { date: true },
+  })
+  const booked = await prisma.appointment.findMany({
+    where: {
+      providerId: provider.id,
+      deletedAt: null,
+      status: 'scheduled',
+      startTs: { gte: startDt, lt: endDt },
+    },
+    select: { startTs: true },
+  })
+  return {
+    blackouts: blackouts.map((b) => b.date.toISOString().slice(0, 10)),
+    booked: booked.map((b) => (b.startTs ? b.startTs.toISOString() : '')).filter(Boolean),
+  }
 })
 
 app.get('/v1/pharmacies/:slug', async (req, reply) => {
@@ -129,6 +257,96 @@ app.get('/v1/pharmacies/:slug', async (req, reply) => {
   return { partner }
 })
 
+const PublicContactBody = z.object({
+  name: z.string().min(2).max(120),
+  email: z.string().email().max(200),
+  message: z.string().min(2).max(5000),
+})
+
+// Public contact form -> creates a Medplum Communication for the provider (so only provider sees it).
+app.post('/v1/public/contact', async (req, reply) => {
+  const body = PublicContactBody.parse(req.body)
+  const mp = await getMedplumAdmin()
+  if (!mp) return reply.internalServerError('Medplum is not configured on the server.')
+
+  let practitionerRef = PROVIDER_PRACTITIONER_ID ? `Practitioner/${PROVIDER_PRACTITIONER_ID}` : ''
+  if (!practitionerRef) {
+    try {
+      const list = (await mp.searchResources('Practitioner', '')) as any[]
+      const first = list?.[0]
+      if (first?.id) practitionerRef = `Practitioner/${first.id}`
+    } catch {
+      // ignore
+    }
+  }
+  if (!practitionerRef) return reply.internalServerError('No provider practitioner configured.')
+
+  const created = await mp.createResource({
+    resourceType: 'Communication',
+    status: 'in-progress',
+    category: [{ text: 'Contact form' }],
+    subject: { display: `${body.name.trim()} <${body.email.trim()}>` },
+    recipient: [{ reference: practitionerRef }],
+    payload: [{ contentString: body.message.trim() }],
+    sent: new Date().toISOString(),
+  } as any)
+
+  return { ok: true, id: (created as any).id }
+})
+
+// Stripe webhook (unauthenticated)
+app.post('/v1/billing/stripe/webhook', async (req, reply) => {
+  if (!stripe) return reply.badRequest('Stripe not configured.')
+  if (!STRIPE_WEBHOOK_SECRET) return reply.badRequest('Stripe webhook secret not configured.')
+  const sig = req.headers['stripe-signature']
+  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Stripe-Signature header.')
+
+  // NOTE: production hardening: register raw body parser for this route.
+  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET)
+  } catch (e: any) {
+    return reply.unauthorized(`Invalid Stripe signature: ${String(e?.message || e)}`)
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const beforePay = await prisma.payment.findFirst({ where: { stripeCheckoutSessionId: session.id } })
+    await prisma.payment.updateMany({
+      where: { stripeCheckoutSessionId: session.id },
+      data: { status: 'succeeded', stripePaymentIntentId: (session.payment_intent as string) || undefined },
+    })
+    const afterPay = await prisma.payment.findFirst({ where: { stripeCheckoutSessionId: session.id } })
+    if (beforePay && afterPay) {
+      await writeAudit({
+        actorId: beforePay.providerId,
+        entityType: 'payment',
+        entityId: beforePay.id,
+        action: 'stripe_checkout_completed',
+        before: beforePay,
+        after: afterPay,
+        ip: reqIp(req),
+      })
+    }
+    if (beforePay?.orderId) {
+      const beforeOrder = await prisma.order.findUnique({ where: { id: beforePay.orderId } })
+      const afterOrder = await prisma.order.update({ where: { id: beforePay.orderId }, data: { status: 'ordered' } })
+      await writeAudit({
+        actorId: beforePay.providerId,
+        entityType: 'order',
+        entityId: beforePay.orderId,
+        action: 'order_marked_ordered_by_payment',
+        before: beforeOrder || undefined,
+        after: afterOrder,
+        ip: reqIp(req),
+      })
+    }
+  }
+
+  return { received: true }
+})
+
 // Clover Hosted Checkout webhook (unauthenticated)
 app.post('/v1/billing/clover/webhook', async (req, reply) => {
   if (!CLOVER_WEBHOOK_SECRET) return reply.badRequest('Clover webhook secret not configured.')
@@ -149,20 +367,69 @@ app.post('/v1/billing/clover/webhook', async (req, reply) => {
   if (status === 'APPROVED') {
     const payment = await prisma.payment.findFirst({
       where: { cloverCheckoutSessionId: checkoutSessionId },
-      select: { id: true, orderId: true },
+      select: { id: true, orderId: true, itemId: true },
     })
+    const beforePay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
     await prisma.payment.updateMany({
       where: { cloverCheckoutSessionId: checkoutSessionId },
       data: { status: 'succeeded' },
     })
+    const afterPay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
+    if (payment?.id && beforePay && afterPay) {
+      await writeAudit({
+        actorId: beforePay.providerId,
+        entityType: 'payment',
+        entityId: payment.id,
+        action: 'clover_payment_approved',
+        before: beforePay,
+        after: afterPay,
+        ip: reqIp(req),
+      })
+    }
     if (payment?.orderId) {
-      await prisma.order.update({ where: { id: payment.orderId }, data: { status: 'ordered' } })
+      const beforeOrder = await prisma.order.findUnique({ where: { id: payment.orderId } })
+      const afterOrder = await prisma.order.update({ where: { id: payment.orderId }, data: { status: 'ordered' } })
+      await writeAudit({
+        actorId: (afterPay?.providerId || beforeOrder?.providerId || ''),
+        entityType: 'order',
+        entityId: payment.orderId,
+        action: 'order_marked_ordered_by_payment',
+        before: beforeOrder || undefined,
+        after: afterOrder,
+        ip: reqIp(req),
+      })
+    }
+
+    // Optional: if Payment.itemId stores a FHIR reference like "MedicationRequest/<id>", update it.
+    if (payment?.itemId && /^MedicationRequest\/.+/.test(payment.itemId)) {
+      const mp = await getMedplumAdmin()
+      if (mp) {
+        try {
+          const mr = (await mp.readResource('MedicationRequest', payment.itemId.split('/')[1])) as MedicationRequest
+          await mp.updateResource({ ...mr, status: 'active' } as MedicationRequest)
+        } catch (e) {
+          app.log.warn({ err: e }, 'medplum_update_failed')
+        }
+      }
     }
   } else if (status === 'DECLINED') {
+    const beforePay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
     await prisma.payment.updateMany({
       where: { cloverCheckoutSessionId: checkoutSessionId },
       data: { status: 'failed' },
     })
+    const afterPay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
+    if (beforePay && afterPay) {
+      await writeAudit({
+        actorId: beforePay.providerId,
+        entityType: 'payment',
+        entityId: beforePay.id,
+        action: 'clover_payment_declined',
+        before: beforePay,
+        after: afterPay,
+        ip: reqIp(req),
+      })
+    }
   }
 
   return { received: true }
@@ -296,10 +563,265 @@ await app.register(async (protectedScope) => {
           stripeChargesEnabled: true,
           stripePayoutsEnabled: true,
           stripeOnboardingStatus: true,
+          activePaymentProvider: true,
+          cloverEnv: true,
+          cloverMerchantId: true,
           createdAt: true,
         },
       })
       return { user: me }
+    },
+  )
+
+  // Provider: payment integrations (Stripe + Clover)
+  protectedScope.get(
+    '/v1/provider/payments',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const u = await prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: {
+          activePaymentProvider: true,
+          stripeConnectedAccountId: true,
+          stripeChargesEnabled: true,
+          stripePayoutsEnabled: true,
+          stripeOnboardingStatus: true,
+          cloverEnv: true,
+          cloverMerchantId: true,
+          cloverPrivateKeyEnc: true,
+          cloverPrivateKeyIv: true,
+          cloverPrivateKeyTag: true,
+        },
+      })
+      const cloverConnected = Boolean(u?.cloverMerchantId && u?.cloverPrivateKeyEnc && u?.cloverPrivateKeyIv && u?.cloverPrivateKeyTag)
+      const stripeConnected = Boolean(u?.stripeConnectedAccountId)
+      return {
+        activeProvider: u?.activePaymentProvider || null,
+        stripe: {
+          available: Boolean(stripe && STRIPE_CONNECT_CLIENT_ID),
+          connected: stripeConnected,
+          accountId: u?.stripeConnectedAccountId || null,
+          onboardingStatus: u?.stripeOnboardingStatus || null,
+          chargesEnabled: Boolean(u?.stripeChargesEnabled),
+          payoutsEnabled: Boolean(u?.stripePayoutsEnabled),
+        },
+        clover: {
+          available: true,
+          connected: cloverConnected,
+          env: u?.cloverEnv || null,
+          merchantId: u?.cloverMerchantId || null,
+        },
+      }
+    },
+  )
+
+  const SetActivePaymentBody = z.object({
+    provider: z.enum(['stripe', 'clover']),
+  })
+  protectedScope.patch(
+    '/v1/provider/payments/active',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const body = SetActivePaymentBody.parse(req.body)
+      const u = await prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: {
+          stripeConnectedAccountId: true,
+          cloverMerchantId: true,
+          cloverPrivateKeyEnc: true,
+          cloverPrivateKeyIv: true,
+          cloverPrivateKeyTag: true,
+        },
+      })
+      const stripeOk = Boolean(u?.stripeConnectedAccountId)
+      const cloverOk = Boolean(u?.cloverMerchantId && u?.cloverPrivateKeyEnc && u?.cloverPrivateKeyIv && u?.cloverPrivateKeyTag)
+      if (body.provider === 'stripe' && !stripeOk) return reply.badRequest('Stripe is not connected yet.')
+      if (body.provider === 'clover' && !cloverOk) return reply.badRequest('Clover is not connected yet.')
+      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
+      const after = await prisma.user.update({ where: { id: req.user.sub }, data: { activePaymentProvider: body.provider } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'user',
+        entityId: req.user.sub,
+        action: 'provider_payment_provider_set_active',
+        before,
+        after,
+        ip: reqIp(req),
+      })
+      return { ok: true, activeProvider: body.provider }
+    },
+  )
+
+  const SaveCloverBody = z.object({
+    env: z.enum(['sandbox', 'production']).default('sandbox'),
+    merchantId: z.string().min(3).max(120),
+    privateKey: z.string().min(10).max(4000),
+  })
+  protectedScope.post(
+    '/v1/provider/payments/clover',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const body = SaveCloverBody.parse(req.body)
+      const enc = encryptSecret(body.privateKey.trim())
+      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
+      const after = await prisma.user.update({
+        where: { id: req.user.sub },
+        data: {
+          cloverEnv: body.env,
+          cloverMerchantId: body.merchantId.trim(),
+          cloverPrivateKeyEnc: enc.enc,
+          cloverPrivateKeyIv: enc.iv,
+          cloverPrivateKeyTag: enc.tag,
+          activePaymentProvider: before?.activePaymentProvider || 'clover',
+        },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'user',
+        entityId: req.user.sub,
+        action: 'provider_clover_connected',
+        before,
+        after,
+        ip: reqIp(req),
+      })
+      return { ok: true }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/provider/payments/clover/disconnect',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
+      const after = await prisma.user.update({
+        where: { id: req.user.sub },
+        data: {
+          cloverEnv: null,
+          cloverMerchantId: null,
+          cloverPrivateKeyEnc: null,
+          cloverPrivateKeyIv: null,
+          cloverPrivateKeyTag: null,
+          ...(before?.activePaymentProvider === 'clover' ? { activePaymentProvider: null } : {}),
+        },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'user',
+        entityId: req.user.sub,
+        action: 'provider_clover_disconnected',
+        before,
+        after,
+        ip: reqIp(req),
+      })
+      return { ok: true }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/provider/payments/stripe/onboard',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!stripe || !STRIPE_CONNECT_CLIENT_ID) return reply.badRequest('Stripe Connect not configured.')
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: { stripeConnectedAccountId: true },
+      })
+      const accountId =
+        user?.stripeConnectedAccountId ||
+        (
+          await stripe.accounts.create({
+            type: 'express',
+            metadata: { providerUserId: req.user.sub },
+          })
+        ).id
+      if (!user?.stripeConnectedAccountId) {
+        await prisma.user.update({
+          where: { id: req.user.sub },
+          data: {
+            stripeConnectedAccountId: accountId,
+            stripeOnboardingStatus: 'pending',
+            stripeChargesEnabled: false,
+            stripePayoutsEnabled: false,
+          },
+        })
+      }
+      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+      const returnUrl = `${origin.replace(/\/$/, '')}/provider/payments?stripe=return`
+      const refreshUrl = `${origin.replace(/\/$/, '')}/provider/payments?stripe=refresh`
+      const link = await stripe.accountLinks.create({
+        account: accountId,
+        type: 'account_onboarding',
+        return_url: returnUrl,
+        refresh_url: refreshUrl,
+      })
+      return { url: link.url, accountId }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/provider/payments/stripe/refresh',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!stripe) return reply.badRequest('Stripe not configured.')
+      const user = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { stripeConnectedAccountId: true } })
+      if (!user?.stripeConnectedAccountId) return reply.badRequest('Stripe is not connected yet.')
+      const acct = await stripe.accounts.retrieve(user.stripeConnectedAccountId)
+      await prisma.user.update({
+        where: { id: req.user.sub },
+        data: {
+          stripeChargesEnabled: Boolean((acct as any).charges_enabled),
+          stripePayoutsEnabled: Boolean((acct as any).payouts_enabled),
+          stripeOnboardingStatus: (acct as any).details_submitted ? 'complete' : 'pending',
+        },
+      })
+      return { ok: true }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/provider/payments/stripe/disconnect',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
+      const after = await prisma.user.update({
+        where: { id: req.user.sub },
+        data: {
+          stripeConnectedAccountId: null,
+          stripeOnboardingStatus: null,
+          stripeChargesEnabled: false,
+          stripePayoutsEnabled: false,
+          ...(before?.activePaymentProvider === 'stripe' ? { activePaymentProvider: null } : {}),
+        },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'user',
+        entityId: req.user.sub,
+        action: 'provider_stripe_disconnected',
+        before,
+        after,
+        ip: reqIp(req),
+      })
+      return { ok: true }
+    },
+  )
+
+  const ChangePasswordBody = z.object({
+    currentPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(6).max(200),
+  })
+  protectedScope.post(
+    '/v1/provider/password',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const body = ChangePasswordBody.parse(req.body)
+      const user = await prisma.user.findUnique({ where: { id: req.user.sub } })
+      if (!user) return reply.unauthorized('Not signed in.')
+      const ok = await verifyPassword(body.currentPassword, user.passwordHash)
+      if (!ok) return reply.unauthorized('Current password is incorrect.')
+      const nextHash = await hashPassword(body.newPassword)
+      await prisma.user.update({ where: { id: user.id }, data: { passwordHash: nextHash } })
+      return { ok: true }
     },
   )
 
@@ -358,7 +880,72 @@ await app.register(async (protectedScope) => {
           providerId: provider.id,
         },
       })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'appointment',
+        entityId: appt.id,
+        action: 'patient_request_created',
+        after: appt,
+        ip: reqIp(req),
+      })
       return { appointment: appt }
+    },
+  )
+
+  const BookAppointmentBody = z.object({
+    type: AppointmentTypeIn,
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    time: z.string().min(1).max(10),
+    minutes: z.number().int().min(10).max(120).default(30),
+    notes: z.string().max(2000).optional(),
+  })
+  protectedScope.post(
+    '/v1/patient/appointments/book',
+    { preHandler: requireRole(['patient']) },
+    async (req, reply) => {
+      const body = BookAppointmentBody.parse(req.body)
+      const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+      if (!provider) return reply.internalServerError('No provider configured.')
+
+      const startTs = new Date(`${body.date}T${body.time}:00`)
+      const endTs = new Date(startTs.getTime() + body.minutes * 60_000)
+
+      const closed = await prisma.blackoutDate.findFirst({
+        where: { providerId: provider.id, date: new Date(body.date) },
+      })
+      if (closed) return reply.badRequest('That date is closed.')
+
+      const conflict = await prisma.appointment.findFirst({
+        where: {
+          providerId: provider.id,
+          deletedAt: null,
+          status: 'scheduled',
+          AND: [{ startTs: { lt: endTs } }, { endTs: { gt: startTs } }],
+        },
+      })
+      if (conflict) return reply.conflict('Slot is already booked.')
+
+      const created = await prisma.appointment.create({
+        data: {
+          status: 'scheduled',
+          type: toApptType(body.type),
+          startTs,
+          endTs,
+          notes: body.notes?.trim() || '',
+          source: 'patient_request',
+          patientId: req.user.sub,
+          providerId: provider.id,
+        },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'appointment',
+        entityId: created.id,
+        action: 'patient_booking_created',
+        after: created,
+        ip: reqIp(req),
+      })
+      return { appointment: created }
     },
   )
 
@@ -414,6 +1001,14 @@ await app.register(async (protectedScope) => {
           providerId: provider.id,
         },
       })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'order',
+        entityId: order.id,
+        action: 'patient_order_request_created',
+        after: order,
+        ip: reqIp(req),
+      })
       return { order }
     },
   )
@@ -466,7 +1061,17 @@ await app.register(async (protectedScope) => {
     async (req) => {
       const id = (req.params as any).id as string
       const body = UpdateApptStatusBody.parse(req.body)
+      const before = await prisma.appointment.findUnique({ where: { id } })
       const appt = await prisma.appointment.update({ where: { id }, data: { status: body.status } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'appointment',
+        entityId: id,
+        action: 'provider_appointment_status_changed',
+        before,
+        after: appt,
+        ip: reqIp(req),
+      })
       return { appointment: appt }
     },
   )
@@ -507,6 +1112,7 @@ await app.register(async (protectedScope) => {
       if (conflict) return reply.conflict('That slot is already booked.')
 
       if (body.appointmentId) {
+        const before = await prisma.appointment.findUnique({ where: { id: body.appointmentId } })
         const updated = await prisma.appointment.update({
           where: { id: body.appointmentId },
           data: {
@@ -517,6 +1123,15 @@ await app.register(async (protectedScope) => {
             notes: body.notes?.trim() || '',
             source: 'provider_scheduled',
           },
+        })
+        await writeAudit({
+          actorId: req.user.sub,
+          entityType: 'appointment',
+          entityId: updated.id,
+          action: 'provider_scheduled_from_request',
+          before,
+          after: updated,
+          ip: reqIp(req),
         })
         return { appointment: updated }
       }
@@ -532,6 +1147,14 @@ await app.register(async (protectedScope) => {
           patientId: body.patientId,
           providerId: req.user.sub,
         },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'appointment',
+        entityId: created.id,
+        action: 'provider_quick_schedule_created',
+        after: created,
+        ip: reqIp(req),
       })
       return { appointment: created }
     },
@@ -567,7 +1190,17 @@ await app.register(async (protectedScope) => {
     async (req) => {
       const id = (req.params as any).id as string
       const body = UpdateOrderStatusBody.parse(req.body)
+      const before = await prisma.order.findUnique({ where: { id } })
       const order = await prisma.order.update({ where: { id }, data: { status: body.status } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'order',
+        entityId: id,
+        action: 'provider_order_status_changed',
+        before,
+        after: order,
+        ip: reqIp(req),
+      })
       return { order }
     },
   )
@@ -599,6 +1232,14 @@ await app.register(async (protectedScope) => {
         const created = await prisma.blackoutDate.create({
           data: { providerId: req.user.sub, date: new Date(body.date), reason: body.reason?.trim() || '' },
         })
+        await writeAudit({
+          actorId: req.user.sub,
+          entityType: 'blackout',
+          entityId: created.id,
+          action: 'provider_blackout_created',
+          after: created,
+          ip: reqIp(req),
+        })
         return { blackout: created }
       } catch {
         return reply.conflict('That date is already closed.')
@@ -611,8 +1252,47 @@ await app.register(async (protectedScope) => {
     { preHandler: requireRole(['provider', 'admin']) },
     async (req) => {
       const id = (req.params as any).id as string
+      const before = await prisma.blackoutDate.findUnique({ where: { id } })
       await prisma.blackoutDate.delete({ where: { id } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'blackout',
+        entityId: id,
+        action: 'provider_blackout_deleted',
+        before,
+        ip: reqIp(req),
+      })
       return { ok: true }
+    },
+  )
+
+  protectedScope.get(
+    '/v1/provider/audit',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const q = req.query as any
+      const take = Math.min(200, Math.max(1, Number(q.take || 50)))
+      const entityType = typeof q.entityType === 'string' ? q.entityType.trim() : ''
+      const entityId = typeof q.entityId === 'string' ? q.entityId.trim() : ''
+
+      const events = await prisma.auditLog.findMany({
+        where: {
+          ...(entityType ? { entityType } : {}),
+          ...(entityId ? { entityId } : {}),
+        },
+        orderBy: { createdAt: 'desc' },
+        take,
+        select: {
+          id: true,
+          entityType: true,
+          entityId: true,
+          action: true,
+          ip: true,
+          createdAt: true,
+          actor: { select: { id: true, username: true, role: true, displayName: true } },
+        },
+      })
+      return { events }
     },
   )
 
@@ -715,10 +1395,89 @@ await app.register(async (protectedScope) => {
         include: { items: true },
       })
 
-      // Create Clover Hosted Checkout session (redirect)
-      if (!CLOVER_MERCHANT_ID || !CLOVER_PRIVATE_KEY) {
-        return { orderId: order.id, totalCents: total, checkoutUrl: null }
+      // Create Hosted Checkout session (redirect) using provider's active processor
+      const providerRow = await prisma.user.findUnique({
+        where: { id: provider.id },
+        select: {
+          activePaymentProvider: true,
+          stripeConnectedAccountId: true,
+          cloverEnv: true,
+          cloverMerchantId: true,
+          cloverPrivateKeyEnc: true,
+          cloverPrivateKeyIv: true,
+          cloverPrivateKeyTag: true,
+        },
+      })
+
+      const active = providerRow?.activePaymentProvider || null
+      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+      const successUrl = `${origin.replace(/\/$/, '')}/pharmacy/${partner.slug}?paid=1&order=${order.id}`
+      const cancelUrl = `${origin.replace(/\/$/, '')}/pharmacy/${partner.slug}?canceled=1&order=${order.id}`
+
+      if (active === 'stripe') {
+        if (!stripe || !providerRow?.stripeConnectedAccountId) return { orderId: order.id, totalCents: total, checkoutUrl: null }
+        const session = await stripe.checkout.sessions.create(
+          {
+            mode: 'payment',
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            line_items: [
+              ...order.items.map((it) => ({
+                price_data: {
+                  currency: 'usd',
+                  unit_amount: it.unitPriceCents,
+                  product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug } },
+                },
+                quantity: it.quantity,
+              })),
+              ...(shippingInsuranceCents
+                ? [
+                    {
+                      price_data: {
+                        currency: 'usd',
+                        unit_amount: shippingInsuranceCents,
+                        product_data: { name: 'Shipping insurance' },
+                      },
+                      quantity: 1,
+                    },
+                  ]
+                : []),
+            ],
+            metadata: { orderId: order.id },
+          },
+          { stripeAccount: providerRow.stripeConnectedAccountId },
+        )
+        await prisma.payment.create({
+          data: {
+            method: 'stripe',
+            status: 'pending',
+            amountCents: total,
+            currency: 'usd',
+            itemType: 'order',
+            itemId: order.id,
+            orderId: order.id,
+            patientId: patient.id,
+            providerId: provider.id,
+            stripeCheckoutSessionId: session.id,
+          },
+        })
+        return { orderId: order.id, totalCents: total, checkoutUrl: session.url }
       }
+
+      // Default to Clover if active is clover OR unset (for backwards compatibility)
+      const cloverEnv = (providerRow?.cloverEnv || CLOVER_ENV || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox'
+      const cloverApiBase = cloverEnv === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
+      const cloverMerchantId = providerRow?.cloverMerchantId || CLOVER_MERCHANT_ID
+      let cloverPrivateKey = CLOVER_PRIVATE_KEY
+      if (providerRow?.cloverPrivateKeyEnc && providerRow?.cloverPrivateKeyIv && providerRow?.cloverPrivateKeyTag) {
+        cloverPrivateKey = decryptSecret({
+          enc: providerRow.cloverPrivateKeyEnc,
+          iv: providerRow.cloverPrivateKeyIv,
+          tag: providerRow.cloverPrivateKeyTag,
+        })
+      }
+
+      if (!cloverMerchantId || !cloverPrivateKey) return { orderId: order.id, totalCents: total, checkoutUrl: null }
 
       const cloverPayload = {
         customer: {
@@ -749,13 +1508,13 @@ await app.register(async (protectedScope) => {
         },
       }
 
-      const cloverRes = await fetch(`${CLOVER_API_BASE}/invoicingcheckoutservice/v1/checkouts`, {
+      const cloverRes = await fetch(`${cloverApiBase}/invoicingcheckoutservice/v1/checkouts`, {
         method: 'POST',
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',
-          authorization: `Bearer ${CLOVER_PRIVATE_KEY}`,
-          'X-Clover-Merchant-Id': CLOVER_MERCHANT_ID,
+          authorization: `Bearer ${cloverPrivateKey}`,
+          'X-Clover-Merchant-Id': cloverMerchantId,
         },
         body: JSON.stringify(cloverPayload),
       })

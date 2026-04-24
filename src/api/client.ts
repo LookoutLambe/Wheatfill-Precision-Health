@@ -50,3 +50,31 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
   return (await res.json()) as T
 }
 
+export async function apiPatch<T>(path: string, body: unknown, token?: string): Promise<T> {
+  const t = token ?? getToken()
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'content-type': 'application/json',
+      ...(t ? { authorization: `Bearer ${t}` } : {}),
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return (await res.json()) as T
+}
+
+export async function apiDelete<T>(path: string, token?: string): Promise<T> {
+  const t = token ?? getToken()
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'DELETE',
+    headers: {
+      ...(t ? { authorization: `Bearer ${t}` } : {}),
+    },
+    credentials: 'include',
+  })
+  if (!res.ok) throw new Error(await res.text())
+  return (await res.json()) as T
+}
+

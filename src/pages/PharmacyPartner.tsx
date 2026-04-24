@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { apiGet, apiPost } from '../api/client'
+import { apiGet } from '../api/client'
+import { useMedplumApp } from '../medplum/provider'
+import type { MedicationRequest } from '@medplum/fhirtypes'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
@@ -10,6 +12,7 @@ function money(cents: number) {
 }
 
 export default function PharmacyPartner() {
+  const { medplum, profile } = useMedplumApp()
   const { slug = '' } = useParams()
   const [partner, setPartner] = useState<PartnerResp['partner'] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -21,6 +24,7 @@ export default function PharmacyPartner() {
   const [sigDate, setSigDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [insurance, setInsurance] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [createdReqIds, setCreatedReqIds] = useState<string[] | null>(null)
 
   useEffect(() => {
     apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(slug)}`)
@@ -193,7 +197,10 @@ export default function PharmacyPartner() {
               </div>
 
               {checkoutError ? (
-                <div style={{ color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>{checkoutError}</div>
+                <div style={{ color: '#7a0f1c', fontSize: 12, fontWeight: 800, whiteSpace: 'pre-line' }}>
+                  {checkoutError}
+                  {createdReqIds?.length ? `\nCreated: ${createdReqIds.join(', ')}` : ''}
+                </div>
               ) : null}
 
               <button
@@ -203,26 +210,49 @@ export default function PharmacyPartner() {
                 style={{ opacity: !agree || !sigName.trim() || items.length === 0 ? 0.6 : 1, width: '100%' }}
                 onClick={() => {
                   setCheckoutError(null)
-                  apiPost<{ checkoutUrl: string | null }>(
-                    '/v1/patient/orders/pharmacy',
-                    {
-                      partnerSlug: partner?.slug,
-                      items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-                      agreedToShippingTerms: agree,
-                      contactPermission: contactOk,
-                      signatureName: sigName,
-                      signatureDate: sigDate,
-                      shippingInsurance: insurance,
-                    },
-                  )
-                    .then((r) => {
-                      if (r.checkoutUrl) window.location.href = r.checkoutUrl
-                      else setCheckoutError('Clover is not configured yet on the server (missing CLOVER keys).')
-                    })
-                    .catch((e) => setCheckoutError(String(e?.message || e)))
+                  ;(async () => {
+                    try {
+                      if (!profile || profile.resourceType !== 'Patient') {
+                        setCheckoutError('Please sign in as a patient first.')
+                        return
+                      }
+                      if (!partner) {
+                        setCheckoutError('Partner not loaded.')
+                        return
+                      }
+
+                      // Create MedicationRequest resources in Medplum (FHIR-native).
+                      const created: string[] = []
+                      for (const it of items) {
+                        const mr = (await medplum.createResource({
+                          resourceType: 'MedicationRequest',
+                          status: 'draft',
+                          intent: 'order',
+                          authoredOn: new Date().toISOString(),
+                          subject: { reference: `Patient/${(profile as any).id}` },
+                          medicationCodeableConcept: { text: it.product.name },
+                          dosageInstruction: [
+                            {
+                              text: `Partner: ${partner.name}. SKU: ${it.sku}. Qty: ${it.quantity}.`,
+                            },
+                          ],
+                          note: [
+                            {
+                              text: `Shipping terms: ${agree ? 'agreed' : 'not agreed'}. Contact permission: ${contactOk ? 'yes' : 'no'}. Signature: ${sigName} on ${sigDate}. Insurance: ${insurance ? 'yes' : 'no'}.`,
+                            },
+                          ],
+                        } as MedicationRequest)) as any
+                        if (mr?.id) created.push(mr.id)
+                      }
+                      setCreatedReqIds(created)
+                      setCheckoutError('Medication requests created. A provider will review and place the order.')
+                    } catch (e: any) {
+                      setCheckoutError(String(e?.message || e))
+                    }
+                  })()
                 }}
               >
-                Continue to payment
+                Submit medication request
               </button>
             </div>
           )}

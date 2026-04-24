@@ -1,0 +1,16 @@
+{
+  "name": "dev",
+  "region": "us-east-1",
+  "accountNumber": "123456789012",
+  "domainName": "example.com",
+  "apiDomainName": "api.example.com",
+  "appDomainName": "app.example.com",
+  "storageDomainName": "storage.example.com",
+  "storageBucketName": "medplum-dev-storage-example",
+  "webAppBucketName": "medplum-dev-webapp-example",
+  "apiSslCertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE_ME",
+  "appSslCertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE_ME",
+  "storageSslCertificateArn": "arn:aws:acm:us-east-1:123456789012:certificate/REPLACE_ME",
+  "useWaf": true
+}
+

@@ -14,9 +14,8 @@
 }
 
 .topNavInner {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,9 +81,8 @@
 }
 
 .main {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 28px 16px 64px;
   box-sizing: border-box;
 }
@@ -360,13 +358,44 @@
 }
 
 .footerInner {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   display: flex;
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 720px) {
+  .topNavInner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .brand {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .brandSub {
+    width: 100%;
+  }
+  .navLinks {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .navLinks a,
+  .navLinks .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .pageHeaderRow {
+    align-items: flex-start;
+  }
 }
 
 .footerLinks {

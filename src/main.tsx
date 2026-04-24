@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
+import { MedplumAppProvider } from './medplum/provider'
 
 // Only register the service worker in production builds.
 // In dev, a SW can cache/serve stale HTML and make routes look "blank".
@@ -16,7 +17,9 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={import.meta.env.BASE_URL}>
-      <App />
+      <MedplumAppProvider>
+        <App />
+      </MedplumAppProvider>
     </BrowserRouter>
   </StrictMode>,
 )

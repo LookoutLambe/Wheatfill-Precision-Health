@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:marketing": "tsc -b && vite build --mode marketing",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@medplum/core": "^5.1.9",
+    "@medplum/fhirtypes": "^5.1.9",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.14.2"

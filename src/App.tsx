@@ -14,11 +14,43 @@ import OrderingPortal from './pages/OrderingPortal'
 import PharmacyOptions from './pages/PharmacyOptions'
 import PharmacyPartner from './pages/PharmacyPartner'
 import PatientPortal from './pages/PatientPortal'
-import PatientLogin from './pages/PatientLogin'
-import ProviderLogin from './pages/ProviderLogin'
 import ProviderPortal from './pages/ProviderPortal'
+import SignIn from './pages/SignIn'
+import ProviderLogin from './pages/ProviderLogin'
+import ProviderOrderingTest from './pages/ProviderOrderingTest'
+import ProviderPayments from './pages/ProviderPayments'
+import ProviderIntegrations from './pages/ProviderIntegrations'
+import { APP_URL, MARKETING_ONLY } from './config/mode'
 
 export default function App() {
+  if (MARKETING_ONLY) {
+    // Marketing-only build: no PHI routes on GitHub Pages.
+    // Route visitors to the AWS-hosted app for booking/portal.
+    const toApp = (path: string) => (APP_URL ? `${APP_URL}${path}` : '/')
+    return (
+      <Routes>
+        <Route element={<Shell />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/ordering" element={<OrderingPortal />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
+
+          <Route path="/book" element={<Navigate to={toApp('/book')} replace />} />
+          <Route path="/pharmacy" element={<Navigate to={toApp('/pharmacy')} replace />} />
+          <Route path="/pharmacy/:slug" element={<Navigate to={toApp('/pharmacy')} replace />} />
+          <Route path="/signin" element={<Navigate to={toApp('/signin')} replace />} />
+          <Route path="/patient" element={<Navigate to={toApp('/patient')} replace />} />
+        </Route>
+
+        <Route path="/provider/login" element={<Navigate to={toApp('/provider/login')} replace />} />
+        <Route path="/provider/*" element={<Navigate to={toApp('/provider')} replace />} />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    )
+  }
   return (
     <Routes>
       <Route element={<Shell />}>
@@ -31,7 +63,7 @@ export default function App() {
         <Route path="/pharmacy/:slug" element={<PharmacyPartner />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
-        <Route path="/patient/login" element={<PatientLogin />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route
           path="/patient"
           element={
@@ -52,6 +84,9 @@ export default function App() {
         }
       >
         <Route path="/provider" element={<ProviderPortal />} />
+        <Route path="/provider/pharmacy/:slug" element={<ProviderOrderingTest />} />
+        <Route path="/provider/payments" element={<ProviderPayments />} />
+        <Route path="/provider/integrations" element={<ProviderIntegrations />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,7 +1,12 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import '../App.css'
+import AuthStatus from './AuthStatus'
+import { APP_URL, MARKETING_ONLY } from '../config/mode'
 
 export default function Shell() {
+  const appBook = APP_URL ? `${APP_URL}/book` : '/book'
+  const appPharmacy = APP_URL ? `${APP_URL}/pharmacy` : '/pharmacy'
+  const appPatient = APP_URL ? `${APP_URL}/patient` : '/patient'
   return (
     <div className="appShell">
       <header className="topNav">
@@ -15,9 +20,28 @@ export default function Shell() {
           <nav className="navLinks" aria-label="Primary navigation">
             <NavLink to="/">Home</NavLink>
             <NavLink to="/pricing">Pricing</NavLink>
-            <NavLink to="/book">Book Online</NavLink>
-            <NavLink to="/pharmacy">Pharmacy Options</NavLink>
-            <NavLink to="/patient">Patient Portal</NavLink>
+            {MARKETING_ONLY ? (
+              <a href={appBook} style={{ textDecoration: 'none' }}>
+                Book Online
+              </a>
+            ) : (
+              <NavLink to="/book">Book Online</NavLink>
+            )}
+            {MARKETING_ONLY ? (
+              <a href={appPharmacy} style={{ textDecoration: 'none' }}>
+                Pharmacy Options
+              </a>
+            ) : (
+              <NavLink to="/pharmacy">Pharmacy Options</NavLink>
+            )}
+            {MARKETING_ONLY ? (
+              <a href={appPatient} style={{ textDecoration: 'none' }}>
+                Patient Portal
+              </a>
+            ) : (
+              <NavLink to="/patient">Patient Portal</NavLink>
+            )}
+            {MARKETING_ONLY ? null : <AuthStatus />}
           </nav>
         </div>
       </header>
@@ -34,7 +58,15 @@ export default function Shell() {
             <NavLink to="/ordering">Ordering</NavLink>
             <NavLink to="/contact">Contact</NavLink>
             <NavLink to="/privacy">Privacy</NavLink>
-            <NavLink to="/provider/login">Provider</NavLink>
+            {MARKETING_ONLY ? (
+              APP_URL ? (
+                <a href={`${APP_URL}/provider`} style={{ textDecoration: 'none' }}>
+                  Provider
+                </a>
+              ) : null
+            ) : (
+              <NavLink to="/provider">Provider</NavLink>
+            )}
           </span>
         </div>
       </footer>

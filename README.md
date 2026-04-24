@@ -1,6 +1,42 @@
-# React + TypeScript + Vite
+## Wheatfill Precision Health
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Telehealth landing site + patient portal + provider portal with a real multi-user backend, scheduling, ordering, and Clover-hosted checkout.
+
+### Local development
+- **Frontend**: `npm install` then `npm run dev -- --port 5176`
+- **Backend**:
+  - `cd backend`
+  - `npm install`
+  - `cp .env.example .env` (then set `JWT_SECRET`)
+  - `npm run dev`
+
+Default URLs:
+- **Web**: `http://localhost:5176`
+- **API**: `http://localhost:8080`
+
+### API URL override (useful for GitHub Pages)
+You can point the frontend at a deployed backend by setting either:
+- `localStorage.wph_api_url_v1 = "https://your-api-domain"`
+- or `?api=https://your-api-domain` query param once (it persists)
+
+### Data retention & audit logging
+See `backend/RETENTION.md`.
+
+### HIPAA-safe hosting split (recommended)
+This repo supports two deploy modes:
+
+- **Marketing-only (GitHub Pages)**: no PHI routes or forms. Safe to host on GitHub Pages.
+  - Build: `npm run build:marketing`
+  - Configure: copy `.env.marketing.example` to `.env.marketing` and set `VITE_APP_URL` to your AWS app domain.
+
+- **Full app (AWS)**: Patient Portal / Provider Portal / messaging / intake / booking.
+  - Host on **AWS (BAA)**, not GitHub Pages.
+
+---
+
+## (Template notes)
+
+This repo started from a Vite template.
 
 Currently, two official plugins are available:
 

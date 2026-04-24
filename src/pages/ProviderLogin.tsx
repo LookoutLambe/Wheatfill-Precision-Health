@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import {
-  getProviderPassword,
-  getProviderUsername,
-  isProviderAuthed,
-  setProviderAuthed,
-  setProviderPassword,
-} from '../provider/providerAuth'
+import { MEDPLUM_CLIENT_ID, PROVIDER_LOGIN_EMAIL } from '../medplum/client'
+import { useMedplumApp } from '../medplum/provider'
+
+const DEFAULT_USERNAME = 'brett'
+const DEFAULT_PASSWORD = 'wheatfill'
 
 export default function ProviderLogin() {
+  const { medplum, refreshProfile } = useMedplumApp()
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = useMemo(() => {
@@ -16,26 +15,17 @@ export default function ProviderLogin() {
     return raw && raw.startsWith('/provider') ? raw : '/provider'
   }, [location.search])
 
-  const [username, setUsername] = useState(getProviderUsername())
+  const [username, setUsername] = useState(DEFAULT_USERNAME)
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-
-  const [showChange, setShowChange] = useState(false)
-  const [currentPass, setCurrentPass] = useState('')
-  const [newPass, setNewPass] = useState('')
-  const [confirmPass, setConfirmPass] = useState('')
-  const [changeMsg, setChangeMsg] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (isProviderAuthed()) navigate(redirectTo, { replace: true })
-  }, [navigate, redirectTo])
+  const [busy, setBusy] = useState(false)
 
   return (
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Provider Portal</h1>
-          <p className="muted pageSubtitle">Sign in to manage scheduling, orders, and availability.</p>
+          <h1 style={{ margin: 0 }}>Provider Login</h1>
+          <p className="muted pageSubtitle">Sign in to manage scheduling and requests.</p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -49,7 +39,14 @@ export default function ProviderLogin() {
         </div>
         <div className="divider" />
 
-        <div className="formRow">
+        {!MEDPLUM_CLIENT_ID ? (
+          <div style={{ color: '#7a0f1c', fontSize: 13, fontWeight: 900, textAlign: 'left' }}>
+            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>.
+          </div>
+        ) : null}
+        {/* Provider email is intentionally not requested in UI for testing */}
+
+        <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
               Username
@@ -58,11 +55,9 @@ export default function ProviderLogin() {
               className="input"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Provider username"
               autoComplete="username"
             />
           </label>
-
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
               Password
@@ -71,15 +66,14 @@ export default function ProviderLogin() {
               className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Provider password"
-              type="password"
               autoComplete="current-password"
+              type="password"
             />
           </label>
         </div>
 
         {error ? (
-          <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>
+          <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800, textAlign: 'left' }}>
             {error}
           </div>
         ) : null}
@@ -88,146 +82,64 @@ export default function ProviderLogin() {
           <button
             type="button"
             className="btn btnPrimary"
-            disabled={!username.trim() || !password}
-            style={{ opacity: !username.trim() || !password ? 0.6 : 1 }}
+            disabled={!MEDPLUM_CLIENT_ID || !username.trim() || !password || busy}
+            style={{
+              opacity: !MEDPLUM_CLIENT_ID || !username.trim() || !password || busy ? 0.6 : 1,
+            }}
             onClick={() => {
               setError(null)
-              if (username.trim().toLowerCase() !== getProviderUsername()) {
+              if (username.trim().toLowerCase() !== DEFAULT_USERNAME) {
                 setError('Invalid username or password.')
                 return
               }
-              if (password !== getProviderPassword()) {
+              if (password !== DEFAULT_PASSWORD) {
                 setError('Invalid username or password.')
                 return
               }
-              setProviderAuthed(true)
-              navigate(redirectTo, { replace: true })
+              if (!PROVIDER_LOGIN_EMAIL) {
+                setError('Provider login email is not configured. Set VITE_PROVIDER_LOGIN_EMAIL for this test login.')
+                return
+              }
+              setBusy(true)
+              ;(async () => {
+                try {
+                  const res: any = await medplum.startLogin({ email: PROVIDER_LOGIN_EMAIL, password: DEFAULT_PASSWORD })
+                  if (res?.code) {
+                    await medplum.processCode(res.code)
+                    refreshProfile()
+                    navigate(redirectTo, { replace: true })
+                    return
+                  }
+                  if (res?.memberships?.length && res?.login) {
+                    const picked = res.memberships[0]
+                    const resp2: any = await medplum.post('auth/profile', { login: res.login, profile: picked.id })
+                    if (resp2?.code) {
+                      await medplum.processCode(resp2.code)
+                      refreshProfile()
+                      navigate(redirectTo, { replace: true })
+                      return
+                    }
+                  }
+                  setError('Provider login succeeded but did not return an authorization code.')
+                } catch (e: any) {
+                  setError(String(e?.message || e))
+                } finally {
+                  setBusy(false)
+                }
+              })()
             }}
           >
             Sign in
           </button>
-
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              setUsername(getProviderUsername())
-              setPassword('')
-              setError(null)
-            }}
-          >
-            Clear
-          </button>
-
-          <span className="pill">Prototype</span>
+          <Link to="/signin" className="btn" style={{ textDecoration: 'none' }}>
+            Sign in (standard)
+          </Link>
         </div>
 
         <div className="divider" />
-
-        <div className="stack">
-          <div className="muted" style={{ fontSize: 13 }}>
-            Prototype login only. Username is <b>{getProviderUsername()}</b>.
-          </div>
-
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              setShowChange((s) => !s)
-              setChangeMsg(null)
-              setCurrentPass('')
-              setNewPass('')
-              setConfirmPass('')
-              setError(null)
-            }}
-          >
-            {showChange ? 'Hide' : 'Change password'}
-          </button>
-
-          {showChange ? (
-            <div className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
-              <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Update password</h2>
-                <span className="pill">Local</span>
-              </div>
-              <div className="divider" />
-
-              <div className="formRow">
-                <label>
-                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                    Current password
-                  </div>
-                  <input
-                    className="input"
-                    value={currentPass}
-                    onChange={(e) => setCurrentPass(e.target.value)}
-                    type="password"
-                    autoComplete="current-password"
-                  />
-                </label>
-
-                <label>
-                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                    New password
-                  </div>
-                  <input
-                    className="input"
-                    value={newPass}
-                    onChange={(e) => setNewPass(e.target.value)}
-                    type="password"
-                    autoComplete="new-password"
-                  />
-                </label>
-              </div>
-
-              <label style={{ display: 'block', marginTop: 12 }}>
-                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                  Confirm new password
-                </div>
-                <input
-                  className="input"
-                  value={confirmPass}
-                  onChange={(e) => setConfirmPass(e.target.value)}
-                  type="password"
-                  autoComplete="new-password"
-                />
-              </label>
-
-              {changeMsg ? (
-                <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
-                  {changeMsg}
-                </div>
-              ) : null}
-
-              <div className="btnRow" style={{ marginTop: 12 }}>
-                <button
-                  type="button"
-                  className="btn btnPrimary"
-                  disabled={!currentPass || !newPass || newPass.length < 6 || confirmPass !== newPass}
-                  style={{
-                    opacity: !currentPass || !newPass || newPass.length < 6 || confirmPass !== newPass ? 0.6 : 1,
-                  }}
-                  onClick={() => {
-                    setChangeMsg(null)
-                    if (currentPass !== getProviderPassword()) {
-                      setError('Current password is incorrect.')
-                      return
-                    }
-                    setError(null)
-                    setProviderPassword(newPass)
-                    setCurrentPass('')
-                    setNewPass('')
-                    setConfirmPass('')
-                    setChangeMsg('Password updated (stored locally for this browser).')
-                  }}
-                >
-                  Update password
-                </button>
-                <span className="pill">6+ chars</span>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        <p className="muted" style={{ margin: 0 }}>
+          Default credentials: <b>brett</b> / <b>wheatfill</b>
+        </p>
       </section>
     </div>
   )
