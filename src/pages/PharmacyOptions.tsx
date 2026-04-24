@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { apiGet } from '../api/client'
+import { API_URL, apiGet } from '../api/client'
 
 type Partner = { slug: string; name: string }
 
@@ -30,7 +30,13 @@ export default function PharmacyOptions() {
         <div className="card cardAccentRed">
           <div style={{ fontWeight: 800 }}>Error</div>
           <div className="divider" style={{ margin: '12px 0' }} />
-          <div className="muted">{error}</div>
+          <div className="muted" style={{ whiteSpace: 'pre-line' }}>
+            {error}
+            {'\n\n'}
+            API URL: {API_URL}
+            {'\n'}
+            Tip: on GitHub Pages, add `?api=https://YOUR_BACKEND_DOMAIN` once to set the API URL.
+          </div>
         </div>
       ) : null}
 

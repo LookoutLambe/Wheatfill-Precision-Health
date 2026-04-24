@@ -43,7 +43,16 @@ const app = Fastify({
 })
 
 await app.register(cors, {
-  origin: [FRONTEND_ORIGIN],
+  origin: (origin, cb) => {
+    const allow = (FRONTEND_ORIGIN || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    // If not configured, allow all origins (dev).
+    if (allow.length === 0) return cb(null, true)
+    if (!origin) return cb(null, true)
+    return cb(null, allow.includes(origin))
+  },
   credentials: true,
 })
 await app.register(sensible)
