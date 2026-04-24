@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
+import ZellePayToHint from '../components/ZellePayToHint'
+import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { bumpCartSku, readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -22,6 +24,7 @@ function vialFamilyForSku(sku: string): CatalogVialFamily {
 export default function OrderNowSummary() {
   const navigate = useNavigate()
   const { slug = '' } = useParams()
+  const isPrimaryCatalog = slug === DEFAULT_CATALOG_PARTNER_SLUG
   const [partner, setPartner] = useState<PartnerResp['partner'] | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [offlineCatalog, setOfflineCatalog] = useState(false)
@@ -49,7 +52,7 @@ export default function OrderNowSummary() {
         if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
           setPartner({
             slug,
-            name: 'Mountain View Pharmacy',
+            name: CONTRACTED_PHARMACY_NAME,
             products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
               sku: p.sku,
               name: p.name,
@@ -132,7 +135,7 @@ export default function OrderNowSummary() {
           return
         }
         setCheckoutError(
-          'Checkout is not available yet (Stripe or Clover must be connected for the practice). Your order may still have been created—check with the office.',
+          'We could not complete the online handoff for this order. Your request may still be on file—check with the office for Zelle payment instructions or next steps.',
         )
       } catch (e: any) {
         setCheckoutError(String(e?.message || e))
@@ -151,9 +154,18 @@ export default function OrderNowSummary() {
           <div>
             <h1 className="orderNowSummaryTitle">My Cart</h1>
             <p className="muted orderNowSummaryLead">
-              Review your selections. Payment opens in a new step on our card processor only when you
-              choose <b>Proceed To Secure Payment</b> below.
+              Review your selections. You are checking out through {PRACTICE_PUBLIC_NAME}.
+              {isPrimaryCatalog ? (
+                <>
+                  {' '}
+                  Fulfillment is coordinated with {CONTRACTED_PHARMACY_NAME} when prescribed. If your order needs
+                  changes, message your care team—we handle coordination with the pharmacy.
+                </>
+              ) : null}{' '}
+              For now, payment is via <b>Zelle</b> after the practice reviews your order. Submit below and your care
+              team will follow up with the amount due and where to send payment.
             </p>
+            <ZellePayToHint style={{ marginTop: 12 }} />
           </div>
           <Link to={catalogPath} className="orderNowContinueBrowse">
             Continue browsing →
@@ -174,7 +186,8 @@ export default function OrderNowSummary() {
 
         {offlineCatalog ? (
           <div className="orderNowOffline" role="status" style={{ marginTop: 14 }}>
-            Showing standard list prices for this catalog. Connect the API for live inventory and card checkout.
+            Showing standard list prices for this catalog. Connect the API for live inventory and automated checkout
+            when available.
           </div>
         ) : null}
 
@@ -183,7 +196,8 @@ export default function OrderNowSummary() {
         {partner && items.length === 0 ? (
           <div className="orderNowSummaryEmpty card">
             <p className="muted" style={{ margin: 0 }}>
-              Your cart is empty. Add products from the catalog, then return here to review and pay when you are ready.
+              Your cart is empty. Add products from the catalog, then return here to review and submit for Zelle
+              payment instructions when you are ready.
             </p>
             <div className="btnRow" style={{ marginTop: 16 }}>
               <Link to={catalogPath} className="btn btnPrimary" style={{ textDecoration: 'none' }}>
@@ -199,7 +213,16 @@ export default function OrderNowSummary() {
         {partner && items.length > 0 ? (
           <>
             <p className="muted orderNowSummaryPartnerLine">
-              Catalog: <strong>{catalogPartnerTitle(partner.name)}</strong>
+              {isPrimaryCatalog ? (
+                <>
+                  Order: <strong>{PRACTICE_PUBLIC_NAME}</strong> · fulfillment partner:{' '}
+                  <strong>{CONTRACTED_PHARMACY_NAME}</strong>
+                </>
+              ) : (
+                <>
+                  Catalog: <strong>{catalogPartnerTitle(partner.name)}</strong>
+                </>
+              )}
             </p>
             <ul className="orderNowSummaryLines">
               {items.map((it) => (
@@ -318,11 +341,13 @@ export default function OrderNowSummary() {
                 style={{ opacity: !agree || !contactOk || !sigName.trim() || checkoutBusy ? 0.55 : 1 }}
                 onClick={onPay}
               >
-                {checkoutBusy ? 'Starting…' : 'Proceed To Secure Payment'}
+                {checkoutBusy ? 'Submitting…' : 'Submit order'}
               </button>
               <p className="muted orderNowSecureNote">
-                Encrypted checkout on Stripe or Clover — you leave this catalog only when you are ready to pay.
+                For now, catalog payment is by <b>Zelle</b> after review. Submitting sends your order to the practice;
+                you are not paying on this screen. Watch email or portal messages for amount and pay-to details.
               </p>
+              <ZellePayToHint style={{ marginTop: 12 }} />
             </div>
           </>
         ) : null}

@@ -173,7 +173,8 @@ export default function MarketingProviderAdmin() {
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens your patient catalog (pick products, then secure checkout on Stripe/Clover when configured).
+            Opens your patient catalog. Orders run through the practice; patients submit from the summary page and get
+            Zelle payment instructions from the office. Stripe/Clover can be wired in later if you choose.
           </p>
           <div className="divider" />
           <a

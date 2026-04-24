@@ -10,7 +10,12 @@ import {
   isMarketingProviderAuthed,
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
-import { PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES, PROVIDER_NPI } from '../config/provider'
+import {
+  PROVIDER_DISPLAY_NAME,
+  PROVIDER_LICENSED_STATES,
+  PROVIDER_NPI,
+  ZELLE_RECIPIENTS,
+} from '../config/provider'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
 export default function Shell() {
@@ -204,7 +209,13 @@ export default function Shell() {
             </div>
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
-            <div className="footerFineprint">Payments processed by Stripe. Patient portal powered by Practice Better.</div>
+            <div className="footerFineprint">
+              Catalog Zelle (only as instructed):{' '}
+              <a href={ZELLE_RECIPIENTS.brett.telHref}>{ZELLE_RECIPIENTS.brett.display}</a> ({ZELLE_RECIPIENTS.brett.label}
+              ) ·{' '}
+              <a href={ZELLE_RECIPIENTS.bridgette.telHref}>{ZELLE_RECIPIENTS.bridgette.display}</a> (
+              {ZELLE_RECIPIENTS.bridgette.label}). Patient portal: Practice Better.
+            </div>
             <div className="footerFineprint">
               <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>
                 Third-party licenses, disclosures, and legal pages

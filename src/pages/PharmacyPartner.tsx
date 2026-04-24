@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
+import ZellePayToHint from '../components/ZellePayToHint'
+import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -25,6 +27,7 @@ function vialFamilyForSku(sku: string): CatalogVialFamily {
 
 export default function PharmacyPartner() {
   const { slug = '' } = useParams()
+  const isPrimaryCatalog = slug === DEFAULT_CATALOG_PARTNER_SLUG
   const [searchParams, setSearchParams] = useSearchParams()
   const [partner, setPartner] = useState<PartnerResp['partner'] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +50,7 @@ export default function PharmacyPartner() {
         if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
           setPartner({
             slug,
-            name: 'Mountain View Pharmacy',
+            name: CONTRACTED_PHARMACY_NAME,
             products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
               sku: p.sku,
               name: p.name,
@@ -120,12 +123,30 @@ export default function PharmacyPartner() {
       <div className="pharmacyToolbar">
         <div className="pharmacyToolbarMain">
           <h1 className="pharmacyToolbarTitle">
-            {partner ? catalogPartnerTitle(partner.name) : 'Medication catalog'}
+            {partner && isPrimaryCatalog
+              ? `Order through ${PRACTICE_PUBLIC_NAME}`
+              : partner
+                ? catalogPartnerTitle(partner.name)
+                : 'Medication catalog'}
           </h1>
           <p className="muted pharmacyToolbarSub">
-            This is the product list—add vials to your bag, then open <b>View Cart</b> for a full summary.
-            Payment on Stripe or Clover happens only after you continue from that page.
+            {isPrimaryCatalog ? (
+              <>
+                Add vials to your cart, then open <b>View Cart</b> for a full summary. You are ordering through
+                our practice—we coordinate preferred pricing and fulfillment with {CONTRACTED_PHARMACY_NAME} when
+                medication is prescribed, and your care team can resolve order issues on our side. For now, payment
+                is via <b>Zelle</b> after you submit from the summary page—the practice follows up with amount and
+                pay-to details.
+              </>
+            ) : (
+              <>
+                This is the product list—add vials to your bag, then open <b>View Cart</b> for a full summary.
+                Payment is via <b>Zelle</b> after you submit from the summary page; the practice sends Zelle
+                instructions.
+              </>
+            )}
           </p>
+          <ZellePayToHint style={{ marginTop: 10 }} />
         </div>
         <div className="pharmacyToolbarActions">
           <button
@@ -156,8 +177,8 @@ export default function PharmacyPartner() {
 
       {offlineCatalog ? (
         <div className="orderNowOffline" role="status">
-          Offline catalog: list prices below match our standard menu. Connect your API to sync with
-          the database and run card checkout.
+          Offline catalog: list prices below match our standard menu. Connect your API to sync with the database and
+          enable integrated checkout when available.
         </div>
       ) : null}
 

@@ -1,4 +1,5 @@
 import brettPortrait from '../assets/brett.png'
+import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
 
 export default function About() {
   return (
@@ -26,10 +27,11 @@ export default function About() {
             life.
             {'\n\n'}
             At Wheatfill Precision Health, Brett delivers a precision-based, patient-centered
-            approach focused on proactive optimization rather than reactive care. His clinical focus
-            includes metabolic health, body composition, and long-term wellness, utilizing
-            evidence-based therapies such as GLP-1 medications, with plans to incorporate advanced
-            peptide therapies as they become available.
+            approach focused on proactive optimization rather than reactive care. He is contracted
+            with {CONTRACTED_PHARMACY_NAME} for compounding catalog and fulfillment where
+            applicable. His clinical focus includes metabolic health, body composition, and
+            long-term wellness, utilizing evidence-based therapies such as GLP-1 medications, with
+            plans to incorporate advanced peptide therapies as they become available.
             {'\n\n'}
             His philosophy is rooted in individualized care—taking the time to understand each
             patient’s goals, physiology, and lifestyle, and developing tailored strategies designed

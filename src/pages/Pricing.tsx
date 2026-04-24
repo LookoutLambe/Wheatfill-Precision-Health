@@ -93,7 +93,8 @@ export default function Pricing() {
           </div>
         </div>
         <p className="muted" style={{ marginTop: 14, fontSize: 15, lineHeight: 1.55 }}>
-          For <b>current vial SKUs and dollar amounts</b> (including multi-size tiers), open <b>Order Now</b>—pricing there matches the live catalog used at checkout.
+          For <b>current vial SKUs and dollar amounts</b> (including multi-size tiers), open <b>Order Now</b>—pricing
+          there matches the catalog you use when ordering through the practice at checkout.
         </p>
         <div style={{ marginTop: 12 }}>
           <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>

@@ -2,6 +2,8 @@ import { useCallback, useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import brettPortrait from '../assets/brett.png'
+import ZellePayToHint from '../components/ZellePayToHint'
+import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
 import {
   DEFAULT_CATALOG_PARTNER_SLUG,
   minCatalogPriceCentsForFamily,
@@ -134,6 +136,7 @@ const ACCORDION_ITEMS: AccordionItem[] = [
           Consultation fees and medication costs are discussed up front where possible. Medication pricing
           can vary by dose and supplier—see our <Link to="/pricing">Pricing</Link> page and the{' '}
           <Link to="/order-now">Order Now Catalog</Link> for representative vial pricing when applicable.
+          Orders are placed through our practice so we can help with pricing and order issues directly.
         </p>
       </>
     ),
@@ -218,9 +221,13 @@ export default function Landing() {
               <span className="pill pillRed">GLP-1</span>
             </div>
             <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
-              Representative vial SKUs and list prices—the same catalog you use to add to cart and
-              pay through our secure checkout (Stripe or Clover).
+              Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
+              coordinate preferred pricing and fulfillment with {CONTRACTED_PHARMACY_NAME} when
+              medication is prescribed. Payment for now is completed via <b>Zelle</b> after the
+              practice confirms your order (amount and pay-to details from your care team). If something goes
+              wrong with your order, your care team handles it from our side.
             </p>
+            <ZellePayToHint style={{ marginTop: 8, marginBottom: 14 }} />
             <div className="landingCatalogStartingRows">
               <div className="landingCatalogStartingAt">
                 <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">

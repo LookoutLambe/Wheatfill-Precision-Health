@@ -166,12 +166,21 @@ export async function renameMarketingProviderLogin(
   return { ok: true }
 }
 
+/** Never use example.com for catalog — it is a documentation placeholder and breaks real navigation. */
+function normalizeCatalogUrl(url: unknown): string {
+  const s = String(url ?? '').trim()
+  if (!s) return ''
+  if (/^https?:\/\/(www\.)?example\.com(\/|$)/i.test(s)) return ''
+  return s
+}
+
 export function getMarketingIntegrations(): MarketingIntegrations {
   const defaults: MarketingIntegrations = {
     // Demo defaults (safe, non-PHI). Can be overridden in /provider/integrations.
     bookingUrl: 'https://practicebetter.io/',
     patientPortalUrl: 'https://practicebetter.io/',
-    pharmacyUrl: 'https://example.com/order-now',
+    // Empty = use same-origin /order-now (GitHub Pages + local marketing builds).
+    pharmacyUrl: '',
     videoVisitUrl: 'https://doxy.me/',
   }
   try {
@@ -182,12 +191,18 @@ export function getMarketingIntegrations(): MarketingIntegrations {
       return defaults
     }
     const parsed = JSON.parse(raw) as Partial<MarketingIntegrations>
-    return {
+    const pharmacyUrl = normalizeCatalogUrl(parsed.pharmacyUrl ?? defaults.pharmacyUrl)
+    const next: MarketingIntegrations = {
       bookingUrl: String(parsed.bookingUrl || defaults.bookingUrl || ''),
       patientPortalUrl: String(parsed.patientPortalUrl || defaults.patientPortalUrl || ''),
-      pharmacyUrl: String(parsed.pharmacyUrl || defaults.pharmacyUrl || ''),
+      pharmacyUrl,
       videoVisitUrl: String(parsed.videoVisitUrl || defaults.videoVisitUrl || ''),
     }
+    // One-time cleanup if older builds stored example.com.
+    if (String(parsed.pharmacyUrl || '').includes('example.com') && pharmacyUrl === '') {
+      localStorage.setItem(KEY_INTEGRATIONS, JSON.stringify(next))
+    }
+    return next
   } catch {
     localStorage.setItem(KEY_INTEGRATIONS, JSON.stringify(defaults))
     return defaults

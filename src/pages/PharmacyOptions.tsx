@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
+import ZellePayToHint from '../components/ZellePayToHint'
 import { API_URL, apiGet } from '../api/client'
+import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 
 type Partner = { slug: string; name: string }
 
 const FALLBACK_PARTNERS: Partner[] = [
-  { slug: DEFAULT_CATALOG_PARTNER_SLUG, name: 'Mountain View Pharmacy' },
+  { slug: DEFAULT_CATALOG_PARTNER_SLUG, name: CONTRACTED_PHARMACY_NAME },
 ]
 
 function formatPrice(cents: number) {
@@ -60,10 +62,13 @@ export default function PharmacyOptions() {
           <div>
             <h1 className="orderNowHubTitle">Order Now Catalog</h1>
             <p className="muted orderNowHubLead">
-              Same idea as a simple storefront: browse products and prices here, build your bag, then
-              open <b>View Cart</b> for a full summary. Card payment (Stripe or Clover) only starts after you
-              continue from that page.
+              You are ordering through {PRACTICE_PUBLIC_NAME}: browse products and prices here, build your
+              bag, then open <b>View Cart</b> for a full summary. We coordinate fulfillment with{' '}
+              {CONTRACTED_PHARMACY_NAME} when medication is prescribed, and your care team can step in if
+              your order needs attention. For now, payment is via <b>Zelle</b> after you submit your order from
+              the summary page—the practice sends amount and pay-to details.
             </p>
+            <ZellePayToHint style={{ marginTop: 12 }} />
           </div>
           <Link to="/" className="btn orderNowHubHomeBtn" style={{ textDecoration: 'none' }}>
             Home
@@ -75,7 +80,7 @@ export default function PharmacyOptions() {
         <div className="orderNowOffline" role="status">
           <span>
             Showing catalog and cart offline—the server at <code className="orderNowCode">{API_URL}</code>{' '}
-            could not be reached. Set your API URL (see tip below) to load live partners and checkout.
+            could not be reached. Set your API URL (see tip below) to load live partners and order workflows.
           </span>
           <span className="orderNowOfflineTip">
             Tip: add <code className="orderNowCode">?api=https://YOUR_BACKEND</code> once, or set{' '}
@@ -91,7 +96,8 @@ export default function PharmacyOptions() {
         </div>
         <p className="muted orderNowSectionSub">
           List prices for our standard vial SKUs. Your selections are saved in this browser until you
-          check out or clear the cart on the catalog page.
+          check out or clear the cart on the catalog page. Checkout is with the practice, not directly with
+          the pharmacy website.
         </p>
 
         <ul className="orderNowProductList">
@@ -130,7 +136,8 @@ export default function PharmacyOptions() {
             </Link>
           </div>
           <p className="muted orderNowFineprint">
-            Use <b>View Cart & Summary</b> when you are ready to review lines, acknowledgments, and pay.
+            Use <b>View Cart & Summary</b> when you are ready to review lines, acknowledgments, and submit for Zelle
+            payment instructions.
           </p>
         </div>
       </section>
@@ -142,8 +149,9 @@ export default function PharmacyOptions() {
             <span className="pill">Catalogs</span>
           </div>
           <p className="muted orderNowSectionSub">
-            If your care team uses another supplier menu, open it here. The default list above matches
-            our Mountain View catalog.
+            If your care team uses another supplier menu, open it here. The default list above matches our
+            standard menu fulfilled through {CONTRACTED_PHARMACY_NAME} when prescribed, coordinated by{' '}
+            {PRACTICE_PUBLIC_NAME}.
           </p>
           <div className="divider" />
           <div className="orderNowPartnerChips">
@@ -168,7 +176,7 @@ export default function PharmacyOptions() {
             <div>
               <div className="orderNowMiniCartLabel">Your cart</div>
               <div className="orderNowMiniCartCount">
-                {cartCount} {cartCount === 1 ? 'item' : 'items'} ready for checkout
+                {cartCount} {cartCount === 1 ? 'item' : 'items'} in cart — continue to summary for Zelle payment steps
               </div>
             </div>
             <Link
