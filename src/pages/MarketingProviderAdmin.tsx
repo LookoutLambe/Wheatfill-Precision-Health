@@ -28,6 +28,9 @@ export default function MarketingProviderAdmin() {
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
             Back
           </Link>
+          <Link to="/provider/demo" className="btn btnAccent" style={{ textDecoration: 'none' }}>
+            Demo dashboard
+          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
