@@ -155,6 +155,8 @@ model Appointment {
   status     AppointmentStatus @default(requested)
   startTs    DateTime?
   endTs      DateTime?
+  preferredDate String @default("")
+  preferredTime String @default("")
   notes      String            @default("")
   source     String            @default("patient_request") // 'patient_request' | 'provider_scheduled'
   createdAt  DateTime          @default(now())

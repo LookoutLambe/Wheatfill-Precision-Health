@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  createOrderRequest,
-  getPortalState,
-  subscribePortalState,
-  type Glp1Medication,
-  type OrderCategory,
-} from '../data/portalStore'
+import { apiGet, apiPost } from '../api/client'
+import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
 import { formatPatientLabel, getCurrentPatient } from '../patient/patientAuth'
 
 export default function OrderingPortal() {
@@ -15,12 +10,16 @@ export default function OrderingPortal() {
   const [category, setCategory] = useState<OrderCategory>('GLP-1')
   const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [request, setRequest] = useState('')
-  const [state, setState] = useState(() => getPortalState())
   const [notice, setNotice] = useState<string | null>(null)
 
-  useEffect(() => subscribePortalState(() => setState(getPortalState())), [])
+  const [orders, setOrders] = useState<any[]>([])
+  useEffect(() => {
+    apiGet<{ orders: any[] }>('/v1/patient/orders')
+      .then((r) => setOrders(r.orders))
+      .catch(() => setOrders([]))
+  }, [])
 
-  const visibleOrders = patientName ? state.orders.filter((o) => o.patientName === patientName) : []
+  const visibleOrders = patientName ? orders : []
 
   return (
     <div className="page">
@@ -113,15 +112,22 @@ export default function OrderingPortal() {
               disabled={!patientName || !request.trim()}
               style={{ opacity: !patientName || !request.trim() ? 0.6 : 1 }}
               onClick={() => {
-                createOrderRequest({
-                  patientName,
+                apiPost('/v1/patient/orders', {
                   category,
                   item: category === 'GLP-1' ? glp1 : undefined,
                   request,
                 })
-                setRequest('')
-                setNotice('Request submitted (prototype).')
-                setTimeout(() => setNotice(null), 1600)
+                  .then(() => apiGet<{ orders: any[] }>('/v1/patient/orders'))
+                  .then((r) => {
+                    setOrders(r.orders)
+                    setRequest('')
+                    setNotice('Request submitted.')
+                    setTimeout(() => setNotice(null), 1600)
+                  })
+                  .catch((e: any) => {
+                    setNotice(String(e?.message || e))
+                    setTimeout(() => setNotice(null), 2200)
+                  })
               }}
             >
               Submit

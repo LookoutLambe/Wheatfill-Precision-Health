@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  createAppointmentRequest,
-  createOrderRequest,
-  getPortalState,
-  subscribePortalState,
-  type AppointmentType,
-  type Glp1Medication,
-  type OrderCategory,
-} from '../data/portalStore'
+import { apiGet, apiPost } from '../api/client'
+import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
 import { formatPatientLabel, getCurrentPatient, logoutPatient } from '../patient/patientAuth'
+
+type AppointmentType = 'New Patient Consultation' | 'Follow-Up Consultation'
 
 export default function PatientPortal() {
   const patient = getCurrentPatient()
@@ -23,8 +18,25 @@ export default function PatientPortal() {
   const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [orderRequest, setOrderRequest] = useState('')
 
-  const [state, setState] = useState(() => getPortalState())
-  useEffect(() => subscribePortalState(() => setState(getPortalState())), [])
+  const [appointments, setAppointments] = useState<any[]>([])
+  const [orders, setOrders] = useState<any[]>([])
+  const [loadErr, setLoadErr] = useState<string | null>(null)
+
+  const refresh = async () => {
+    try {
+      setLoadErr(null)
+      const a = await apiGet<{ appointments: any[] }>('/v1/patient/appointments')
+      const o = await apiGet<{ orders: any[] }>('/v1/patient/orders')
+      setAppointments(a.appointments)
+      setOrders(o.orders)
+    } catch (e: any) {
+      setLoadErr(String(e?.message || e))
+    }
+  }
+
+  useEffect(() => {
+    refresh()
+  }, [])
 
   const prices = useMemo(
     () => ({
@@ -35,9 +47,9 @@ export default function PatientPortal() {
   )
 
   const selected = prices[apptType]
-  const myAppointments = state.appointments.filter((a) => a.patientName === patientName)
-  const myOrders = state.orders.filter((o) => o.patientName === patientName)
-  const myScheduled = myAppointments.filter((a) => a.status === 'Scheduled')
+  const myAppointments = appointments
+  const myOrders = orders
+  const myScheduled = myAppointments.filter((a) => a.status === 'scheduled')
 
   return (
     <div className="page">
@@ -63,6 +75,14 @@ export default function PatientPortal() {
           <span className="pill">Telehealth</span>
         </div>
       </div>
+
+      {loadErr ? (
+        <div className="card cardAccentRed">
+          <div style={{ fontWeight: 800 }}>Error</div>
+          <div className="divider" style={{ margin: '12px 0' }} />
+          <div className="muted">{loadErr}</div>
+        </div>
+      ) : null}
 
       <div className="cardGrid">
         <section className="card cardAccentNavy">
@@ -129,16 +149,19 @@ export default function PatientPortal() {
                 type="button"
                 className="btn btnPrimary"
                 onClick={() => {
-                  createAppointmentRequest({
-                    patientName,
+                  apiPost('/v1/patient/appointments/request', {
                     type: apptType,
                     preferredDate,
                     preferredTime,
                     notes: apptNotes,
                   })
-                  setPreferredDate('')
-                  setPreferredTime('')
-                  setApptNotes('')
+                    .then(() => {
+                      setPreferredDate('')
+                      setPreferredTime('')
+                      setApptNotes('')
+                      refresh()
+                    })
+                    .catch((e: any) => setLoadErr(String(e?.message || e)))
                 }}
                 disabled={!preferredDate || !preferredTime}
                 style={{
@@ -221,13 +244,16 @@ export default function PatientPortal() {
               type="button"
               className="btn btnAccent"
               onClick={() => {
-                createOrderRequest({
-                  patientName,
+                apiPost('/v1/patient/orders', {
                   category: orderCategory,
                   item: orderCategory === 'GLP-1' ? glp1 : undefined,
                   request: orderRequest,
                 })
-                setOrderRequest('')
+                  .then(() => {
+                    setOrderRequest('')
+                    refresh()
+                  })
+                  .catch((e: any) => setLoadErr(String(e?.message || e)))
               }}
               disabled={!orderRequest.trim()}
               style={{
@@ -266,9 +292,9 @@ export default function PatientPortal() {
                 <tbody>
                   {myScheduled.map((r) => (
                     <tr key={r.id}>
-                      <td>{r.type}</td>
+                      <td>{r.type === 'follow_up' ? 'Follow-Up Consultation' : 'New Patient Consultation'}</td>
                       <td>
-                        {r.scheduledDate && r.scheduledTime ? `${r.scheduledDate} • ${r.scheduledTime}` : '—'}
+                        {r.startTs ? `${String(r.startTs).slice(0, 10)} • ${String(r.startTs).slice(11, 16)}` : '—'}
                       </td>
                       <td className="muted">{r.notes || '—'}</td>
                     </tr>
@@ -295,7 +321,7 @@ export default function PatientPortal() {
                 <tbody>
                   {myOrders.map((o) => (
                     <tr key={o.id}>
-                      <td>{o.category}</td>
+                      <td>{String(o.category).toUpperCase()}</td>
                       <td className="muted">{o.item || '—'}</td>
                       <td>{o.request}</td>
                       <td className="muted">

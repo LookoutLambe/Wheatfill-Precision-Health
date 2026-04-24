@@ -303,6 +303,319 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  // Patient: appointments
+  const AppointmentTypeIn = z.enum(['New Patient Consultation', 'Follow-Up Consultation'])
+  function toApptType(x: z.infer<typeof AppointmentTypeIn>) {
+    return x === 'Follow-Up Consultation' ? 'follow_up' : 'new_patient'
+  }
+
+  protectedScope.get(
+    '/v1/patient/appointments',
+    { preHandler: requireRole(['patient']) },
+    async (req) => {
+      const appts = await prisma.appointment.findMany({
+        where: { patientId: req.user.sub, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          preferredDate: true,
+          preferredTime: true,
+          startTs: true,
+          endTs: true,
+          notes: true,
+          createdAt: true,
+        },
+      })
+      return { appointments: appts }
+    },
+  )
+
+  const CreateAppointmentRequestBody = z.object({
+    type: AppointmentTypeIn,
+    preferredDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    preferredTime: z.string().min(1).max(10),
+    notes: z.string().max(2000).optional(),
+  })
+
+  protectedScope.post(
+    '/v1/patient/appointments/request',
+    { preHandler: requireRole(['patient']) },
+    async (req, reply) => {
+      const body = CreateAppointmentRequestBody.parse(req.body)
+      const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+      if (!provider) return reply.internalServerError('No provider configured.')
+      const appt = await prisma.appointment.create({
+        data: {
+          type: toApptType(body.type),
+          status: 'requested',
+          preferredDate: body.preferredDate,
+          preferredTime: body.preferredTime,
+          notes: body.notes?.trim() || '',
+          source: 'patient_request',
+          patientId: req.user.sub,
+          providerId: provider.id,
+        },
+      })
+      return { appointment: appt }
+    },
+  )
+
+  // Patient: general order requests (non-pharmacy catalog)
+  const OrderCategoryIn = z.enum(['GLP-1', 'Labs', 'Supplements', 'Other'])
+  function toOrderCategory(x: z.infer<typeof OrderCategoryIn>) {
+    if (x === 'Labs') return 'labs'
+    if (x === 'Supplements') return 'supplements'
+    if (x === 'Other') return 'other'
+    return 'glp1'
+  }
+
+  protectedScope.get(
+    '/v1/patient/orders',
+    { preHandler: requireRole(['patient']) },
+    async (req) => {
+      const orders = await prisma.order.findMany({
+        where: { patientId: req.user.sub, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          category: true,
+          item: true,
+          request: true,
+          status: true,
+          createdAt: true,
+        },
+      })
+      return { orders }
+    },
+  )
+
+  const CreateOrderRequestBody = z.object({
+    category: OrderCategoryIn,
+    item: z.string().max(120).optional(),
+    request: z.string().min(2).max(2000),
+  })
+
+  protectedScope.post(
+    '/v1/patient/orders',
+    { preHandler: requireRole(['patient']) },
+    async (req, reply) => {
+      const body = CreateOrderRequestBody.parse(req.body)
+      const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+      if (!provider) return reply.internalServerError('No provider configured.')
+      const order = await prisma.order.create({
+        data: {
+          category: toOrderCategory(body.category),
+          item: body.item?.trim() || null,
+          request: body.request.trim(),
+          status: 'new',
+          patientId: req.user.sub,
+          providerId: provider.id,
+        },
+      })
+      return { order }
+    },
+  )
+
+  // Provider: patients list
+  protectedScope.get(
+    '/v1/provider/patients',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async () => {
+      const patients = await prisma.user.findMany({
+        where: { role: 'patient', deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, displayName: true, firstName: true, lastName: true, birthdate: true, createdAt: true },
+      })
+      return { patients }
+    },
+  )
+
+  // Provider: appointments & orders queues
+  protectedScope.get(
+    '/v1/provider/appointments',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const appts = await prisma.appointment.findMany({
+        where: { providerId: req.user.sub, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          preferredDate: true,
+          preferredTime: true,
+          startTs: true,
+          endTs: true,
+          notes: true,
+          createdAt: true,
+          patient: { select: { id: true, displayName: true, firstName: true, lastName: true, birthdate: true } },
+        },
+      })
+      return { appointments: appts }
+    },
+  )
+
+  const UpdateApptStatusBody = z.object({
+    status: z.enum(['requested', 'scheduled', 'completed', 'cancelled']),
+  })
+  protectedScope.patch(
+    '/v1/provider/appointments/:id/status',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const id = (req.params as any).id as string
+      const body = UpdateApptStatusBody.parse(req.body)
+      const appt = await prisma.appointment.update({ where: { id }, data: { status: body.status } })
+      return { appointment: appt }
+    },
+  )
+
+  const ScheduleApptBody = z.object({
+    appointmentId: z.string().optional(),
+    patientId: z.string().min(1),
+    type: AppointmentTypeIn,
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    time: z.string().min(1).max(10),
+    minutes: z.number().int().min(10).max(120).default(30),
+    notes: z.string().max(2000).optional(),
+  })
+
+  protectedScope.post(
+    '/v1/provider/appointments/schedule',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const body = ScheduleApptBody.parse(req.body)
+      const startTs = new Date(`${body.date}T${body.time}:00`)
+      const endTs = new Date(startTs.getTime() + body.minutes * 60_000)
+
+      // blackouts are stored by date (00:00)
+      const closed = await prisma.blackoutDate.findFirst({
+        where: { providerId: req.user.sub, date: new Date(body.date) },
+      })
+      if (closed) return reply.badRequest('That date is closed.')
+
+      const conflict = await prisma.appointment.findFirst({
+        where: {
+          providerId: req.user.sub,
+          deletedAt: null,
+          status: { in: ['scheduled', 'completed'] },
+          startTs: { not: null },
+          AND: [{ startTs: { lt: endTs } }, { endTs: { gt: startTs } }],
+        },
+      })
+      if (conflict) return reply.conflict('That slot is already booked.')
+
+      if (body.appointmentId) {
+        const updated = await prisma.appointment.update({
+          where: { id: body.appointmentId },
+          data: {
+            status: 'scheduled',
+            type: toApptType(body.type),
+            startTs,
+            endTs,
+            notes: body.notes?.trim() || '',
+            source: 'provider_scheduled',
+          },
+        })
+        return { appointment: updated }
+      }
+
+      const created = await prisma.appointment.create({
+        data: {
+          status: 'scheduled',
+          type: toApptType(body.type),
+          startTs,
+          endTs,
+          notes: body.notes?.trim() || '',
+          source: 'provider_scheduled',
+          patientId: body.patientId,
+          providerId: req.user.sub,
+        },
+      })
+      return { appointment: created }
+    },
+  )
+
+  protectedScope.get(
+    '/v1/provider/orders',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const orders = await prisma.order.findMany({
+        where: { providerId: req.user.sub, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          category: true,
+          item: true,
+          request: true,
+          status: true,
+          createdAt: true,
+          patient: { select: { id: true, displayName: true, firstName: true, lastName: true, birthdate: true } },
+        },
+      })
+      return { orders }
+    },
+  )
+
+  const UpdateOrderStatusBody = z.object({
+    status: z.enum(['new', 'in_review', 'ordered', 'closed']),
+  })
+  protectedScope.patch(
+    '/v1/provider/orders/:id/status',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const id = (req.params as any).id as string
+      const body = UpdateOrderStatusBody.parse(req.body)
+      const order = await prisma.order.update({ where: { id }, data: { status: body.status } })
+      return { order }
+    },
+  )
+
+  // Provider: blackout dates
+  protectedScope.get(
+    '/v1/provider/blackouts',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const blackouts = await prisma.blackoutDate.findMany({
+        where: { providerId: req.user.sub },
+        orderBy: { date: 'asc' },
+        select: { id: true, date: true, reason: true },
+      })
+      return { blackouts }
+    },
+  )
+
+  const AddBlackoutBody = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    reason: z.string().max(200).optional(),
+  })
+  protectedScope.post(
+    '/v1/provider/blackouts',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const body = AddBlackoutBody.parse(req.body)
+      try {
+        const created = await prisma.blackoutDate.create({
+          data: { providerId: req.user.sub, date: new Date(body.date), reason: body.reason?.trim() || '' },
+        })
+        return { blackout: created }
+      } catch {
+        return reply.conflict('That date is already closed.')
+      }
+    },
+  )
+
+  protectedScope.delete(
+    '/v1/provider/blackouts/:id',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const id = (req.params as any).id as string
+      await prisma.blackoutDate.delete({ where: { id } })
+      return { ok: true }
+    },
+  )
+
   const CreateOrderBody = z.object({
     partnerSlug: z.string().min(2).max(80),
     items: z
