@@ -1,36 +1,98 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
+import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
+import { catalogPartnerTitle } from '../lib/orderNowDisplay'
+import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet } from '../api/client'
-import { useMedplumApp } from '../medplum/provider'
-import type { MedicationRequest } from '@medplum/fhirtypes'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
 
-function money(cents: number) {
+function moneyWhole(cents: number) {
   return `$${(cents / 100).toFixed(0)}`
 }
 
+function moneyCents(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`
+}
+
+function vialFamilyForSku(sku: string): CatalogVialFamily {
+  if (sku.startsWith('TZ')) return 'tirzepatide'
+  if (sku.startsWith('SEMA')) return 'semaglutide'
+  return 'neutral'
+}
+
 export default function PharmacyPartner() {
-  const { medplum, profile } = useMedplumApp()
   const { slug = '' } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [partner, setPartner] = useState<PartnerResp['partner'] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cart, setCart] = useState<Record<string, number>>({})
-  const [open, setOpen] = useState(true)
-  const [agree, setAgree] = useState(false)
-  const [contactOk, setContactOk] = useState(false)
-  const [sigName, setSigName] = useState('')
-  const [sigDate, setSigDate] = useState(() => new Date().toISOString().slice(0, 10))
-  const [insurance, setInsurance] = useState(false)
-  const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [createdReqIds, setCreatedReqIds] = useState<string[] | null>(null)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [offlineCatalog, setOfflineCatalog] = useState(false)
 
   useEffect(() => {
+    if (!slug) return
+    setPartner(null)
+    setError(null)
+    setOfflineCatalog(false)
     apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(slug)}`)
-      .then((r) => setPartner(r.partner))
-      .catch((e) => setError(String(e?.message || e)))
+      .then((r) => {
+        setPartner(r.partner)
+        setError(null)
+        setOfflineCatalog(false)
+      })
+      .catch((e) => {
+        if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
+          setPartner({
+            slug,
+            name: 'Mountain View Pharmacy',
+            products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
+              sku: p.sku,
+              name: p.name,
+              subtitle: p.subtitle,
+              priceCents: p.priceCents,
+              currency: 'usd',
+            })),
+          })
+          setError(null)
+          setOfflineCatalog(true)
+        } else {
+          setPartner(null)
+          setError(String(e?.message || e))
+          setOfflineCatalog(false)
+        }
+      })
   }, [slug])
+
+  useEffect(() => {
+    setCart(readCartForSlug(slug))
+  }, [slug])
+
+  useEffect(() => {
+    if (!slug) return
+    writeCartForSlug(slug, cart)
+  }, [cart, slug])
+
+  useEffect(() => {
+    if (searchParams.get('paid') === '1') {
+      setCart({})
+      writeCartForSlug(slug, {})
+      setCartOpen(false)
+      const next = new URLSearchParams(searchParams)
+      next.delete('paid')
+      next.delete('order')
+      next.delete('canceled')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams, slug])
+
+  useEffect(() => {
+    if (cartOpen) document.documentElement.classList.add('pharmacyCartOpen')
+    else document.documentElement.classList.remove('pharmacyCartOpen')
+    return () => document.documentElement.classList.remove('pharmacyCartOpen')
+  }, [cartOpen])
 
   const items = useMemo(() => {
     if (!partner) return []
@@ -43,23 +105,40 @@ export default function PharmacyPartner() {
       .filter(Boolean) as Array<{ sku: string; quantity: number; product: Product }>
   }, [cart, partner])
 
+  const itemCount = useMemo(() => items.reduce((n, it) => n + it.quantity, 0), [items])
+
   const subtotal = useMemo(
     () => items.reduce((sum, it) => sum + it.product.priceCents * it.quantity, 0),
     [items],
   )
-  const insuranceCents = useMemo(() => (insurance ? Math.round(subtotal * 0.02) : 0), [insurance, subtotal])
-  const total = subtotal + insuranceCents
+
+  const closeCart = () => setCartOpen(false)
 
   return (
-    <div className="page">
-      <div className="pageHeaderRow">
-        <div>
-          <h1 style={{ margin: 0 }}>{partner?.name || 'Pharmacy'}</h1>
-          <p className="muted pageSubtitle">Add items to your cart, then complete shipping terms and payment.</p>
+    <div className="page pharmacyPartnerPage">
+      <div className="catalogShopRoot">
+      <div className="pharmacyToolbar">
+        <div className="pharmacyToolbarMain">
+          <h1 className="pharmacyToolbarTitle">
+            {partner ? catalogPartnerTitle(partner.name) : 'Medication catalog'}
+          </h1>
+          <p className="muted pharmacyToolbarSub">
+            This is the product list—add vials to your bag, then open <b>View Cart</b> for a full summary.
+            Payment on Stripe or Clover happens only after you continue from that page.
+          </p>
         </div>
-        <div className="pageActions">
-          <Link to="/pharmacy" className="btn" style={{ textDecoration: 'none' }}>
-            Pharmacy Options
+        <div className="pharmacyToolbarActions">
+          <button
+            type="button"
+            className="pharmacyCartBtn"
+            aria-label={`Shopping cart, ${itemCount} items`}
+            onClick={() => setCartOpen(true)}
+          >
+            <span className="pharmacyCartIcon" aria-hidden="true" />
+            {itemCount > 0 ? <span className="pharmacyCartBadge">{itemCount > 99 ? '99+' : itemCount}</span> : null}
+          </button>
+          <Link to="/order-now" className="btn" style={{ textDecoration: 'none' }}>
+            All Catalogs
           </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
@@ -75,190 +154,136 @@ export default function PharmacyPartner() {
         </div>
       ) : null}
 
-      <div className="cardGrid">
-        <section className="card cardAccentSoft" style={{ gridColumn: 'span 8' }}>
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Products</h2>
-            <span className="pill">Add to cart</span>
-          </div>
-          <div className="divider" />
+      {offlineCatalog ? (
+        <div className="orderNowOffline" role="status">
+          Offline catalog: list prices below match our standard menu. Connect your API to sync with
+          the database and run card checkout.
+        </div>
+      ) : null}
 
-          {!partner ? (
-            <p className="muted">Loading…</p>
-          ) : (
-            <div className="stack">
-              {partner.products.map((p) => {
-                const qty = cart[p.sku] || 0
-                return (
-                  <div key={p.sku} className="card cardAccentNavy" style={{ gridColumn: 'span 12' }}>
-                    <div className="cardTitle">
-                      <div>
-                        <div style={{ fontWeight: 850, color: 'var(--text-h)' }}>{p.name}</div>
-                        <div className="muted" style={{ marginTop: 6 }}>
-                          {p.subtitle}
-                        </div>
-                      </div>
-                      <span className="pill pillRed">{money(p.priceCents)}</span>
-                    </div>
-                    <div className="divider" style={{ margin: '12px 0' }} />
-                    <div className="btnRow">
-                      <button type="button" className="btn" onClick={() => setCart((c) => ({ ...c, [p.sku]: Math.max(0, qty - 1) }))}>
-                        −
-                      </button>
-                      <span className="pill">{qty}</span>
-                      <button type="button" className="btn" onClick={() => setCart((c) => ({ ...c, [p.sku]: qty + 1 }))}>
-                        +
-                      </button>
-                      <button type="button" className="btn btnPrimary" onClick={() => setOpen(true)}>
-                        View cart
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-
-        <aside className="card cardAccentRed" style={{ gridColumn: 'span 4', position: 'sticky', top: 92, height: 'fit-content' }}>
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Cart</h2>
-            <button type="button" className="btn" onClick={() => setOpen((s) => !s)}>
-              {open ? 'Hide' : 'Show'}
-            </button>
-          </div>
-          <div className="divider" />
-
-          {!open ? (
-            <p className="muted">Cart hidden.</p>
-          ) : items.length === 0 ? (
-            <p className="muted">No items yet.</p>
-          ) : (
-            <div className="stack">
-              {items.map((it) => (
-                <div key={it.sku} className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
-                  <div style={{ fontWeight: 800 }}>{it.product.name}</div>
-                  <div className="muted" style={{ marginTop: 6 }}>
-                    {it.quantity} × {money(it.product.priceCents)}
+      <section className="pharmacyCatalog">
+        {!partner && !error ? (
+          <p className="muted">Loading Catalog…</p>
+        ) : partner ? (
+          <ul className="pharmacyProductList">
+            {partner.products.map((p) => (
+              <li key={p.sku} className="pharmacyProductRow card cardAccentSoft">
+                <CatalogVialThumb family={vialFamilyForSku(p.sku)} />
+                <div className="pharmacyProductBody">
+                  <div className="pharmacyProductTitle">{p.name}</div>
+                  <div className="muted pharmacyProductSubtitle">{p.subtitle}</div>
+                  <div className="pharmacyProductPriceRow">
+                    <span className="pharmacyProductPrice">{moneyWhole(p.priceCents)}</span>
+                    <button
+                      type="button"
+                      className="btn catalogOutlineBtn pharmacyAddBtn"
+                      onClick={() => {
+                        setCart((c) => ({ ...c, [p.sku]: (c[p.sku] || 0) + 1 }))
+                        setCartOpen(true)
+                      }}
+                    >
+                      Add To Cart
+                    </button>
                   </div>
                 </div>
-              ))}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+      </div>
 
-              <div className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
-                <div className="cardTitle">
-                  <div>Subtotal</div>
-                  <span className="pill">{money(subtotal)}</span>
-                </div>
-                <div className="divider" style={{ margin: '12px 0' }} />
-                <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <input type="checkbox" checked={insurance} onChange={(e) => setInsurance(e.target.checked)} />
-                  <span className="muted">Add shipping insurance (2%)</span>
-                </label>
-                <div className="divider" style={{ margin: '12px 0' }} />
-                <div className="cardTitle">
-                  <div>Total due</div>
-                  <span className="pill pillRed">{money(total)}</span>
-                </div>
-              </div>
-
-              <div className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
-                <div style={{ fontWeight: 850, color: 'var(--text-h)' }}>Medication Shipping Terms</div>
-                <div className="divider" style={{ margin: '12px 0' }} />
-                <div className="muted" style={{ fontSize: 13, lineHeight: 1.6 }}>
-                  Prototype terms placeholder. In production, we’ll insert your finalized shipping terms, liability language, and HIPAA contact authorization.
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-                    <span className="muted">I have read and agree to the shipping terms.</span>
-                  </label>
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <label style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <input type="checkbox" checked={contactOk} onChange={(e) => setContactOk(e.target.checked)} />
-                    <span className="muted">I authorize contact regarding my order when necessary.</span>
-                  </label>
-                </div>
-                <div className="divider" style={{ margin: '12px 0' }} />
-                <div className="formRow">
-                  <label>
-                    <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                      Date
-                    </div>
-                    <input className="input" type="date" value={sigDate} onChange={(e) => setSigDate(e.target.value)} />
-                  </label>
-                  <label>
-                    <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                      Typed signature
-                    </div>
-                    <input className="input" value={sigName} onChange={(e) => setSigName(e.target.value)} placeholder="First and Last Name" />
-                  </label>
-                </div>
-              </div>
-
-              {checkoutError ? (
-                <div style={{ color: '#7a0f1c', fontSize: 12, fontWeight: 800, whiteSpace: 'pre-line' }}>
-                  {checkoutError}
-                  {createdReqIds?.length ? `\nCreated: ${createdReqIds.join(', ')}` : ''}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                className="btn btnPrimary"
-                disabled={!agree || !sigName.trim() || items.length === 0}
-                style={{ opacity: !agree || !sigName.trim() || items.length === 0 ? 0.6 : 1, width: '100%' }}
-                onClick={() => {
-                  setCheckoutError(null)
-                  ;(async () => {
-                    try {
-                      if (!profile || profile.resourceType !== 'Patient') {
-                        setCheckoutError('Please sign in as a patient first.')
-                        return
-                      }
-                      if (!partner) {
-                        setCheckoutError('Partner not loaded.')
-                        return
-                      }
-
-                      // Create MedicationRequest resources in Medplum (FHIR-native).
-                      const created: string[] = []
-                      for (const it of items) {
-                        const mr = (await medplum.createResource({
-                          resourceType: 'MedicationRequest',
-                          status: 'draft',
-                          intent: 'order',
-                          authoredOn: new Date().toISOString(),
-                          subject: { reference: `Patient/${(profile as any).id}` },
-                          medicationCodeableConcept: { text: it.product.name },
-                          dosageInstruction: [
-                            {
-                              text: `Partner: ${partner.name}. SKU: ${it.sku}. Qty: ${it.quantity}.`,
-                            },
-                          ],
-                          note: [
-                            {
-                              text: `Shipping terms: ${agree ? 'agreed' : 'not agreed'}. Contact permission: ${contactOk ? 'yes' : 'no'}. Signature: ${sigName} on ${sigDate}. Insurance: ${insurance ? 'yes' : 'no'}.`,
-                            },
-                          ],
-                        } as MedicationRequest)) as any
-                        if (mr?.id) created.push(mr.id)
-                      }
-                      setCreatedReqIds(created)
-                      setCheckoutError('Medication requests created. A provider will review and place the order.')
-                    } catch (e: any) {
-                      setCheckoutError(String(e?.message || e))
-                    }
-                  })()
-                }}
-              >
-                Submit medication request
+      {cartOpen ? (
+        <>
+          <button type="button" className="pharmacyDrawerScrim" aria-label="Close cart" onClick={closeCart} />
+          <aside className="pharmacyDrawer" aria-label="Shopping cart">
+            <div className="pharmacyDrawerTop">
+              <h2 className="pharmacyDrawerTitle">Cart ({itemCount} {itemCount === 1 ? 'Item' : 'Items'})</h2>
+              <button type="button" className="pharmacyDrawerClose" onClick={closeCart} aria-label="Close cart">
+                ×
               </button>
             </div>
-          )}
-        </aside>
-      </div>
+
+            {items.length === 0 ? (
+              <p className="muted" style={{ marginTop: 8 }}>
+                Your cart is empty. Add products from the list.
+              </p>
+            ) : (
+              <>
+                <ul className="pharmacyDrawerLines">
+                  {items.map((it) => (
+                    <li key={it.sku} className="pharmacyDrawerLine">
+                      <CatalogVialThumb family={vialFamilyForSku(it.sku)} />
+                      <div className="pharmacyDrawerLineBody">
+                        <div className="pharmacyDrawerLineName">{it.product.name}</div>
+                        <div className="pharmacyDrawerLineMeta">
+                          <span className="muted">{moneyCents(it.product.priceCents)} each</span>
+                        </div>
+                        <div className="pharmacyDrawerQtyRow">
+                          <button
+                            type="button"
+                            className="btn"
+                            aria-label="Decrease quantity"
+                            onClick={() =>
+                              setCart((c) => {
+                                const q = (c[it.sku] || 0) - 1
+                                const next = { ...c }
+                                if (q <= 0) delete next[it.sku]
+                                else next[it.sku] = q
+                                return next
+                              })
+                            }
+                          >
+                            −
+                          </button>
+                          <span className="pill">{it.quantity}</span>
+                          <button
+                            type="button"
+                            className="btn"
+                            aria-label="Increase quantity"
+                            onClick={() => setCart((c) => ({ ...c, [it.sku]: (c[it.sku] || 0) + 1 }))}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                      <div className="pharmacyDrawerLineTotal">{moneyCents(it.product.priceCents * it.quantity)}</div>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="pharmacyDrawerDivider" />
+
+                <div className="pharmacyDrawerTotalRow">
+                  <span style={{ fontWeight: 800 }}>Estimated Subtotal</span>
+                  <span className="pharmacyDrawerTotalAmt">{moneyCents(subtotal)}</span>
+                </div>
+
+                <p className="muted" style={{ fontSize: 12, lineHeight: 1.45, margin: '12px 0 0' }}>
+                  Review shipping acknowledgments and pay on the next page—only when you are ready.
+                </p>
+
+                <div className="pharmacyDrawerActions">
+                  <button type="button" className="btn" style={{ width: '100%' }} onClick={closeCart}>
+                    Continue Shopping
+                  </button>
+                  <Link
+                    to={`/order-now/${encodeURIComponent(slug)}/summary`}
+                    className="btn btnPrimary"
+                    style={{ width: '100%', textDecoration: 'none', textAlign: 'center', boxSizing: 'border-box' }}
+                    onClick={closeCart}
+                  >
+                    View Cart
+                  </Link>
+                </div>
+                <p className="muted" style={{ margin: '10px 0 0', fontSize: 12, textAlign: 'center' }}>
+                  Secure payment after summary
+                </p>
+              </>
+            )}
+          </aside>
+        </>
+      ) : null}
     </div>
   )
 }
-

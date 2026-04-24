@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import {
-  ensureDefaultMarketingProviderUsers,
-  resolveMarketingProviderSlot,
-  setMarketingProviderAuthed,
-  verifyMarketingProviderPassword,
-} from '../marketing/providerStore'
+import { MEDPLUM_CLIENT_ID, PROVIDER_LOGIN_EMAIL } from '../medplum/client'
+import { useMedplumApp } from '../medplum/provider'
 
-export default function MarketingProviderLogin() {
+const ALLOWED_USERNAMES = new Set(['admin', 'brett', 'bridgette'])
+const DEFAULT_PASSWORD = 'wheatfill'
+
+export default function MedplumProviderLogin() {
+  const { medplum, refreshProfile } = useMedplumApp()
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = useMemo(() => {
@@ -20,28 +20,46 @@ export default function MarketingProviderLogin() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const canSubmit = !!username.trim() && !!password && !busy
+  const canSubmit = !!MEDPLUM_CLIENT_ID && !!username.trim() && !!password && !busy
 
   const submit = () => {
     if (!canSubmit) return
     setError(null)
+    if (!ALLOWED_USERNAMES.has(username.trim().toLowerCase())) {
+      setError('Invalid username or password.')
+      return
+    }
+    if (password !== DEFAULT_PASSWORD) {
+      setError('Invalid username or password.')
+      return
+    }
+    if (!PROVIDER_LOGIN_EMAIL) {
+      setError('Provider login email is not configured. Set VITE_PROVIDER_LOGIN_EMAIL for this test login.')
+      return
+    }
     setBusy(true)
     ;(async () => {
       try {
-        await ensureDefaultMarketingProviderUsers()
-        const u = username.trim().toLowerCase()
-        const slot = resolveMarketingProviderSlot(u)
-        if (!slot) {
-          setError('Invalid username or password.')
+        const res: any = await medplum.startLogin({ email: PROVIDER_LOGIN_EMAIL, password: DEFAULT_PASSWORD })
+        if (res?.code) {
+          await medplum.processCode(res.code)
+          refreshProfile()
+          navigate(redirectTo, { replace: true })
           return
         }
-        const ok = await verifyMarketingProviderPassword(u, password)
-        if (!ok) {
-          setError('Invalid username or password.')
-          return
+        if (res?.memberships?.length && res?.login) {
+          const picked = res.memberships[0]
+          const resp2: any = await medplum.post('auth/profile', { login: res.login, profile: picked.id })
+          if (resp2?.code) {
+            await medplum.processCode(resp2.code)
+            refreshProfile()
+            navigate(redirectTo, { replace: true })
+            return
+          }
         }
-        setMarketingProviderAuthed(true, slot)
-        navigate(redirectTo, { replace: true })
+        setError('Provider login succeeded but did not return an authorization code.')
+      } catch (e: any) {
+        setError(String(e?.message || e))
       } finally {
         setBusy(false)
       }
@@ -53,7 +71,7 @@ export default function MarketingProviderLogin() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Provider Login</h1>
-            <p className="muted pageSubtitle">Demo access (no patient data stored on this site).</p>
+          <p className="muted pageSubtitle">Sign in to manage scheduling and requests.</p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -66,6 +84,12 @@ export default function MarketingProviderLogin() {
           <span className="pill pillRed">Provider</span>
         </div>
         <div className="divider" />
+
+        {!MEDPLUM_CLIENT_ID ? (
+          <div style={{ color: '#7a0f1c', fontSize: 13, fontWeight: 900, textAlign: 'left' }}>
+            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>. This Medplum-backed provider login only works when Medplum is configured.
+          </div>
+        ) : null}
 
         <form
           onSubmit={(e) => {
@@ -95,27 +119,26 @@ export default function MarketingProviderLogin() {
           </div>
 
           {error ? (
-            <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800, textAlign: 'left' }}>{error}</div>
+            <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800, textAlign: 'left' }}>
+              {error}
+            </div>
           ) : null}
 
           <div className="btnRow" style={{ marginTop: 12 }}>
-            <button
-              type="submit"
-              className="btn btnPrimary"
-              disabled={!canSubmit}
-              style={{ opacity: !canSubmit ? 0.6 : 1 }}
-            >
+            <button type="submit" className="btn btnPrimary" disabled={!canSubmit} style={{ opacity: !canSubmit ? 0.6 : 1 }}>
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
+            <Link to="/signin" className="btn" style={{ textDecoration: 'none' }}>
+              Sign in (standard)
+            </Link>
           </div>
         </form>
 
         <div className="divider" />
         <p className="muted" style={{ margin: 0 }}>
-          This is a <b>demo</b> provider area. It does not access patient data.
+          If you don’t have access, contact your administrator.
         </p>
       </section>
     </div>
   )
 }
-

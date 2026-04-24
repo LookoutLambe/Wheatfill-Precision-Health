@@ -32,6 +32,8 @@ const MEDPLUM_CLIENT_SECRET = process.env.MEDPLUM_CLIENT_SECRET || ''
 
 const DEFAULT_PROVIDER_USERNAME = (process.env.DEFAULT_PROVIDER_USERNAME || 'brett').trim().toLowerCase()
 const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
+const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
+const DEFAULT_PATIENT_PASSWORD = process.env.DEFAULT_PATIENT_PASSWORD || 'wheatfill'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
 const STRIPE_CONNECT_CLIENT_ID = process.env.STRIPE_CONNECT_CLIENT_ID || ''
@@ -103,6 +105,7 @@ async function ensureProviderSeed() {
   const existing = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
   if (existing) {
     providerSeeded = true
+    await ensureDemoPatientSeed()
     return
   }
   const passwordHash = await hashPassword(DEFAULT_PROVIDER_PASSWORD)
@@ -133,6 +136,32 @@ async function ensureProviderSeed() {
     },
   })
   providerSeeded = true
+  await ensureDemoPatientSeed()
+}
+
+async function ensureDemoPatientSeed() {
+  const username = DEFAULT_PATIENT_USERNAME
+  const existing = await prisma.user.findUnique({ where: { username } })
+  if (existing) return
+  const passwordHash = await hashPassword(DEFAULT_PATIENT_PASSWORD)
+  await prisma.user.create({
+    data: {
+      role: 'patient',
+      username,
+      passwordHash,
+      displayName: 'Demo Patient',
+      firstName: 'Demo',
+      lastName: 'Patient',
+      birthdate: new Date('1990-01-15'),
+      email: 'demo@example.com',
+      phone: '3035550100',
+      address1: '123 Demo St',
+      city: 'Denver',
+      state: 'CO',
+      postalCode: '80202',
+      country: 'US',
+    },
+  })
 }
 
 const app = Fastify({
@@ -1309,7 +1338,7 @@ await app.register(async (protectedScope) => {
     agreedToShippingTerms: z.boolean(),
     contactPermission: z.boolean(),
     signatureName: z.string().min(2).max(120),
-    signatureDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/),
+    signatureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     shippingInsurance: z.boolean().default(false),
   })
 
@@ -1411,8 +1440,8 @@ await app.register(async (protectedScope) => {
 
       const active = providerRow?.activePaymentProvider || null
       const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const successUrl = `${origin.replace(/\/$/, '')}/pharmacy/${partner.slug}?paid=1&order=${order.id}`
-      const cancelUrl = `${origin.replace(/\/$/, '')}/pharmacy/${partner.slug}?canceled=1&order=${order.id}`
+      const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}?paid=1&order=${order.id}`
+      const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}?canceled=1&order=${order.id}`
 
       if (active === 'stripe') {
         if (!stripe || !providerRow?.stripeConnectedAccountId) return { orderId: order.id, totalCents: total, checkoutUrl: null }

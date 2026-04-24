@@ -310,14 +310,14 @@ export default function ProviderPortal() {
           </div>
           <div className="divider" />
           <p className="muted">
-            Create MedicationRequests for a patient from the pharmacy catalog.
+            Create MedicationRequests for a patient from the Order Now Catalog.
           </p>
           <div className="divider" />
-          <Link to="/pharmacy" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
-            Open pharmacy catalog
+          <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
+            Open Order Now Catalog
           </Link>
           <p className="muted" style={{ marginTop: 10 }}>
-            Tip: open a partner page in the provider area via <code>/provider/pharmacy/&lt;slug&gt;</code>.
+            Tip: open a partner page in the provider area via <code>/provider/pharmacy/&lt;slug&gt;</code> (provider test route).
           </p>
         </section>
 
@@ -340,7 +340,7 @@ export default function ProviderPortal() {
             <span className="pill pillRed">EHR/Video</span>
           </div>
           <div className="divider" />
-          <p className="muted">Configure booking, portal, pharmacy, and video visit links.</p>
+          <p className="muted">Configure booking, portal, Order Now Catalog, and video visit links.</p>
           <div className="divider" />
           <Link to="/provider/integrations" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
             Open integrations

@@ -7,47 +7,23 @@ type DemoAppt = { id: string; patientId: string; type: string; when: string; sta
 type DemoMsg = { id: string; from: string; category: string; body: string; when: string; status: 'new' | 'handled' }
 type DemoOrder = { id: string; patientId: string; item: string; when: string; status: string }
 
-function demoSeed() {
-  // Demo sandbox only: populated sample data for UI/training.
-  const workspacePatients: DemoPatient[] = [
+function seedWorkspacePatients(): DemoPatient[] {
+  return [
     { id: 'p1', label: 'Demo patient A' },
     { id: 'p2', label: 'Demo patient B' },
     { id: 'p3', label: 'Demo patient C' },
   ]
-
-  const directoryPatients: DemoPatient[] = [
-    { id: 'p1', label: 'Smith Test, Jordan — 1992-04-14' },
-    { id: 'p2', label: 'Garcia Test, Elena — 1986-11-02' },
-    { id: 'p3', label: 'Nguyen Test, Chris — 1979-07-30' },
-  ]
-
-  const appts: DemoAppt[] = [
-    { id: 'a1', patientId: 'p1', type: 'New Patient Consultation', when: 'Apr 28, 2026 10:00 AM', status: 'Requested' },
-    { id: 'a2', patientId: 'p2', type: 'Follow-Up Consultation', when: 'Apr 29, 2026 2:15 PM', status: 'Scheduled' },
-    { id: 'a3', patientId: 'p3', type: 'Follow-Up Consultation', when: 'May 01, 2026 9:30 AM', status: 'Completed' },
-  ]
-
-  const msgs: DemoMsg[] = [
-    { id: 'm1', from: 'Demo sender A', category: 'Contact form', body: 'I have questions about GLP‑1 eligibility.', when: 'Apr 24, 2026 8:12 AM', status: 'new' },
-    { id: 'm2', from: 'Demo sender B', category: 'Patient message', body: 'Can we adjust my dose this week?', when: 'Apr 24, 2026 9:05 AM', status: 'new' },
-  ]
-
-  const orders: DemoOrder[] = [
-    { id: 'o1', patientId: 'p1', item: 'Semaglutide 2.5 mg/mL - 2 mL', when: 'Apr 24, 2026', status: 'New' },
-    { id: 'o2', patientId: 'p2', item: 'Tirzepatide 12.5 mg/mL - 2 mL', when: 'Apr 23, 2026', status: 'Ordered' },
-  ]
-
-  return { workspacePatients, directoryPatients, appts, msgs, orders }
 }
 
-export default function MarketingProviderDemoDashboard() {
+export default function ProviderVbmsWorkspace() {
   const navigate = useNavigate()
   const who = getMarketingProviderLoginDisplay()
-  const { workspacePatients, directoryPatients } = useMemo(() => demoSeed(), [])
-  const [appts, setAppts] = useState(demoSeed().appts)
-  const [orders] = useState(demoSeed().orders)
-  const [msgs, setMsgs] = useState(demoSeed().msgs)
-  const [blackouts, setBlackouts] = useState<string[]>(['2026-04-30'])
+
+  const workspacePatients = useMemo(() => seedWorkspacePatients(), [])
+  const [appts, setAppts] = useState<DemoAppt[]>([])
+  const [orders] = useState<DemoOrder[]>([])
+  const [msgs, setMsgs] = useState<DemoMsg[]>([])
+  const [blackouts, setBlackouts] = useState<string[]>([])
 
   const [qsPatient, setQsPatient] = useState('p1')
   const [qsType, setQsType] = useState<'New Patient Consultation' | 'Follow-Up Consultation'>('New Patient Consultation')
@@ -69,23 +45,23 @@ export default function MarketingProviderDemoDashboard() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>VBMS demo sandbox</h1>
+          <h1 style={{ margin: 0 }}>VBMS</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Sample data for training/UI review only. Your live provider VBMS stays separate at <b>/provider</b>.
+            Provider workspace starts empty until scheduling and messages arrive. (No patient data stored on this site.)
           </p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
-          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back to provider VBMS
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Home
           </Link>
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
           </Link>
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+          <Link to="/provider/demo" className="btn btnAccent" style={{ textDecoration: 'none' }}>
+            Demo sandbox
           </Link>
-          <span className="pill pillRed">Demo</span>
+          <span className="pill pillRed">Provider</span>
         </div>
       </div>
 
@@ -97,7 +73,7 @@ export default function MarketingProviderDemoDashboard() {
           </div>
           <div className="divider" />
           {msgs.length === 0 ? (
-            <p className="muted">No messages.</p>
+            <p className="muted">No messages yet.</p>
           ) : (
             <div className="tableWrap">
               <table className="table" aria-label="Inbox">
@@ -143,7 +119,7 @@ export default function MarketingProviderDemoDashboard() {
           </div>
           <div className="divider" />
           {requested.length === 0 ? (
-            <p className="muted">No appointment requests.</p>
+            <p className="muted">No appointment requests yet.</p>
           ) : (
             <div className="tableWrap">
               <table className="table" aria-label="Requested appointments">
@@ -298,7 +274,7 @@ export default function MarketingProviderDemoDashboard() {
           </div>
           <div className="divider" />
           {blackouts.length === 0 ? (
-            <p className="muted">No closed dates.</p>
+            <p className="muted">No closed dates yet.</p>
           ) : (
             <div className="tableWrap">
               <table className="table" aria-label="Blackout dates">
@@ -345,17 +321,17 @@ export default function MarketingProviderDemoDashboard() {
 
         <section className="card cardAccentSoft">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Audit log (preview)</h2>
+            <h2 style={{ margin: 0 }}>Audit log</h2>
             <span className="pill">Compliance</span>
           </div>
           <div className="divider" />
-          <p className="muted">In production, every action writes an audit event. Preview shows examples only.</p>
+          <p className="muted" style={{ marginTop: 0 }}>
+            In production, every action writes an audit event.
+          </p>
           <div className="divider" />
-          <div className="muted" style={{ fontSize: 13 }}>
-            - Apr 24 09:05 · inbox_mark_handled · m2
-            <br />- Apr 24 08:12 · appointment_status_changed · a2
-            <br />- Apr 23 14:10 · order_marked_ordered · o2
-          </div>
+          <p className="muted" style={{ margin: 0 }}>
+            No audit events yet.
+          </p>
         </section>
 
         <section className="card cardAccentRed">
@@ -364,116 +340,47 @@ export default function MarketingProviderDemoDashboard() {
             <span className="pill pillRed">Order Now</span>
           </div>
           <div className="divider" />
-          <div className="tableWrap">
-            <table className="table" aria-label="Orders">
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Patient</th>
-                  <th>Item</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id}>
-                    <td className="muted">{o.when}</td>
-                    <td className="muted">{workspacePatientLabel(o.patientId)}</td>
-                    <td>{o.item}</td>
-                    <td className="muted">{o.status}</td>
+          {orders.length === 0 ? (
+            <p className="muted">No orders yet.</p>
+          ) : (
+            <div className="tableWrap">
+              <table className="table" aria-label="Orders">
+                <thead>
+                  <tr>
+                    <th>When</th>
+                    <th>Patient</th>
+                    <th>Item</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id}>
+                      <td className="muted">{o.when}</td>
+                      <td className="muted">{workspacePatientLabel(o.patientId)}</td>
+                      <td>{o.item}</td>
+                      <td className="muted">{o.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="card cardAccentSoft">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Patients</h2>
-            <span className="pill">Directory</span>
+            <h2 style={{ margin: 0 }}>Demo sandbox</h2>
+            <span className="pill">Training</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Workspace uses generic labels. Detailed synthetic names are listed below for UI review only.
+            Want sample inbox/schedule/orders for UI review? That lives in a separate demo area (not your live provider workspace).
           </p>
           <div className="divider" />
-          <div className="muted" style={{ fontSize: 13 }}>
-            Active demo profiles: <b>{workspacePatients.length}</b>
-          </div>
-        </section>
-      </div>
-
-      <div className="divider" style={{ marginTop: 22 }} />
-      <div id="practice-setup">
-        <h2 style={{ margin: '0 0 10px' }}>Practice setup (demo)</h2>
-        <p className="muted" style={{ marginTop: 0 }}>
-          Configure links (no patient data stored on this site). This section is part of the demo sandbox only.
-        </p>
-      </div>
-
-      <div className="cardGrid">
-        <section className="card cardAccentNavy">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Integrations</h2>
-            <span className="pill pillRed">EHR</span>
-          </div>
-          <div className="divider" />
-          <p className="muted">Set your booking URL, patient portal URL, Order Now Catalog link, and video visit room.</p>
-          <div className="divider" />
-          <Link to="/provider/integrations" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
-            Open integrations
+          <Link to="/provider/demo" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}>
+            Open demo sandbox
           </Link>
-        </section>
-
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Inbox (preview)</h2>
-            <span className="pill">Demo</span>
-          </div>
-          <div className="divider" />
-          <p className="muted">In the production app this shows contact + patient messages. Here it’s a preview area.</p>
-          <div className="divider" />
-          <div className="pill">No messages (demo)</div>
-        </section>
-
-        <section className="card cardAccentRed">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Schedule (preview)</h2>
-            <span className="pill pillRed">Demo</span>
-          </div>
-          <div className="divider" />
-          <p className="muted">
-            In the production app this is your real schedule + blackout dates. Here it’s a UI preview only.
-          </p>
-          <div className="divider" />
-          <div className="btnRow">
-            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Add blackout (disabled)
-            </button>
-            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Schedule visit (disabled)
-            </button>
-          </div>
-        </section>
-
-        <section className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Patients (demo test directory)</h2>
-            <span className="pill">Demo</span>
-          </div>
-          <div className="divider" />
-          <p className="muted" style={{ marginTop: 0 }}>
-            These names are synthetic demo data for UI review only.
-          </p>
-          <div className="divider" />
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {directoryPatients.map((p) => (
-              <li key={p.id} className="muted" style={{ marginBottom: 6 }}>
-                {p.label}
-              </li>
-            ))}
-          </ul>
         </section>
       </div>
     </div>

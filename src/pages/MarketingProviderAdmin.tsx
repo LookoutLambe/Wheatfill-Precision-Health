@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  getMarketingProviderUser,
+  getMarketingProviderLoginDisplay,
   getMarketingIntegrations,
   isMarketingProviderAuthed,
   setMarketingIntegrations,
@@ -11,7 +11,7 @@ import {
 
 export default function MarketingProviderAdmin() {
   const navigate = useNavigate()
-  const who = getMarketingProviderUser()
+  const who = getMarketingProviderLoginDisplay()
   const [form, setForm] = useState<MarketingIntegrations>(() => getMarketingIntegrations())
   const [saved, setSaved] = useState(false)
 
@@ -24,7 +24,7 @@ export default function MarketingProviderAdmin() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
-          <p className="muted pageSubtitle">Configure booking, portal, pharmacy, and video links.</p>
+          <p className="muted pageSubtitle">Configure booking, portal, Order Now Catalog, and video links.</p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
@@ -47,7 +47,7 @@ export default function MarketingProviderAdmin() {
           >
             Logout
           </button>
-          <span className="pill pillRed">Marketing-only</span>
+          <span className="pill pillRed">Provider</span>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ export default function MarketingProviderAdmin() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Pharmacy URL (partner portal)
+              Order Now Catalog URL (Patient-Facing Catalog)
             </div>
             <input className="input" value={form.pharmacyUrl} onChange={(e) => setForm((p) => ({ ...p, pharmacyUrl: e.target.value }))} />
           </label>
@@ -168,12 +168,12 @@ export default function MarketingProviderAdmin() {
 
         <section className="card cardAccentRed">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Pharmacy</h2>
-            <span className="pill pillRed">Partner</span>
+            <h2 style={{ margin: 0 }}>Order Now</h2>
+            <span className="pill pillRed">Catalog</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens the pharmacy partner portal (login stays on the pharmacy’s site).
+            Opens your patient catalog (pick products, then secure checkout on Stripe/Clover when configured).
           </p>
           <div className="divider" />
           <a
@@ -187,7 +187,7 @@ export default function MarketingProviderAdmin() {
               if (!form.pharmacyUrl.trim()) e.preventDefault()
             }}
           >
-            {form.pharmacyUrl.trim() ? 'Open pharmacy portal' : 'Add pharmacy URL above'}
+            {form.pharmacyUrl.trim() ? 'Open Order Now Catalog' : 'Add Catalog URL Above'}
           </a>
         </section>
 

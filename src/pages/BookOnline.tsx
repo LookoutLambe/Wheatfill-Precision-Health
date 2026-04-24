@@ -7,6 +7,13 @@ import { PROVIDER_PRACTITIONER_ID } from '../medplum/client'
 
 type Slot = { date: string; time: string }
 
+function ymdLocal(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function nextBusinessDaySlots(days: number, startFrom = new Date()): Slot[] {
   const slots: Slot[] = []
   const times = ['08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '13:00', '13:30', '14:00']
@@ -16,20 +23,55 @@ function nextBusinessDaySlots(days: number, startFrom = new Date()): Slot[] {
     d.setDate(now.getDate() + i)
     const day = d.getDay()
     if (day === 0 || day === 6) continue
-    const date = d.toISOString().slice(0, 10)
+    const date = ymdLocal(d)
     for (const time of times) slots.push({ date, time })
   }
   return slots
 }
 
-function groupByDate(slots: Slot[]) {
-  const map = new Map<string, Slot[]>()
-  for (const s of slots) {
-    const cur = map.get(s.date)
-    if (cur) cur.push(s)
-    else map.set(s.date, [s])
+function startOfMonth(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), 1)
+}
+
+function addMonths(d: Date, delta: number) {
+  return new Date(d.getFullYear(), d.getMonth() + delta, 1)
+}
+
+function sameMonth(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+}
+
+function buildMonthCells(month: Date) {
+  const first = startOfMonth(month)
+  const startDow = first.getDay() // 0 Sun
+  const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+
+  const cells: Array<{ date: Date; inMonth: boolean }> = []
+
+  const prevMonthDays = new Date(first.getFullYear(), first.getMonth(), 0).getDate()
+  for (let i = 0; i < startDow; i++) {
+    const dayNum = prevMonthDays - (startDow - 1 - i)
+    const date = new Date(first.getFullYear(), first.getMonth() - 1, dayNum)
+    cells.push({ date, inMonth: false })
   }
-  return Array.from(map.entries()).map(([date, daySlots]) => ({ date, slots: daySlots }))
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({ date: new Date(first.getFullYear(), first.getMonth(), day), inMonth: true })
+  }
+
+  while (cells.length % 7 !== 0) {
+    const last = cells[cells.length - 1].date
+    const next = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1)
+    cells.push({ date: next, inMonth: false })
+  }
+
+  while (cells.length < 42) {
+    const last = cells[cells.length - 1].date
+    const next = new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1)
+    cells.push({ date: next, inMonth: false })
+  }
+
+  return cells.slice(0, 42)
 }
 
 export default function BookOnline() {
@@ -49,10 +91,25 @@ export default function BookOnline() {
     [],
   )
 
-  const [rangeDays, setRangeDays] = useState(60)
+  const [rangeDays, setRangeDays] = useState(180)
   const allSlots = useMemo(() => nextBusinessDaySlots(rangeDays), [rangeDays])
-  const grouped = useMemo(() => groupByDate(allSlots), [allSlots])
-  const [selected, setSelected] = useState<Slot | null>(null)
+  const slotsByDate = useMemo(() => {
+    const m = new Map<string, Slot[]>()
+    for (const s of allSlots) {
+      const cur = m.get(s.date)
+      if (cur) cur.push(s)
+      else m.set(s.date, [s])
+    }
+    for (const [k, v] of m.entries()) {
+      v.sort((a, b) => a.time.localeCompare(b.time))
+      m.set(k, v)
+    }
+    return m
+  }, [allSlots])
+
+  const [calendarMonth, setCalendarMonth] = useState(() => startOfMonth(new Date()))
+  const [selectedDate, setSelectedDate] = useState<string>(() => ymdLocal(new Date()))
+  const [selectedTime, setSelectedTime] = useState<string>('')
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [provider, setProvider] = useState<Practitioner | null>(null)
@@ -113,12 +170,39 @@ export default function BookOnline() {
   const blackoutSet = useMemo(() => new Set(availability.blackouts), [availability.blackouts])
   const bookedSet = useMemo(() => new Set(availability.booked.map((x) => x.slice(0, 16))), [availability.booked])
 
+  const monthCells = useMemo(() => buildMonthCells(calendarMonth), [calendarMonth])
+
+  const availableTimesForSelectedDay = useMemo(() => {
+    if (!selectedDate) return []
+    if (blackoutSet.has(selectedDate)) return []
+    const base = slotsByDate.get(selectedDate) || []
+    return base.filter((s) => !bookedSet.has(`${s.date}T${s.time}`))
+  }, [selectedDate, slotsByDate, blackoutSet, bookedSet])
+
+  const selected: Slot | null = selectedDate && selectedTime ? { date: selectedDate, time: selectedTime } : null
+
+  const nextAvailableDate = useMemo(() => {
+    const [y, m, day] = selectedDate.split('-').map((x) => Number(x))
+    const start = new Date(y, (m || 1) - 1, day || 1)
+    for (let i = 1; i <= 365; i++) {
+      const d = new Date(start.getTime() + i * 24 * 60 * 60 * 1000)
+      const key = ymdLocal(d)
+      const dow = d.getDay()
+      if (dow === 0 || dow === 6) continue
+      if (blackoutSet.has(key)) continue
+      const slots = slotsByDate.get(key) || []
+      const open = slots.some((s) => !bookedSet.has(`${s.date}T${s.time}`))
+      if (open) return key
+    }
+    return ''
+  }, [selectedDate, slotsByDate, blackoutSet, bookedSet])
+
   return (
     <div className="page">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Book Online</h1>
-          <p className="muted pageSubtitle">Choose an appointment type and select an available time.</p>
+          <p className="muted pageSubtitle">Pick a day on the calendar, then choose an available time.</p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -199,181 +283,288 @@ export default function BookOnline() {
       ) : null}
 
       {step === 'schedule' ? (
-      <div className="cardGrid">
-        <section className="card cardAccentNavy">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Your appointment</h2>
-            <span className="pill pillRed">
-              ${chosen.price} • ~{chosen.minutes} min
-            </span>
-          </div>
-          <div className="divider" />
+        <div className="cardGrid" style={{ alignItems: 'start' }}>
+          <section className="card cardAccentNavy">
+            <div className="cardTitle">
+              <h2 style={{ margin: 0 }}>Service details</h2>
+              <span className="pill pillRed">
+                ${chosen.price} • ~{chosen.minutes} min
+              </span>
+            </div>
+            <div className="divider" />
 
-          <div className="formRow">
-            <div>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Signed in as
-              </div>
-              <div className="pill">{patientName || '—'}</div>
-              {!patientName ? (
-                <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  Please sign in via <Link to="/signin">Sign in</Link> before booking.
+            <div className="formRow">
+              <div>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Signed in as
                 </div>
-              ) : null}
-            </div>
-
-            <label>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Appointment type
-              </div>
-              <select className="select" value={apptType} onChange={(e) => setApptType(e.target.value as UiApptType)}>
-                <option>New Patient Consultation</option>
-                <option>Follow-Up Consultation</option>
-              </select>
-            </label>
-          </div>
-
-          <label style={{ display: 'block', marginTop: 12 }}>
-            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Notes (optional)
-            </div>
-            <textarea className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Goals, background, questions…" />
-          </label>
-
-          <div className="divider" />
-
-          <div className="btnRow">
-            <button type="button" className="btn" onClick={() => setStep('choose')}>
-              Back
-            </button>
-            <button
-              type="button"
-              className="btn btnPrimary"
-              disabled={!patientName || !selected || busy}
-              style={{ opacity: !patientName || !selected || busy ? 0.6 : 1 }}
-              onClick={() => {
-                setMessage(null)
-                if (!selected) return
-                setBusy(true)
-                ;(async () => {
-                  try {
-                    if (!profile || profile.resourceType !== 'Patient') throw new Error('Not signed in as a patient.')
-                    if (!provider) throw new Error('Provider not configured.')
-
-                    const minutes = apptType === 'Follow-Up Consultation' ? 15 : 30
-                    const startIso = new Date(`${selected.date}T${selected.time}:00`).toISOString()
-                    const endIso = new Date(new Date(startIso).getTime() + minutes * 60_000).toISOString()
-
-                    const appt = await createBookedAppointment({
-                      medplum,
-                      patient: profile as any,
-                      practitioner: provider,
-                      startIso,
-                      endIso,
-                      type: apptType,
-                      notes,
-                    })
-
-                    setMessage(`Booked ${appt.start ? new Date(appt.start).toLocaleString() : `${selected.date} ${selected.time}`}.`)
-                    setSelected(null)
-                    setNotes('')
-
-                    if (scheduleId) {
-                      const startDt = new Date()
-                      const endDt = new Date(startDt.getTime() + rangeDays * 24 * 60 * 60 * 1000)
-                      const appts = await listAppointmentsForRange(medplum, `Practitioner/${provider.id}`, startDt.toISOString(), endDt.toISOString())
-                      const booked = appts
-                        .filter((a) => a.status === 'booked' || a.status === 'arrived')
-                        .map((a) => (a.start ? String(a.start).slice(0, 16) : ''))
-                        .filter(Boolean)
-                      setAvailability((prev) => ({ ...prev, booked }))
-                    }
-                  } catch (e: any) {
-                    setMessage(String(e?.message || e))
-                  } finally {
-                    setBusy(false)
-                  }
-                })()
-              }}
-            >
-              Confirm booking
-            </button>
-            <Link to="/patient" className="btn" style={{ textDecoration: 'none' }}>
-              Go to Patient Portal
-            </Link>
-          </div>
-
-          {message ? (
-            <div style={{ marginTop: 10, color: '#0a1e3f', fontSize: 12, fontWeight: 800 }}>
-              {message}
-            </div>
-          ) : null}
-        </section>
-
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Select a time</h2>
-            <span className="pill">Availability</span>
-          </div>
-          <div className="divider" />
-
-          {availError ? (
-            <div style={{ marginBottom: 12, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>
-              {availError}
-            </div>
-          ) : null}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {grouped.map((g) => (
-              <div key={g.date} className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
-                <div className="cardTitle" style={{ marginBottom: 0 }}>
-                  <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
-                    {new Date(g.date).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: '2-digit', year: 'numeric' })}
+                <div className="pill">{patientName || '—'}</div>
+                {!patientName ? (
+                  <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                    Please sign in via <Link to="/signin">Sign in</Link> before booking.
                   </div>
-                  <span className="pill">Mon–Fri</span>
-                </div>
-                <div className="divider" style={{ margin: '12px 0' }} />
+                ) : null}
+              </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                  {g.slots.map((s) => {
-                    const dayClosed = blackoutSet.has(s.date)
-                    const key = `${s.date}T${s.time}`
-                    const booked = bookedSet.has(key)
-                    const isSelected = selected?.date === s.date && selected?.time === s.time
+              <label>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Appointment type
+                </div>
+                <select className="select" value={apptType} onChange={(e) => setApptType(e.target.value as UiApptType)}>
+                  <option>New Patient Consultation</option>
+                  <option>Follow-Up Consultation</option>
+                </select>
+              </label>
+            </div>
+
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Notes (optional)
+              </div>
+              <textarea className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Goals, background, questions…" />
+            </label>
+
+            <div className="divider" />
+
+            <div className="btnRow">
+              <button type="button" className="btn" onClick={() => setStep('choose')}>
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn btnPrimary"
+                disabled={!patientName || !selected || busy}
+                style={{ opacity: !patientName || !selected || busy ? 0.6 : 1 }}
+                onClick={() => {
+                  setMessage(null)
+                  if (!selected) return
+                  setBusy(true)
+                  ;(async () => {
+                    try {
+                      if (!profile || profile.resourceType !== 'Patient') throw new Error('Not signed in as a patient.')
+                      if (!provider) throw new Error('Provider not configured.')
+
+                      const minutes = apptType === 'Follow-Up Consultation' ? 15 : 30
+                      const startLocal = new Date(`${selected.date}T${selected.time}:00`)
+                      const startIso = startLocal.toISOString()
+                      const endIso = new Date(startLocal.getTime() + minutes * 60_000).toISOString()
+
+                      const appt = await createBookedAppointment({
+                        medplum,
+                        patient: profile as any,
+                        practitioner: provider,
+                        startIso,
+                        endIso,
+                        type: apptType,
+                        notes,
+                      })
+
+                      setMessage(`Booked ${appt.start ? new Date(appt.start).toLocaleString() : `${selected.date} ${selected.time}`}.`)
+                      setSelectedTime('')
+                      setNotes('')
+
+                      if (scheduleId) {
+                        const startDt = new Date()
+                        const endDt = new Date(startDt.getTime() + rangeDays * 24 * 60 * 60 * 1000)
+                        const appts = await listAppointmentsForRange(medplum, `Practitioner/${provider.id}`, startDt.toISOString(), endDt.toISOString())
+                        const booked = appts
+                          .filter((a) => a.status === 'booked' || a.status === 'arrived')
+                          .map((a) => (a.start ? String(a.start).slice(0, 16) : ''))
+                          .filter(Boolean)
+                        setAvailability((prev) => ({ ...prev, booked }))
+                      }
+                    } catch (e: any) {
+                      setMessage(String(e?.message || e))
+                    } finally {
+                      setBusy(false)
+                    }
+                  })()
+                }}
+              >
+                Next
+              </button>
+              <Link to="/patient" className="btn" style={{ textDecoration: 'none' }}>
+                Go to Patient Portal
+              </Link>
+            </div>
+
+            {message ? (
+              <div style={{ marginTop: 10, color: '#0a1e3f', fontSize: 12, fontWeight: 800 }}>
+                {message}
+              </div>
+            ) : null}
+          </section>
+
+          <section className="card cardAccentSoft">
+            <div style={{ textAlign: 'center', marginBottom: 10 }}>
+              <h2 style={{ margin: 0 }}>Schedule your service</h2>
+              <p className="muted" style={{ marginTop: 8 }}>
+                Check availability and book the date and time that works for you.
+              </p>
+            </div>
+            <div className="divider" />
+
+            {availError ? (
+              <div style={{ marginBottom: 12, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>
+                {availError}
+              </div>
+            ) : null}
+
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <div style={{ flex: '1 1 360px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <button type="button" className="btn" onClick={() => setCalendarMonth((m) => addMonths(m, -1))}>
+                    ‹
+                  </button>
+                  <div style={{ fontWeight: 900, color: 'var(--text-h)' }}>
+                    {calendarMonth.toLocaleString(undefined, { month: 'long', year: 'numeric' })}
+                  </div>
+                  <button type="button" className="btn" onClick={() => setCalendarMonth((m) => addMonths(m, 1))}>
+                    ›
+                  </button>
+                </div>
+
+                <div className="divider" />
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                    gap: 8,
+                    userSelect: 'none',
+                  }}
+                >
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+                    <div key={d} className="muted" style={{ fontSize: 12, fontWeight: 800, textAlign: 'center' }}>
+                      {d}
+                    </div>
+                  ))}
+
+                  {monthCells.map((c, idx) => {
+                    const key = ymdLocal(c.date)
+                    const inMonth = c.inMonth && sameMonth(c.date, calendarMonth)
+                    const isToday = key === ymdLocal(new Date())
+                    const isSelected = key === selectedDate
+                    const dow = c.date.getDay()
+                    const isWeekend = dow === 0 || dow === 6
+                    const todayStart = new Date()
+                    todayStart.setHours(0, 0, 0, 0)
+                    const cellStart = new Date(c.date.getFullYear(), c.date.getMonth(), c.date.getDate())
+                    const isPast = cellStart < todayStart
+                    const dayClosed = blackoutSet.has(key)
+                    const hasTemplate = (slotsByDate.get(key) || []).length > 0
+                    const hasOpen = (slotsByDate.get(key) || []).some((s) => !bookedSet.has(`${s.date}T${s.time}`) && !dayClosed)
+                    const disabled = !inMonth || isPast || isWeekend || !hasTemplate || dayClosed || !hasOpen
+
                     return (
                       <button
-                        key={`${s.date}_${s.time}`}
+                        key={`${key}_${idx}`}
                         type="button"
-                        className={`btn ${isSelected ? 'btnAccent' : ''}`}
-                        disabled={booked || dayClosed}
-                        onClick={() => setSelected(s)}
-                        style={{ opacity: booked || dayClosed ? 0.55 : 1, minWidth: 120, display: 'inline-flex', justifyContent: 'space-between', gap: 10 }}
-                        title={dayClosed ? 'Closed' : booked ? 'Booked' : 'Available'}
+                        className="btn"
+                        disabled={disabled}
+                        onClick={() => {
+                          setSelectedDate(key)
+                          setSelectedTime('')
+                        }}
+                        style={{
+                          padding: '10px 0',
+                          borderRadius: 12,
+                          opacity: disabled ? 0.35 : 1,
+                          borderColor: isSelected ? 'rgba(122, 15, 28, 0.55)' : undefined,
+                          background: isSelected ? 'rgba(122, 15, 28, 0.10)' : inMonth ? 'white' : 'transparent',
+                          color: inMonth ? 'var(--text-h)' : 'rgba(31, 41, 55, 0.45)',
+                          fontWeight: isSelected ? 900 : 700,
+                          boxShadow: isToday ? 'rgba(10, 30, 63, 0.18) 0 10px 18px -14px' : undefined,
+                        }}
+                        title={
+                          dayClosed ? 'Closed' : isWeekend ? 'Weekend' : !hasTemplate ? 'No schedule template' : !hasOpen ? 'Fully booked' : 'Available'
+                        }
                       >
-                        <span>{s.time}</span>
-                        <span className="muted" style={{ fontWeight: 800, fontSize: 12 }}>
-                          {dayClosed ? 'Closed' : booked ? 'Booked' : 'Open'}
-                        </span>
+                        {c.date.getDate()}
                       </button>
                     )
                   })}
                 </div>
+
+                <div className="divider" />
+                <button type="button" className="btn" onClick={() => setRangeDays((d) => d + 180)} style={{ width: '100%' }}>
+                  Load more availability range
+                </button>
               </div>
-            ))}
 
-            <button type="button" className="btn" onClick={() => setRangeDays((d) => d + 60)} style={{ width: '100%' }}>
-              Load more dates
-            </button>
-          </div>
+              <div style={{ flex: '1 1 320px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'baseline' }}>
+                  <div style={{ fontWeight: 900, color: 'var(--text-h)' }}>Select a date and time</div>
+                  <div className="muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+                    Local time
+                  </div>
+                </div>
 
-          <div className="divider" />
-          <p className="muted" style={{ margin: 0 }}>
-            In the Provider Portal, booked appointments appear in “Scheduled & completed”.
-          </p>
-        </section>
-      </div>
+                <div className="divider" />
+
+                <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
+                  Availability for{' '}
+                  {(() => {
+                    const [yy, mm, dd] = selectedDate.split('-').map((x) => Number(x))
+                    return new Date(yy, (mm || 1) - 1, dd || 1).toLocaleDateString(undefined, {
+                      weekday: 'long',
+                      month: 'long',
+                      day: '2-digit',
+                      year: 'numeric',
+                    })
+                  })()}
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  {availableTimesForSelectedDay.length === 0 ? (
+                    <div>
+                      <p className="muted" style={{ marginTop: 0 }}>
+                        No availability.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={!nextAvailableDate}
+                        style={{ width: '100%', opacity: !nextAvailableDate ? 0.55 : 1 }}
+                        onClick={() => {
+                          if (!nextAvailableDate) return
+                          setSelectedDate(nextAvailableDate)
+                          setCalendarMonth(() => {
+                            const [yy, mm, dd] = nextAvailableDate.split('-').map((x) => Number(x))
+                            return startOfMonth(new Date(yy, (mm || 1) - 1, dd || 1))
+                          })
+                          setSelectedTime('')
+                        }}
+                      >
+                        Check next availability
+                      </button>
+                    </div>
+                  ) : (
+                    <label>
+                      <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                        Time
+                      </div>
+                      <select className="select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
+                        <option value="">Select a time…</option>
+                        {availableTimesForSelectedDay.map((s) => (
+                          <option key={`${s.date}_${s.time}`} value={s.time}>
+                            {s.time}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+
+                <div className="divider" />
+                <p className="muted" style={{ margin: 0 }}>
+                  Booked times disappear from the dropdown. Blackout days are disabled on the calendar.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
       ) : null}
     </div>
   )
 }
-

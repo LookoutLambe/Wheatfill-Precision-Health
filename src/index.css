@@ -1,3 +1,13 @@
+html {
+  scroll-padding-top: 112px;
+}
+
+@media (max-width: 720px) {
+  html {
+    scroll-padding-top: 124px;
+  }
+}
+
 :root {
   /* Wheatfill Precision Health theme (light) */
   --text: #1f2937; /* slate-800 */
@@ -10,6 +20,13 @@
   --navy-2: #0f2e5a;
   --red: #7a0f1c;
   --red-2: #991b1b;
+  /* Sticky header: matches wheatfill-mark.png flat background (sampled ~#c4b0b0). */
+  --header-bar-bg: #c4b0b0;
+  --header-bar-border: #aea0a0;
+  --header-bar-shadow: rgba(0, 0, 0, 0.07);
+
+  --brand-wordmark-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --brand-wordmark-rose: #5a3c46;
 
   --accent: var(--navy);
   --accent-bg: rgba(10, 30, 63, 0.10);

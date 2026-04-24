@@ -500,7 +500,7 @@ export default function PatientPortal() {
         <section className="card cardAccentRed" style={{ gridColumn: '1 / -1' }}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Medication requests</h2>
-            <span className="pill pillRed">Pharmacy</span>
+            <span className="pill pillRed">Order Now</span>
           </div>
           <div className="divider" />
           {medRequests.length === 0 ? (

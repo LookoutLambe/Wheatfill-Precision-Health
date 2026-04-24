@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 
 export default function Pricing() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="page" style={{ gap: 22 }}>
       <div>
-        <h1 style={{ margin: 0 }}>Transparent Pricing</h1>
+        <h1 style={{ margin: 0, scrollMarginTop: 88 }}>Transparent Pricing</h1>
         <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
           Clear, upfront costs with no hidden fees or surprises.
         </p>
@@ -17,7 +17,7 @@ export default function Pricing() {
         </div>
         <div className="divider" />
 
-      <div className="cardGrid">
+      <div className="cardGrid pricingConsultGrid">
         <section className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>New Patient</h2>
@@ -41,7 +41,7 @@ export default function Pricing() {
 
         <section className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Established patient</h2>
+            <h2 style={{ margin: 0 }}>Established Patient</h2>
             <span className="pill">$85</span>
           </div>
           <p className="muted" style={{ marginTop: 6 }}>
@@ -91,6 +91,14 @@ export default function Pricing() {
               Starting at <b>$260</b>
             </p>
           </div>
+        </div>
+        <p className="muted" style={{ marginTop: 14, fontSize: 15, lineHeight: 1.55 }}>
+          For <b>current vial SKUs and dollar amounts</b> (including multi-size tiers), open <b>Order Now</b>—pricing there matches the live catalog used at checkout.
+        </p>
+        <div style={{ marginTop: 12 }}>
+          <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+            Browse Order Now Catalog
+          </Link>
         </div>
       </section>
 
@@ -180,4 +188,5 @@ export default function Pricing() {
     </div>
   )
 }
+
 

@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   ensureDefaultMarketingProviderUsers,
+  getMarketingProviderLoginDisplay,
   getMarketingProviderUser,
-  isMarketingProviderAuthed,
   isAllowedMarketingProviderUser,
+  isMarketingProviderAuthed,
+  loginNameForSlot,
+  renameMarketingProviderLogin,
   setMarketingProviderPassword,
   type MarketingProviderUser,
 } from '../marketing/providerStore'
@@ -27,6 +30,15 @@ export default function MarketingProviderSecurity() {
   const [saved, setSaved] = useState(false)
   const [busy, setBusy] = useState(false)
 
+  const [newLogin, setNewLogin] = useState('')
+  const [usernameCurrentPw, setUsernameCurrentPw] = useState('')
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [usernameSaved, setUsernameSaved] = useState(false)
+  const [usernameBusy, setUsernameBusy] = useState(false)
+
+  const loginDisplay = getMarketingProviderLoginDisplay()
+  const canChangeUsername = effectiveTarget === 'brett' || effectiveTarget === 'bridgette'
+
   useEffect(() => {
     if (!isMarketingProviderAuthed()) navigate('/provider/login', { replace: true })
   }, [navigate])
@@ -37,13 +49,24 @@ export default function MarketingProviderSecurity() {
     })()
   }, [])
 
+  useEffect(() => {
+    setNewLogin(loginNameForSlot(effectiveTarget))
+    setUsernameCurrentPw('')
+    setUsernameError(null)
+    setUsernameSaved(false)
+  }, [effectiveTarget])
+
   return (
     <div className="page">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Security</h1>
-          <p className="muted pageSubtitle">Change provider password (marketing-only mode).</p>
-          {signedInAs ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {signedInAs}</div> : null}
+          <p className="muted pageSubtitle">Change Sign-In Username</p>
+          {signedInAs ? (
+            <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>
+              Signed in as: <b>{loginDisplay || signedInAs}</b>
+            </div>
+          ) : null}
         </div>
         <div className="pageActions">
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
@@ -52,9 +75,111 @@ export default function MarketingProviderSecurity() {
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
-          <span className="pill pillRed">Marketing-only</span>
+          <span className="pill pillRed">Provider</span>
         </div>
       </div>
+
+      {canChangeUsername ? (
+        <section className="card cardAccentSoft" style={{ maxWidth: 980, marginBottom: 18 }}>
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Change Sign-In Username</h2>
+            <span className="pill">Sign-in</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 12, fontSize: 14 }}>
+            This is the name you use on the provider login screen. The <b>admin</b> account always signs in as{' '}
+            <b>admin</b>.
+          </p>
+          {canManageOthers ? (
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Provider account
+              </div>
+              <select className="input" value={targetUser} onChange={(e) => setTargetUser(e.target.value as MarketingProviderUser)}>
+                <option value="admin">admin</option>
+                <option value="brett">brett</option>
+                <option value="bridgette">bridgette</option>
+              </select>
+            </label>
+          ) : null}
+
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              New username
+            </div>
+            <input
+              className="input"
+              value={newLogin}
+              onChange={(e) => setNewLogin(e.target.value)}
+              autoComplete="username"
+              spellCheck={false}
+            />
+          </label>
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Current password (to confirm)
+            </div>
+            <input
+              className="input"
+              value={usernameCurrentPw}
+              onChange={(e) => setUsernameCurrentPw(e.target.value)}
+              type="password"
+              autoComplete="current-password"
+            />
+          </label>
+
+          {usernameError ? (
+            <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>{usernameError}</div>
+          ) : null}
+          {usernameSaved ? (
+            <div style={{ marginTop: 10, color: '#0f4c28', fontSize: 12, fontWeight: 800 }}>
+              Username saved. Use the new name next time you sign in.
+            </div>
+          ) : null}
+
+          <div className="btnRow" style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              className="btn btnPrimary"
+              disabled={
+                !newLogin.trim() ||
+                !usernameCurrentPw ||
+                usernameBusy ||
+                newLogin.trim().toLowerCase() === loginNameForSlot(effectiveTarget as 'brett' | 'bridgette')
+              }
+              style={{
+                opacity:
+                  !newLogin.trim() ||
+                  !usernameCurrentPw ||
+                  usernameBusy ||
+                  newLogin.trim().toLowerCase() === loginNameForSlot(effectiveTarget as 'brett' | 'bridgette')
+                    ? 0.6
+                    : 1,
+              }}
+              onClick={() => {
+                setUsernameSaved(false)
+                setUsernameError(null)
+                setUsernameBusy(true)
+                ;(async () => {
+                  try {
+                    const res = await renameMarketingProviderLogin(effectiveTarget as 'brett' | 'bridgette', newLogin, usernameCurrentPw)
+                    if (!res.ok) {
+                      setUsernameError(res.reason)
+                      return
+                    }
+                    setUsernameCurrentPw('')
+                    setUsernameSaved(true)
+                  } finally {
+                    setUsernameBusy(false)
+                  }
+                })()
+              }}
+            >
+              {usernameBusy ? 'Saving…' : 'Save username'}
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="card cardAccentSoft" style={{ maxWidth: 980 }}>
         <div className="cardTitle">
@@ -69,6 +194,7 @@ export default function MarketingProviderSecurity() {
               Provider account
             </div>
             <select className="input" value={targetUser} onChange={(e) => setTargetUser(e.target.value as MarketingProviderUser)}>
+              <option value="admin">admin</option>
               <option value="brett">brett</option>
               <option value="bridgette">bridgette</option>
             </select>
@@ -130,4 +256,3 @@ export default function MarketingProviderSecurity() {
     </div>
   )
 }
-

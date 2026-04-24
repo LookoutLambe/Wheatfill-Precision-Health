@@ -52,7 +52,7 @@ export default function ProviderIntegrations() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Configure where patients go for booking/portal/pharmacy/video. These are links only.
+            Configure where patients go for booking, portal, Order Now Catalog, and video. These are links only.
           </p>
         </div>
         <div className="pageActions">
@@ -111,7 +111,7 @@ export default function ProviderIntegrations() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Pharmacy URL (partner portal)
+              Order Now / Catalog URL
             </div>
             <input
               className="input"
