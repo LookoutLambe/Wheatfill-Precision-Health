@@ -33,6 +33,7 @@ export default function Shell() {
             <NavLink to="/ordering">Ordering</NavLink>
             <NavLink to="/contact">Contact</NavLink>
             <NavLink to="/privacy">Privacy</NavLink>
+            <NavLink to="/provider/login">Provider</NavLink>
           </span>
         </div>
       </footer>
