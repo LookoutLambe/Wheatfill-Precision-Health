@@ -21,10 +21,13 @@ export default function MarketingProviderAdmin() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Provider Admin</h1>
-          <p className="muted pageSubtitle">Configure where the site links for booking, portal, pharmacy, and video.</p>
+          <h1 style={{ margin: 0 }}>Integrations</h1>
+          <p className="muted pageSubtitle">Configure booking, portal, pharmacy, and video links.</p>
         </div>
         <div className="pageActions">
+          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
+            Back
+          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
