@@ -1,0 +1,168 @@
+:root {
+  --vbms-header: #0a1e3f;
+  --vbms-header-2: #081732;
+  --vbms-border: rgba(10, 30, 63, 0.18);
+  --vbms-border-strong: rgba(10, 30, 63, 0.3);
+  --vbms-surface: #ffffff;
+  --vbms-surface-2: rgba(10, 30, 63, 0.06);
+  --vbms-text: #0b1220;
+  --vbms-text-muted: rgba(31, 41, 55, 0.7);
+}
+
+.vbmsApp {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.vbmsTopbar {
+  height: 46px;
+  background: linear-gradient(0deg, var(--vbms-header-2), var(--vbms-header));
+  color: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 10px;
+}
+
+.vbmsBrand {
+  font-weight: 850;
+  letter-spacing: 0.3px;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.vbmsMenu {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.vbmsMenu a,
+.vbmsMenu button {
+  color: white;
+  padding: 6px 8px;
+  border-radius: 4px;
+  opacity: 0.95;
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.vbmsMenu a:hover,
+.vbmsMenu button:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.vbmsTopRight {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.95;
+}
+
+.vbmsShellMain {
+  flex: 1 1 auto;
+  display: grid;
+  place-items: center;
+  padding: 22px 12px 44px;
+}
+
+.vbmsLoginCard {
+  width: 520px;
+  max-width: 100%;
+  border: 1px solid var(--vbms-border);
+  background: var(--vbms-surface);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: rgba(10, 30, 63, 0.18) 0 24px 36px -28px;
+}
+
+.vbmsLoginHeader {
+  padding: 12px 14px;
+  background: var(--vbms-surface-2);
+  border-bottom: 1px solid var(--vbms-border);
+  font-weight: 800;
+  color: var(--vbms-text);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.vbmsLoginBody {
+  padding: 14px;
+}
+
+.vbmsFieldLabel {
+  font-size: 12px;
+  color: var(--vbms-text-muted);
+  margin-bottom: 4px;
+}
+
+.vbmsInput {
+  width: 100%;
+  border: 1px solid var(--vbms-border);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-size: 13px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.vbmsInput:focus {
+  outline: 2px solid rgba(122, 15, 28, 0.35);
+  outline-offset: 2px;
+  border-color: rgba(122, 15, 28, 0.35);
+}
+
+.vbmsBtn {
+  border: 1px solid var(--vbms-border-strong);
+  background: white;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.vbmsBtnPrimary {
+  background: #0a1e3f;
+  color: white;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.vbmsBtnPrimary:hover {
+  background: #0f2e5a;
+}
+
+.vbmsBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vbmsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .vbmsRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vbmsHint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--vbms-text-muted);
+}
+

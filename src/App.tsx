@@ -2,8 +2,16 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Shell from './components/Shell'
 import ProviderShell from './components/ProviderShell'
+import ProviderGuard from './components/ProviderGuard'
 import Landing from './pages/Landing'
+import About from './pages/About'
+import Pricing from './pages/Pricing'
+import Contact from './pages/Contact'
+import Privacy from './pages/Privacy'
+import BookOnline from './pages/BookOnline'
+import OrderingPortal from './pages/OrderingPortal'
 import PatientPortal from './pages/PatientPortal'
+import ProviderLogin from './pages/ProviderLogin'
 import ProviderPortal from './pages/ProviderPortal'
 
 export default function App() {
@@ -11,11 +19,24 @@ export default function App() {
     <Routes>
       <Route element={<Shell />}>
         <Route path="/" element={<Landing />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/book" element={<BookOnline />} />
+        <Route path="/ordering" element={<OrderingPortal />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/patient" element={<PatientPortal />} />
       </Route>
 
       {/* Provider area is intentionally separate from the public shell */}
-      <Route element={<ProviderShell />}>
+      <Route path="/provider/login" element={<ProviderLogin />} />
+      <Route
+        element={
+          <ProviderGuard>
+            <ProviderShell />
+          </ProviderGuard>
+        }
+      >
         <Route path="/provider" element={<ProviderPortal />} />
       </Route>
 

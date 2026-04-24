@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wheatfill Precision Health</title>
+    <script>
+      // If we arrived here via the 404.html SPA redirect on GitHub Pages,
+      // restore the original URL so React Router can render the right route.
+      (function () {
+        var redirect = sessionStorage.getItem('wph_redirect');
+        if (!redirect) return;
+        sessionStorage.removeItem('wph_redirect');
+        // Redirect includes the base path already; just replace the URL.
+        window.history.replaceState(null, '', redirect);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

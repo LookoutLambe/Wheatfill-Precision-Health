@@ -14,6 +14,12 @@ export default function Shell() {
 
           <nav className="navLinks" aria-label="Primary navigation">
             <NavLink to="/">Home</NavLink>
+            <NavLink to="/about">About</NavLink>
+            <NavLink to="/pricing">Pricing</NavLink>
+            <NavLink to="/book">Book Online</NavLink>
+            <NavLink to="/ordering">Ordering Portal</NavLink>
+            <NavLink to="/contact">Contact</NavLink>
+            <NavLink to="/privacy">Privacy</NavLink>
             <NavLink to="/patient">Patient Portal</NavLink>
           </nav>
         </div>

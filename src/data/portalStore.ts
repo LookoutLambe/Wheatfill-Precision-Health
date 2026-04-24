@@ -29,6 +29,7 @@ export type OrderRequest = {
 type PortalState = {
   appointments: AppointmentRequest[]
   orders: OrderRequest[]
+  bookedSlots: string[]
 }
 
 const STORAGE_KEY = 'wph_portal_state_v1'
@@ -50,14 +51,15 @@ function uid(prefix: string) {
 function readState(): PortalState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { appointments: [], orders: [] }
+    if (!raw) return { appointments: [], orders: [], bookedSlots: [] }
     const parsed = JSON.parse(raw) as PortalState
     return {
       appointments: Array.isArray(parsed.appointments) ? parsed.appointments : [],
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+      bookedSlots: Array.isArray(parsed.bookedSlots) ? parsed.bookedSlots : [],
     }
   } catch {
-    return { appointments: [], orders: [] }
+    return { appointments: [], orders: [], bookedSlots: [] }
   }
 }
 
@@ -105,6 +107,50 @@ export function createAppointmentRequest(input: {
   return req
 }
 
+function slotKey(date: string, time: string) {
+  return `${date}T${time}`
+}
+
+export function isSlotBooked(date: string, time: string) {
+  const state = readState()
+  return state.bookedSlots.includes(slotKey(date, time))
+}
+
+export function bookAppointment(input: {
+  patientName: string
+  type: AppointmentType
+  date: string
+  time: string
+  notes?: string
+}) {
+  const state = readState()
+  const key = slotKey(input.date, input.time)
+  if (state.bookedSlots.includes(key)) {
+    return { ok: false as const, reason: 'Slot is already booked.' }
+  }
+
+  const appt: AppointmentRequest = {
+    id: uid('appt'),
+    patientName: input.patientName.trim(),
+    type: input.type,
+    preferredDate: '',
+    preferredTime: '',
+    notes: (input.notes ?? '').trim(),
+    status: 'Scheduled',
+    createdAt: nowIso(),
+    scheduledDate: input.date,
+    scheduledTime: input.time,
+  }
+
+  writeState({
+    ...state,
+    appointments: [appt, ...state.appointments],
+    bookedSlots: [key, ...state.bookedSlots],
+  })
+
+  return { ok: true as const, appointment: appt }
+}
+
 export function scheduleAppointment(input: {
   appointmentId?: string
   patientName: string
@@ -114,6 +160,8 @@ export function scheduleAppointment(input: {
   notes?: string
 }) {
   const state = readState()
+  const key = slotKey(input.date, input.time)
+  const nextBooked = state.bookedSlots.includes(key) ? state.bookedSlots : [key, ...state.bookedSlots]
   if (input.appointmentId) {
     const next = state.appointments.map((a) =>
       a.id === input.appointmentId
@@ -126,7 +174,7 @@ export function scheduleAppointment(input: {
           }
         : a,
     )
-    writeState({ ...state, appointments: next })
+    writeState({ ...state, appointments: next, bookedSlots: nextBooked })
     return
   }
 
@@ -142,7 +190,7 @@ export function scheduleAppointment(input: {
     scheduledDate: input.date,
     scheduledTime: input.time,
   }
-  writeState({ ...state, appointments: [req, ...state.appointments] })
+  writeState({ ...state, appointments: [req, ...state.appointments], bookedSlots: nextBooked })
 }
 
 export function updateAppointmentStatus(appointmentId: string, status: AppointmentStatus) {
@@ -176,6 +224,6 @@ export function updateOrderStatus(orderId: string, status: OrderStatus) {
 }
 
 export function clearPortalState() {
-  writeState({ appointments: [], orders: [] })
+  writeState({ appointments: [], orders: [], bookedSlots: [] })
 }
 

@@ -1,7 +1,9 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import '../app.css'
+import { setProviderAuthed } from '../provider/providerAuth'
 
 export default function ProviderShell() {
+  const navigate = useNavigate()
   return (
     <div className="appShell">
       <header className="topNav">
@@ -14,6 +16,17 @@ export default function ProviderShell() {
 
           <nav className="navLinks" aria-label="Provider navigation">
             <NavLink to="/provider">Dashboard</NavLink>
+            <button
+              type="button"
+              className="btn"
+              style={{ padding: '8px 10px', borderRadius: 10 }}
+              onClick={() => {
+                setProviderAuthed(false)
+                navigate('/provider/login', { replace: true })
+              }}
+            >
+              Logout
+            </button>
           </nav>
         </div>
       </header>
