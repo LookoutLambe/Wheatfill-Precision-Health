@@ -190,6 +190,14 @@ function normalizeProviderBookingUrl(url: unknown): string {
   return s
 }
 
+/** Old marketing default was Practice Better PHR; clear so staff pastes Charm PHR URL. */
+function normalizePatientPortalUrl(url: unknown): string {
+  const s = String(url ?? '').trim()
+  if (!s) return ''
+  if (/^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(s)) return ''
+  return s
+}
+
 export function getMarketingIntegrations(): MarketingIntegrations {
   const defaults: MarketingIntegrations = {
     // Provider-only: paste Charm EHR scheduling URL in /provider/integrations (not used for public Book Online).
@@ -212,9 +220,10 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     const parsed = JSON.parse(raw) as Partial<MarketingIntegrations>
     const pharmacyUrl = normalizeCatalogUrl(parsed.pharmacyUrl ?? defaults.pharmacyUrl)
     const bookingUrl = normalizeProviderBookingUrl(parsed.bookingUrl ?? defaults.bookingUrl)
+    const patientPortalUrl = normalizePatientPortalUrl(parsed.patientPortalUrl ?? defaults.patientPortalUrl)
     const next: MarketingIntegrations = {
       bookingUrl,
-      patientPortalUrl: String(parsed.patientPortalUrl || defaults.patientPortalUrl || ''),
+      patientPortalUrl,
       pharmacyUrl,
       videoVisitUrl: String(parsed.videoVisitUrl || defaults.videoVisitUrl || ''),
       fulfillmentPartnerName:
@@ -225,15 +234,18 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     }
     const stripPbHome =
       /^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(String(parsed.bookingUrl || '').trim()) && bookingUrl === ''
+    const stripPbPatient =
+      /^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(String(parsed.patientPortalUrl || '').trim()) && patientPortalUrl === ''
     const needsCompatWrite =
       typeof (parsed as Partial<MarketingIntegrations>).fulfillmentPartnerName !== 'string' ||
       typeof (parsed as Partial<MarketingIntegrations>).catalogVenmoPayUrl !== 'string' ||
       typeof (parsed as Partial<MarketingIntegrations>).paymentProcessorsNote !== 'string'
-    // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking".
+    // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking" / default PHR.
     if (
       needsCompatWrite ||
       (String(parsed.pharmacyUrl || '').includes('example.com') && pharmacyUrl === '') ||
-      stripPbHome
+      stripPbHome ||
+      stripPbPatient
     ) {
       localStorage.setItem(KEY_INTEGRATIONS, JSON.stringify(next))
     }
