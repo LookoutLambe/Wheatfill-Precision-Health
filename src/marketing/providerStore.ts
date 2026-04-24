@@ -174,10 +174,18 @@ function normalizeCatalogUrl(url: unknown): string {
   return s
 }
 
+/** Generic Practice Better homepage is not a patient booking page — use in provider portal only after pasting your real scheduling URL. */
+function normalizeProviderBookingUrl(url: unknown): string {
+  const s = String(url ?? '').trim()
+  if (!s) return ''
+  if (/^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(s)) return ''
+  return s
+}
+
 export function getMarketingIntegrations(): MarketingIntegrations {
   const defaults: MarketingIntegrations = {
-    // Demo defaults (safe, non-PHI). Can be overridden in /provider/integrations.
-    bookingUrl: 'https://practicebetter.io/',
+    // Provider-only: paste Brett's Practice Better scheduling URL in /provider/integrations (not used for public Book Online).
+    bookingUrl: '',
     patientPortalUrl: 'https://practicebetter.io/',
     // Empty = use same-origin /order-now (GitHub Pages + local marketing builds).
     pharmacyUrl: '',
@@ -192,14 +200,20 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     }
     const parsed = JSON.parse(raw) as Partial<MarketingIntegrations>
     const pharmacyUrl = normalizeCatalogUrl(parsed.pharmacyUrl ?? defaults.pharmacyUrl)
+    const bookingUrl = normalizeProviderBookingUrl(parsed.bookingUrl ?? defaults.bookingUrl)
     const next: MarketingIntegrations = {
-      bookingUrl: String(parsed.bookingUrl || defaults.bookingUrl || ''),
+      bookingUrl,
       patientPortalUrl: String(parsed.patientPortalUrl || defaults.patientPortalUrl || ''),
       pharmacyUrl,
       videoVisitUrl: String(parsed.videoVisitUrl || defaults.videoVisitUrl || ''),
     }
-    // One-time cleanup if older builds stored example.com.
-    if (String(parsed.pharmacyUrl || '').includes('example.com') && pharmacyUrl === '') {
+    const stripPbHome =
+      /^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(String(parsed.bookingUrl || '').trim()) && bookingUrl === ''
+    // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking".
+    if (
+      (String(parsed.pharmacyUrl || '').includes('example.com') && pharmacyUrl === '') ||
+      stripPbHome
+    ) {
       localStorage.setItem(KEY_INTEGRATIONS, JSON.stringify(next))
     }
     return next

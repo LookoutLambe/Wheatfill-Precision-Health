@@ -89,7 +89,7 @@ export default function ProviderShell() {
           ) : (
             <>
               <NavLink to="/provider" onClick={closeMenu}>
-                VBMS
+                Provider&apos;s Portal
               </NavLink>
               <NavLink to="/provider/demo" onClick={closeMenu}>
                 Demo

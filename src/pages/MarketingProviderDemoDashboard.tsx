@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
+import VenmoPayToHint from '../components/VenmoPayToHint'
 import { getMarketingProviderLoginDisplay, isMarketingProviderAuthed } from '../marketing/providerStore'
 
 type DemoPatient = { id: string; label: string }
@@ -69,15 +70,16 @@ export default function MarketingProviderDemoDashboard() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>VBMS demo sandbox</h1>
+          <h1 style={{ margin: 0 }}>Provider&apos;s Portal — demo sandbox</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Sample data for training/UI review only. Your live provider VBMS stays separate at <b>/provider</b>.
+            Sample data for training/UI review only. Your live Provider&apos;s Portal workspace stays separate at{' '}
+            <b>/provider</b>.
           </p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back to provider VBMS
+            Back to Provider&apos;s Portal
           </Link>
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
@@ -328,19 +330,14 @@ export default function MarketingProviderDemoDashboard() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments (preview)</h2>
-            <span className="pill">Stripe/Clover</span>
+            <span className="pill">Venmo</span>
           </div>
           <div className="divider" />
-          <p className="muted">In production, connect Stripe or Clover and choose which one is active.</p>
-          <div className="divider" />
-          <div className="btnRow">
-            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Connect Stripe (preview)
-            </button>
-            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Connect Clover (preview)
-            </button>
-          </div>
+          <p className="muted">
+            Catalog checkout uses <b>Venmo</b> after the practice confirms amount and recipient with the patient. Optional
+            card processors (Stripe/Clover) can be wired later for other flows.
+          </p>
+          <VenmoPayToHint style={{ marginTop: 10 }} />
         </section>
 
         <section className="card cardAccentSoft">

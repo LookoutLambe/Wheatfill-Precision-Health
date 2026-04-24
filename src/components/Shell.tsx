@@ -10,12 +10,7 @@ import {
   isMarketingProviderAuthed,
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
-import {
-  PROVIDER_DISPLAY_NAME,
-  PROVIDER_LICENSED_STATES,
-  PROVIDER_NPI,
-  ZELLE_RECIPIENTS,
-} from '../config/provider'
+import { CATALOG_VENMO, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES, PROVIDER_NPI } from '../config/provider'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
 export default function Shell() {
@@ -61,7 +56,6 @@ export default function Shell() {
   const base = (import.meta as any).env?.BASE_URL?.toString() || '/'
   const internal = (p: string) => `${base.replace(/\/$/, '')}${p.startsWith('/') ? p : `/${p}`}`
 
-  const appBook = integ?.bookingUrl || (APP_URL ? `${APP_URL}/book` : internal('/book'))
   const appOrderCatalog = integ?.pharmacyUrl || (APP_URL ? `${APP_URL}/order-now` : internal('/order-now'))
   const appPatient = integ?.patientPortalUrl || (APP_URL ? `${APP_URL}/patient` : internal('/patient'))
   const states = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
@@ -124,15 +118,9 @@ export default function Shell() {
             <NavLink to="/peptides" onClick={closeMenu}>
               Peptides
             </NavLink>
-            {MARKETING_ONLY ? (
-              <a href={appBook} style={{ textDecoration: 'none' }} onClick={closeMenu}>
-                Book Online
-              </a>
-            ) : (
-              <NavLink to="/book" onClick={closeMenu}>
-                Book Online
-              </NavLink>
-            )}
+            <NavLink to="/book" onClick={closeMenu}>
+              Book Online
+            </NavLink>
             {MARKETING_ONLY ? (
               <a href={appOrderCatalog} style={{ textDecoration: 'none' }} onClick={closeMenu}>
                 Order Now
@@ -172,13 +160,7 @@ export default function Shell() {
               <NavLink to="/about">About</NavLink>
               <NavLink to="/pricing">Pricing</NavLink>
               <NavLink to="/peptides">Peptides</NavLink>
-              {MARKETING_ONLY ? (
-                <a href={appBook} style={{ textDecoration: 'none' }}>
-                  Book Online
-                </a>
-              ) : (
-                <NavLink to="/book">Book Online</NavLink>
-              )}
+              <NavLink to="/book">Book Online</NavLink>
               <NavLink to="/ordering">Ordering</NavLink>
               {MARKETING_ONLY ? (
                 <a href={appOrderCatalog} style={{ textDecoration: 'none' }}>
@@ -210,11 +192,11 @@ export default function Shell() {
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
             <div className="footerFineprint">
-              Catalog Zelle (only as instructed):{' '}
-              <a href={ZELLE_RECIPIENTS.brett.telHref}>{ZELLE_RECIPIENTS.brett.display}</a> ({ZELLE_RECIPIENTS.brett.label}
-              ) ·{' '}
-              <a href={ZELLE_RECIPIENTS.bridgette.telHref}>{ZELLE_RECIPIENTS.bridgette.display}</a> (
-              {ZELLE_RECIPIENTS.bridgette.label}). Patient portal: Practice Better.
+              Catalog Venmo (only as instructed):{' '}
+              <a href={CATALOG_VENMO.payUrl} target="_blank" rel="noopener noreferrer">
+                Pay here {CATALOG_VENMO.handle}
+              </a>{' '}
+              <span className="muted">({CATALOG_VENMO.payUrl})</span>. Patient portal: Practice Better.
             </div>
             <div className="footerFineprint">
               <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
-import ZellePayToHint from '../components/ZellePayToHint'
+import VenmoPayToHint from '../components/VenmoPayToHint'
 import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
@@ -135,18 +135,18 @@ export default function PharmacyPartner() {
                 Add vials to your cart, then open <b>View Cart</b> for a full summary. You are ordering through
                 our practice—we coordinate preferred pricing and fulfillment with {CONTRACTED_PHARMACY_NAME} when
                 medication is prescribed, and your care team can resolve order issues on our side. For now, payment
-                is via <b>Zelle</b> after you submit from the summary page—the practice follows up with amount and
+                is via <b>Venmo</b> after you submit from the summary page—the practice follows up with amount and
                 pay-to details.
               </>
             ) : (
               <>
                 This is the product list—add vials to your bag, then open <b>View Cart</b> for a full summary.
-                Payment is via <b>Zelle</b> after you submit from the summary page; the practice sends Zelle
+                Payment is via <b>Venmo</b> after you submit from the summary page; the practice sends Venmo
                 instructions.
               </>
             )}
           </p>
-          <ZellePayToHint style={{ marginTop: 10 }} />
+          <VenmoPayToHint style={{ marginTop: 10 }} />
         </div>
         <div className="pharmacyToolbarActions">
           <button

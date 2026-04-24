@@ -13,17 +13,10 @@ export const PROVIDER_LICENSED_STATES = ['[state list]']
 /** If set, peptide waitlist can open a prefilled mailto link. Leave empty to show Contact fallback on static builds. */
 export const PUBLIC_INQUIRY_EMAIL = ''
 
-/** Zelle pay-to numbers the practice may confirm for catalog orders (use only as instructed for your order). */
-export const ZELLE_RECIPIENTS = {
-  brett: {
-    label: 'Brett',
-    telHref: 'tel:+17144897506',
-    display: '714-489-7506',
-  },
-  bridgette: {
-    label: 'Bridgette',
-    telHref: 'tel:+18013805477',
-    display: '801-380-5477',
-  },
+/** Venmo pay link for catalog orders after the practice confirms amount and recipient (works on static sites like GitHub Pages). */
+export const CATALOG_VENMO = {
+  handle: '@wheaty27',
+  username: 'wheaty27',
+  /** Opens Brett’s Venmo profile to pay: https://venmo.com/wheaty27 */
+  payUrl: 'https://venmo.com/wheaty27',
 } as const
-

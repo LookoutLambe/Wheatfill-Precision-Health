@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { getMarketingProviderLoginDisplay, isMarketingProviderAuthed } from '../marketing/providerStore'
+import VenmoPayToHint from '../components/VenmoPayToHint'
+import { getMarketingIntegrations, getMarketingProviderLoginDisplay, isMarketingProviderAuthed } from '../marketing/providerStore'
 
 type DemoPatient = { id: string; label: string }
 type DemoAppt = { id: string; patientId: string; type: string; when: string; status: string }
@@ -41,11 +42,13 @@ export default function ProviderVbmsWorkspace() {
 
   const workspacePatientLabel = (patientId: string) => workspacePatients.find((p) => p.id === patientId)?.label || '—'
 
+  const practiceBetterSchedulingUrl = getMarketingIntegrations().bookingUrl.trim()
+
   return (
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>VBMS</h1>
+          <h1 style={{ margin: 0 }}>Provider&apos;s Portal</h1>
           <p className="muted" style={{ marginTop: 8 }}>
             Provider workspace starts empty until scheduling and messages arrive. (No patient data stored on this site.)
           </p>
@@ -55,6 +58,21 @@ export default function ProviderVbmsWorkspace() {
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
+          {practiceBetterSchedulingUrl ? (
+            <a
+              href={practiceBetterSchedulingUrl}
+              className="btn btnPrimary"
+              style={{ textDecoration: 'none' }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Practice Better scheduling
+            </a>
+          ) : (
+            <Link to="/provider/integrations" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+              Set Practice Better URL
+            </Link>
+          )}
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
           </Link>
@@ -304,19 +322,14 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments (preview)</h2>
-            <span className="pill">Stripe/Clover</span>
+            <span className="pill">Venmo</span>
           </div>
           <div className="divider" />
-          <p className="muted">In production, connect Stripe or Clover and choose which one is active.</p>
-          <div className="divider" />
-          <div className="btnRow">
-            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Connect Stripe (preview)
-            </button>
-            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Connect Clover (preview)
-            </button>
-          </div>
+          <p className="muted">
+            Catalog checkout uses <b>Venmo</b> after the practice confirms amount and recipient with the patient. Optional
+            card processors (Stripe/Clover) can be wired later for other flows.
+          </p>
+          <VenmoPayToHint style={{ marginTop: 10 }} />
         </section>
 
         <section className="card cardAccentSoft">

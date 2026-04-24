@@ -54,7 +54,7 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
 
-          <Route path="/book" element={<Navigate to={toApp('/book')} replace />} />
+          <Route path="/book" element={<BookOnline />} />
           <Route path="/pharmacy" element={<MarketingRedirectToApp />} />
           <Route path="/pharmacy/:slug" element={<MarketingRedirectToApp />} />
           <Route path="/order-now" element={<MarketingRedirectToApp />} />

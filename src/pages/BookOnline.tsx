@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Practitioner } from '@medplum/fhirtypes'
+import { MARKETING_ONLY } from '../config/mode'
+import { bookAppointment, getPortalState, subscribePortalState } from '../data/portalStore'
 import { useMedplumApp } from '../medplum/provider'
 import { createBookedAppointment, ensureSchedule, listAppointmentsForRange, listBlackoutSlots, type UiApptType } from '../medplum/scheduling'
 import { PROVIDER_PRACTITIONER_ID } from '../medplum/client'
@@ -114,6 +116,7 @@ export default function BookOnline() {
   const [busy, setBusy] = useState(false)
   const [provider, setProvider] = useState<Practitioner | null>(null)
   const [scheduleId, setScheduleId] = useState<string>('')
+  const [guestName, setGuestName] = useState('')
 
   useEffect(() => {
     if (!profile || profile.resourceType !== 'Patient') {
@@ -129,6 +132,21 @@ export default function BookOnline() {
   }, [profile])
 
   useEffect(() => {
+    if (MARKETING_ONLY) {
+      setAvailError(null)
+      setProvider(null)
+      setScheduleId('')
+      const applyPortal = () => {
+        const s = getPortalState()
+        setAvailability({
+          blackouts: [...s.blackoutDates],
+          booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
+        })
+      }
+      applyPortal()
+      return subscribePortalState(applyPortal)
+    }
+
     setAvailError(null)
     ;(async () => {
       try {
@@ -299,7 +317,13 @@ export default function BookOnline() {
                   Signed in as
                 </div>
                 <div className="pill">{patientName || '—'}</div>
-                {!patientName ? (
+                {MARKETING_ONLY ? (
+                  <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                    This page uses the calendar below. Enter your name in the field under Notes to hold a time (saved
+                    in this browser only). For PHI and Practice Better scheduling, staff use the link in Provider&apos;s
+                    Portal.
+                  </div>
+                ) : !patientName ? (
                   <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
                     Please sign in via <Link to="/signin">Sign in</Link> before booking.
                   </div>
@@ -317,6 +341,21 @@ export default function BookOnline() {
               </label>
             </div>
 
+            {MARKETING_ONLY ? (
+              <label style={{ display: 'block', marginTop: 12 }}>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Your name (required to hold this time in preview)
+                </div>
+                <input
+                  className="input"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  placeholder="First and last name"
+                  autoComplete="name"
+                />
+              </label>
+            ) : null}
+
             <label style={{ display: 'block', marginTop: 12 }}>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 Notes (optional)
@@ -333,14 +372,48 @@ export default function BookOnline() {
               <button
                 type="button"
                 className="btn btnPrimary"
-                disabled={!patientName || !selected || busy}
-                style={{ opacity: !patientName || !selected || busy ? 0.6 : 1 }}
+                disabled={
+                  !selected ||
+                  busy ||
+                  (MARKETING_ONLY ? !(patientName || guestName).trim() : !patientName)
+                }
+                style={{
+                  opacity:
+                    !selected || busy || (MARKETING_ONLY ? !(patientName || guestName).trim() : !patientName)
+                      ? 0.6
+                      : 1,
+                }}
                 onClick={() => {
                   setMessage(null)
                   if (!selected) return
                   setBusy(true)
                   ;(async () => {
                     try {
+                      if (MARKETING_ONLY) {
+                        const who = (patientName || guestName).trim()
+                        if (!who) throw new Error('Enter your name to hold this time.')
+                        const res = bookAppointment({
+                          patientName: who,
+                          type: apptType,
+                          date: selected.date,
+                          time: selected.time,
+                          notes,
+                        })
+                        if (!res.ok) {
+                          setMessage(res.reason)
+                          return
+                        }
+                        setMessage(`Booked ${selected.date} ${selected.time} (preview—stored in this browser only).`)
+                        setSelectedTime('')
+                        setNotes('')
+                        const s = getPortalState()
+                        setAvailability({
+                          blackouts: [...s.blackoutDates],
+                          booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
+                        })
+                        return
+                      }
+
                       if (!profile || profile.resourceType !== 'Patient') throw new Error('Not signed in as a patient.')
                       if (!provider) throw new Error('Provider not configured.')
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { CATALOG_VENMO } from '../config/provider'
 
 export default function Pricing() {
   return (
@@ -166,8 +167,13 @@ export default function Pricing() {
             </div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
-              We accept Cash App, all major credit cards, debit cards, and HSA/FSA cards for both
-              consultations and medications.
+              We accept Venmo (
+              <a href={CATALOG_VENMO.payUrl} target="_blank" rel="noopener noreferrer">
+                pay here
+              </a>
+              , {CATALOG_VENMO.handle} — only when your care team confirms amount and recipient for catalog orders),
+              Cash App, all major credit cards, debit cards, and HSA/FSA cards for consultations and medications where
+              applicable.
             </div>
           </div>
         </div>

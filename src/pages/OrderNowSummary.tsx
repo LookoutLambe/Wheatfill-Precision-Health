@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
-import ZellePayToHint from '../components/ZellePayToHint'
+import VenmoPayToHint from '../components/VenmoPayToHint'
 import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
@@ -135,7 +135,7 @@ export default function OrderNowSummary() {
           return
         }
         setCheckoutError(
-          'We could not complete the online handoff for this order. Your request may still be on file—check with the office for Zelle payment instructions or next steps.',
+          'We could not complete the online handoff for this order. Your request may still be on file—check with the office for Venmo payment instructions or next steps.',
         )
       } catch (e: any) {
         setCheckoutError(String(e?.message || e))
@@ -162,10 +162,9 @@ export default function OrderNowSummary() {
                   changes, message your care team—we handle coordination with the pharmacy.
                 </>
               ) : null}{' '}
-              For now, payment is via <b>Zelle</b> after the practice reviews your order. Submit below and your care
-              team will follow up with the amount due and where to send payment.
+              When you submit your order, your care team confirms your total and how to pay before you send anything.
             </p>
-            <ZellePayToHint style={{ marginTop: 12 }} />
+            <VenmoPayToHint variant="panel" style={{ marginTop: 14 }} />
           </div>
           <Link to={catalogPath} className="orderNowContinueBrowse">
             Continue browsing →
@@ -185,9 +184,9 @@ export default function OrderNowSummary() {
         ) : null}
 
         {offlineCatalog ? (
-          <div className="orderNowOffline" role="status" style={{ marginTop: 14 }}>
-            Showing standard list prices for this catalog. Connect the API for live inventory and automated checkout
-            when available.
+          <div className="orderNowOffline orderNowOffline--subtle" role="status" style={{ marginTop: 14 }}>
+            You&apos;re viewing list prices for this catalog. Connect the live API for up-to-date inventory and checkout
+            when your deployment is ready.
           </div>
         ) : null}
 
@@ -196,8 +195,8 @@ export default function OrderNowSummary() {
         {partner && items.length === 0 ? (
           <div className="orderNowSummaryEmpty card">
             <p className="muted" style={{ margin: 0 }}>
-              Your cart is empty. Add products from the catalog, then return here to review and submit for Zelle
-              payment instructions when you are ready.
+              Your cart is empty. Add products from the catalog, then return here to review your order and submit when
+              you&apos;re ready.
             </p>
             <div className="btnRow" style={{ marginTop: 16 }}>
               <Link to={catalogPath} className="btn btnPrimary" style={{ textDecoration: 'none' }}>
@@ -344,10 +343,10 @@ export default function OrderNowSummary() {
                 {checkoutBusy ? 'Submitting…' : 'Submit order'}
               </button>
               <p className="muted orderNowSecureNote">
-                For now, catalog payment is by <b>Zelle</b> after review. Submitting sends your order to the practice;
-                you are not paying on this screen. Watch email or portal messages for amount and pay-to details.
+                Submitting sends your request to the practice—you are not charged here. When your care team confirms the
+                total, pay with Venmo using the <strong>Payment</strong> section at the top of this page (only as they
+                instruct).
               </p>
-              <ZellePayToHint style={{ marginTop: 12 }} />
             </div>
           </>
         ) : null}

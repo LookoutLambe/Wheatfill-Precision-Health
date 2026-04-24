@@ -61,7 +61,7 @@ export default function MarketingProviderAdmin() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Booking URL (Practice Better booking page)
+              Practice Better scheduling URL (provider only — not shown on public Book Online)
             </div>
             <input className="input" value={form.bookingUrl} onChange={(e) => setForm((p) => ({ ...p, bookingUrl: e.target.value }))} />
           </label>
@@ -123,7 +123,7 @@ export default function MarketingProviderAdmin() {
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens Practice Better booking in a new tab (Practice Better handles login + PHI).
+            Opens your Practice Better scheduling page in a new tab for staff. Patients use <b>Book Online</b> on the site for the calendar.
           </p>
           <div className="divider" />
           <a
@@ -174,7 +174,7 @@ export default function MarketingProviderAdmin() {
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
             Opens your patient catalog. Orders run through the practice; patients submit from the summary page and get
-            Zelle payment instructions from the office. Stripe/Clover can be wired in later if you choose.
+            Venmo payment instructions from the office. Stripe/Clover can be wired in later if you choose.
           </p>
           <div className="divider" />
           <a

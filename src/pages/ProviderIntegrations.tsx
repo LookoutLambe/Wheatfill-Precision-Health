@@ -86,7 +86,7 @@ export default function ProviderIntegrations() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Booking URL (Practice Better booking page)
+              Practice Better scheduling URL (staff — paste your Practice Better booking link)
             </div>
             <input
               className="input"

@@ -324,13 +324,16 @@ export default function ProviderPortal() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments</h2>
-            <span className="pill">Stripe/Clover</span>
+            <span className="pill">Venmo · processors</span>
           </div>
           <div className="divider" />
-          <p className="muted">Connect Stripe or Clover, then choose which one is active for new payments.</p>
+          <p className="muted">
+            Patient catalog checkout uses <b>Venmo</b> after the practice confirms amount and recipient. Optional Stripe or
+            Clover can still be configured for other billing flows.
+          </p>
           <div className="divider" />
           <Link to="/provider/payments" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
-            Open payment settings
+            Open payment processor settings
           </Link>
         </section>
 

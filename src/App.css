@@ -1270,7 +1270,8 @@ html.pharmacyCartOpen body {
     display: none !important;
   }
 
-  .navLinks {
+  /* Inline top nav only. Provider portal uses .topNavShell--alwaysDrawer + slide-over drawer at all widths. */
+  .topNavShell:not(.topNavShell--alwaysDrawer) .navLinks {
     position: static;
     width: auto;
     height: auto;
@@ -1293,7 +1294,7 @@ html.pharmacyCartOpen body {
     overflow: visible;
   }
 
-  .navLinks a {
+  .topNavShell:not(.topNavShell--alwaysDrawer) .navLinks a {
     padding: 7px 8px;
     font-size: 14px;
     white-space: nowrap;
@@ -2101,6 +2102,13 @@ html.pharmacyCartOpen body {
   gap: 8px;
 }
 
+/* Softer “info” strip (e.g. cart using offline catalog) — avoids error-like red tint */
+.orderNowOffline--subtle {
+  border-color: rgba(10, 30, 63, 0.14);
+  background: rgba(10, 30, 63, 0.045);
+  color: rgba(31, 41, 55, 0.78);
+}
+
 .orderNowOfflineTip {
   font-size: 12px;
   color: rgba(31, 41, 55, 0.72);
@@ -2351,6 +2359,45 @@ html.pharmacyCartOpen body {
 }
 
 /* Order summary (/order-now/:slug/summary) — pay only from here */
+/* Venmo callout — cart / summary */
+.venmoPayToHintPanel {
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(10, 30, 63, 0.12);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+  box-shadow: rgba(10, 30, 63, 0.06) 0 14px 28px -18px;
+}
+
+.venmoPayToHintPanelTitle {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(31, 41, 55, 0.55);
+  margin-bottom: 8px;
+}
+
+.venmoPayToHintPanelBody {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(31, 41, 55, 0.82);
+}
+
+.venmoPayToHintPanelBtn {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.venmoPayToHint--inline a {
+  font-weight: 700;
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .orderNowSummaryPage {
   max-width: 720px;
   margin: 0 auto;
@@ -2374,23 +2421,26 @@ html.pharmacyCartOpen body {
 .orderNowSummaryLead {
   margin: 0;
   font-size: 15px;
-  line-height: 1.5;
-  max-width: 56ch;
+  line-height: 1.55;
+  max-width: 62ch;
 }
 
 .orderNowContinueBrowse {
-  font-size: 12px;
-  font-weight: 750;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-transform: none;
   text-decoration: none;
-  color: var(--red);
+  color: var(--navy);
   flex-shrink: 0;
-  margin-top: 6px;
+  margin-top: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid transparent;
 }
 
 .orderNowContinueBrowse:hover {
-  text-decoration: underline;
+  color: var(--text-h);
+  border-bottom-color: rgba(10, 30, 63, 0.22);
 }
 
 .orderNowSummaryPartnerLine {
