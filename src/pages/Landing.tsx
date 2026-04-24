@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 
 import brettPortrait from '../assets/brett.png'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import {
   DEFAULT_CATALOG_PARTNER_SLUG,
   minCatalogPriceCentsForFamily,
@@ -222,7 +223,7 @@ export default function Landing() {
             </div>
             <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
               Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
-              coordinate preferred pricing and fulfillment with {CONTRACTED_PHARMACY_NAME} when
+              coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
               medication is prescribed. Payment for now is completed via <b>Venmo</b> after the
               practice confirms your order (amount and pay-to details from your care team). If something goes
               wrong with your order, your care team handles it from our side.

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 
 import { apiPost } from '../api/client'
 import { MARKETING_ONLY } from '../config/mode'
-import { CONTRACTED_PHARMACY_NAME, PUBLIC_INQUIRY_EMAIL } from '../config/provider'
+import { PUBLIC_INQUIRY_EMAIL } from '../config/provider'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
 type PeptideId =
   | 'bpc157'
@@ -322,7 +323,7 @@ export default function PeptideTherapy() {
         </h2>
         <p className="muted" style={{ marginBottom: 0 }}>
           Timelines for compounding categories have shifted repeatedly. We will not publish a firm “on sale” date
-          here. When Brett’s contracted partner, {CONTRACTED_PHARMACY_NAME}, and counsel confirm a lawful path for
+          here. When Brett’s contracted partner, {resolvedFulfillmentPharmacyName()}, and counsel confirm a lawful path for
           specific protocols, we will update this page and the patient portal—not before.
         </p>
       </section>

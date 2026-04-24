@@ -3,7 +3,8 @@
 // Minimal PWA service worker (prototype).
 // Cache static assets for offline use; use network-first for navigations.
 
-const CACHE = 'wph-cache-v2';
+// Bump when asset paths or hosting root change (e.g. GitHub Pages repo URL → custom domain).
+const CACHE = 'wph-cache-v3-root';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

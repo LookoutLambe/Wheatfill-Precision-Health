@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
 import VenmoPayToHint from '../components/VenmoPayToHint'
 import { API_URL, apiGet } from '../api/client'
-import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 
 type Partner = { slug: string; name: string }
 
-const FALLBACK_PARTNERS: Partner[] = [
-  { slug: DEFAULT_CATALOG_PARTNER_SLUG, name: CONTRACTED_PHARMACY_NAME },
-]
+function fallbackPartners(): Partner[] {
+  return [{ slug: DEFAULT_CATALOG_PARTNER_SLUG, name: resolvedFulfillmentPharmacyName() }]
+}
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(0)}`
@@ -29,13 +30,13 @@ export default function PharmacyOptions() {
     apiGet<{ partners: Partner[] }>('/v1/pharmacies')
       .then((r) => {
         if (cancelled) return
-        const list = r.partners?.length ? r.partners : FALLBACK_PARTNERS
+        const list = r.partners?.length ? r.partners : fallbackPartners()
         setPartners(list)
         setApiUnavailable(false)
       })
       .catch(() => {
         if (cancelled) return
-        setPartners(FALLBACK_PARTNERS)
+        setPartners(fallbackPartners())
         setApiUnavailable(true)
       })
     return () => {
@@ -64,7 +65,7 @@ export default function PharmacyOptions() {
             <p className="muted orderNowHubLead">
               You are ordering through {PRACTICE_PUBLIC_NAME}: browse products and prices here, build your
               bag, then open <b>View Cart</b> for a full summary. We coordinate fulfillment with{' '}
-              {CONTRACTED_PHARMACY_NAME} when medication is prescribed, and your care team can step in if
+              {resolvedFulfillmentPharmacyName()} when medication is prescribed, and your care team can step in if
               your order needs attention. For now, payment is via <b>Venmo</b> after you submit your order from
               the summary page—the practice sends amount and pay-to details.
             </p>
@@ -150,7 +151,7 @@ export default function PharmacyOptions() {
           </div>
           <p className="muted orderNowSectionSub">
             If your care team uses another supplier menu, open it here. The default list above matches our
-            standard menu fulfilled through {CONTRACTED_PHARMACY_NAME} when prescribed, coordinated by{' '}
+            standard menu fulfilled through {resolvedFulfillmentPharmacyName()} when prescribed, coordinated by{' '}
             {PRACTICE_PUBLIC_NAME}.
           </p>
           <div className="divider" />

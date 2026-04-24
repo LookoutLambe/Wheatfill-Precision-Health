@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import type { Organization, Practitioner } from '@medplum/fhirtypes'
 import { useMedplumApp } from '../medplum/provider'
 import { getOrCreatePracticeOrg, readIntegrations, writeIntegrations, type PracticeIntegrations } from '../medplum/integrations'
+import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
 import { PROVIDER_PRACTITIONER_ID } from '../medplum/client'
 
 export default function ProviderIntegrations() {
@@ -19,6 +20,9 @@ export default function ProviderIntegrations() {
     patientPortalUrl: '',
     pharmacyUrl: '',
     videoVisitUrl: '',
+    fulfillmentPartnerName: CONTRACTED_PHARMACY_NAME,
+    catalogVenmoPayUrl: CATALOG_VENMO.payUrl,
+    paymentProcessorsNote: '',
   })
 
   async function load() {
@@ -52,7 +56,9 @@ export default function ProviderIntegrations() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Configure where patients go for booking, portal, Order Now Catalog, and video. These are links only.
+            Configure where patients go for booking, portal, Order Now Catalog, and video; fulfillment partner name and
+            catalog Venmo link shown on the public site; optional notes for card rails (Stripe/Clover in{' '}
+            <Link to="/provider/payments">Payments</Link>).
           </p>
         </div>
         <div className="pageActions">
@@ -132,6 +138,45 @@ export default function ProviderIntegrations() {
             />
           </label>
         </div>
+
+        <div className="formRow" style={{ marginTop: 12 }}>
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Fulfillment partner name (patient-facing copy, e.g. compounding pharmacy)
+            </div>
+            <input
+              className="input"
+              value={form.fulfillmentPartnerName}
+              onChange={(e) => setForm((p) => ({ ...p, fulfillmentPartnerName: e.target.value }))}
+              placeholder={CONTRACTED_PHARMACY_NAME}
+            />
+          </label>
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Catalog Venmo pay link (after the practice confirms amount)
+            </div>
+            <input
+              className="input"
+              value={form.catalogVenmoPayUrl}
+              onChange={(e) => setForm((p) => ({ ...p, catalogVenmoPayUrl: e.target.value }))}
+              placeholder="https://venmo.com/..."
+            />
+          </label>
+        </div>
+
+        <label style={{ display: 'block', marginTop: 12 }}>
+          <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+            Payment processors note (Stripe/Clover — internal reference; connect accounts under Payments)
+          </div>
+          <textarea
+            className="input"
+            rows={3}
+            value={form.paymentProcessorsNote}
+            onChange={(e) => setForm((p) => ({ ...p, paymentProcessorsNote: e.target.value }))}
+            placeholder="e.g. Use Stripe for catalog prepay; Clover in-office only."
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </label>
 
         {saved ? (
           <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>Saved.</div>

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { bumpCartSku, readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -52,7 +53,7 @@ export default function OrderNowSummary() {
         if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
           setPartner({
             slug,
-            name: CONTRACTED_PHARMACY_NAME,
+            name: resolvedFulfillmentPharmacyName(),
             products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
               sku: p.sku,
               name: p.name,
@@ -158,7 +159,7 @@ export default function OrderNowSummary() {
               {isPrimaryCatalog ? (
                 <>
                   {' '}
-                  Fulfillment is coordinated with {CONTRACTED_PHARMACY_NAME} when prescribed. If your order needs
+                  Fulfillment is coordinated with {resolvedFulfillmentPharmacyName()} when prescribed. If your order needs
                   changes, message your care team—we handle coordination with the pharmacy.
                 </>
               ) : null}{' '}
@@ -215,7 +216,7 @@ export default function OrderNowSummary() {
               {isPrimaryCatalog ? (
                 <>
                   Order: <strong>{PRACTICE_PUBLIC_NAME}</strong> · fulfillment partner:{' '}
-                  <strong>{CONTRACTED_PHARMACY_NAME}</strong>
+                  <strong>{resolvedFulfillmentPharmacyName()}</strong>
                 </>
               ) : (
                 <>

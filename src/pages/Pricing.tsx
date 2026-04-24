@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CATALOG_VENMO } from '../config/provider'
+import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 
 export default function Pricing() {
   return (
@@ -168,7 +169,7 @@ export default function Pricing() {
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
               We accept Venmo (
-              <a href={CATALOG_VENMO.payUrl} target="_blank" rel="noopener noreferrer">
+              <a href={resolvedCatalogVenmoPayUrl()} target="_blank" rel="noopener noreferrer">
                 pay here
               </a>
               , {CATALOG_VENMO.handle} — only when your care team confirms amount and recipient for catalog orders),

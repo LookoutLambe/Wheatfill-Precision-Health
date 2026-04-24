@@ -14,14 +14,24 @@
     />
     <title>Wheatfill Precision Health</title>
     <script>
+      // Use HTTPS on the live site (avoids “Not secure” when users or links hit http://).
+      (function () {
+        var h = location.hostname
+        if (location.protocol !== 'http:' || !h || h === 'localhost' || h === '127.0.0.1') return
+        location.replace(location.href.replace(/^http:/, 'https:'))
+      })()
+    </script>
+    <script>
       // If we arrived here via the 404.html SPA redirect on GitHub Pages,
       // restore the original URL so React Router can render the right route.
       (function () {
         var redirect = sessionStorage.getItem('wph_redirect');
         if (!redirect) return;
         sessionStorage.removeItem('wph_redirect');
-        // Redirect includes the base path already; just replace the URL.
-        window.history.replaceState(null, '', redirect);
+        // Custom domain uses basename "/"; strip legacy GitHub project-path prefix if present.
+        var stripped = redirect.replace(/^\/Wheatfill-Precision-Health(?=\/|\?|#|$)/i, '') || '/';
+        if (stripped.charAt(0) !== '/') stripped = '/' + stripped;
+        window.history.replaceState(null, '', stripped);
       })();
     </script>
   </head>

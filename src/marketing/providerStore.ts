@@ -1,8 +1,16 @@
+import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
+
 export type MarketingIntegrations = {
   bookingUrl: string
   patientPortalUrl: string
   pharmacyUrl: string
   videoVisitUrl: string
+  /** Catalog / fulfillment partner shown to patients (e.g. Mountain View Pharmacy). */
+  fulfillmentPartnerName: string
+  /** Patient Venmo pay link after the practice confirms amount (marketing site can override repo default). */
+  catalogVenmoPayUrl: string
+  /** Staff notes for Stripe/Clover (full app / backend). */
+  paymentProcessorsNote: string
 }
 
 const KEY_INTEGRATIONS = 'wph_marketing_integrations_v1'
@@ -190,6 +198,9 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     // Empty = use same-origin /order-now (GitHub Pages + local marketing builds).
     pharmacyUrl: '',
     videoVisitUrl: 'https://doxy.me/',
+    fulfillmentPartnerName: CONTRACTED_PHARMACY_NAME,
+    catalogVenmoPayUrl: CATALOG_VENMO.payUrl,
+    paymentProcessorsNote: '',
   }
   try {
     const raw = localStorage.getItem(KEY_INTEGRATIONS)
@@ -206,11 +217,21 @@ export function getMarketingIntegrations(): MarketingIntegrations {
       patientPortalUrl: String(parsed.patientPortalUrl || defaults.patientPortalUrl || ''),
       pharmacyUrl,
       videoVisitUrl: String(parsed.videoVisitUrl || defaults.videoVisitUrl || ''),
+      fulfillmentPartnerName:
+        String(parsed.fulfillmentPartnerName ?? defaults.fulfillmentPartnerName).trim() || defaults.fulfillmentPartnerName,
+      catalogVenmoPayUrl:
+        String(parsed.catalogVenmoPayUrl ?? defaults.catalogVenmoPayUrl).trim() || defaults.catalogVenmoPayUrl,
+      paymentProcessorsNote: String(parsed.paymentProcessorsNote ?? defaults.paymentProcessorsNote ?? ''),
     }
     const stripPbHome =
       /^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(String(parsed.bookingUrl || '').trim()) && bookingUrl === ''
+    const needsCompatWrite =
+      typeof (parsed as Partial<MarketingIntegrations>).fulfillmentPartnerName !== 'string' ||
+      typeof (parsed as Partial<MarketingIntegrations>).catalogVenmoPayUrl !== 'string' ||
+      typeof (parsed as Partial<MarketingIntegrations>).paymentProcessorsNote !== 'string'
     // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking".
     if (
+      needsCompatWrite ||
       (String(parsed.pharmacyUrl || '').includes('example.com') && pharmacyUrl === '') ||
       stripPbHome
     ) {

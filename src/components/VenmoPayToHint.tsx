@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 
 import { CATALOG_VENMO } from '../config/provider'
+import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 
 type Props = {
   style?: CSSProperties
@@ -9,6 +10,7 @@ type Props = {
 }
 
 export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
+  const payUrl = resolvedCatalogVenmoPayUrl()
   if (variant === 'panel') {
     return (
       <div className="venmoPayToHintPanel" style={style}>
@@ -17,7 +19,7 @@ export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
           Use Venmo only after your care team confirms the amount and who should receive payment for this order.
         </p>
         <a
-          href={CATALOG_VENMO.payUrl}
+          href={payUrl}
           className="venmoPayToHintPanelBtn btn btnPrimary"
           target="_blank"
           rel="noopener noreferrer"
@@ -35,7 +37,7 @@ export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
       style={{ fontSize: 13, lineHeight: 1.5, marginTop: 10, marginBottom: 0, ...style }}
     >
       <strong>Venmo</strong> — pay only when the practice confirms amount and recipient.{' '}
-      <a href={CATALOG_VENMO.payUrl} target="_blank" rel="noopener noreferrer">
+      <a href={payUrl} target="_blank" rel="noopener noreferrer">
         Pay here
       </a>{' '}
       <span className="muted">({CATALOG_VENMO.handle})</span>

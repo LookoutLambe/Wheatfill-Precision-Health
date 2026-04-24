@@ -1,5 +1,5 @@
 import brettPortrait from '../assets/brett.png'
-import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
 export default function About() {
   return (
@@ -28,7 +28,7 @@ export default function About() {
             {'\n\n'}
             At Wheatfill Precision Health, Brett delivers a precision-based, patient-centered
             approach focused on proactive optimization rather than reactive care. He is contracted
-            with {CONTRACTED_PHARMACY_NAME} for compounding catalog and fulfillment where
+            with {resolvedFulfillmentPharmacyName()} for compounding catalog and fulfillment where
             applicable. His clinical focus includes metabolic health, body composition, and
             long-term wellness, utilizing evidence-based therapies such as GLP-1 medications, with
             plans to incorporate advanced peptide therapies as they become available.

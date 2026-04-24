@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Shell from './components/Shell'
 import ProviderShell from './components/ProviderShell'
@@ -31,18 +32,39 @@ import MarketingProviderDemoDashboard from './pages/MarketingProviderDemoDashboa
 import MarketingProviderSecurity from './pages/MarketingProviderSecurity'
 import ProviderVbmsWorkspace from './pages/ProviderVbmsWorkspace'
 
-function MarketingRedirectToApp() {
-  const { pathname, search, hash } = useLocation()
-  if (!APP_URL) return <Navigate to="/" replace />
-  const base = APP_URL.replace(/\/$/, '')
-  return <Navigate to={`${base}${pathname}${search}${hash}`} replace />
+/** React Router `Navigate` must not receive a full `https://…` string — it breaks routing (white screen). */
+function MarketingLeaveToFullApp({ path }: { path: string }) {
+  const base = (APP_URL || '').replace(/\/$/, '')
+  useEffect(() => {
+    if (!base) return
+    try {
+      if (typeof window !== 'undefined' && new URL(base).origin === window.location.origin) {
+        return
+      }
+    } catch {
+      return
+    }
+    window.location.replace(`${base}${path.startsWith('/') ? path : `/${path}`}`)
+  }, [base, path])
+  if (!base) return <Navigate to="/" replace />
+  try {
+    if (typeof window !== 'undefined' && new URL(base).origin === window.location.origin) {
+      return <Navigate to="/" replace />
+    }
+  } catch {
+    return <Navigate to="/" replace />
+  }
+  return (
+    <p className="muted" style={{ padding: 24 }}>
+      Opening the practice app…
+    </p>
+  )
 }
 
 export default function App() {
   if (MARKETING_ONLY) {
     // Marketing-only build: no PHI routes on GitHub Pages.
     // Allow a local "provider admin" (links only) with a test login.
-    const toApp = (path: string) => (APP_URL ? `${APP_URL}${path}` : '/')
     return (
       <Routes>
         <Route element={<Shell />}>
@@ -55,14 +77,14 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
 
           <Route path="/book" element={<BookOnline />} />
-          <Route path="/pharmacy" element={<MarketingRedirectToApp />} />
-          <Route path="/pharmacy/:slug" element={<MarketingRedirectToApp />} />
-          <Route path="/order-now" element={<MarketingRedirectToApp />} />
-          <Route path="/order-now/:slug/summary" element={<MarketingRedirectToApp />} />
-          <Route path="/order-now/:slug" element={<MarketingRedirectToApp />} />
-          <Route path="/signin" element={<Navigate to={toApp('/signin')} replace />} />
-          <Route path="/patient" element={<Navigate to={toApp('/patient')} replace />} />
-          <Route path="/patient/login" element={<Navigate to={toApp('/patient/login')} replace />} />
+          <Route path="/order-now" element={<PharmacyOptions />} />
+          <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
+          <Route path="/order-now/:slug" element={<PharmacyPartner />} />
+          <Route path="/pharmacy" element={<Navigate to="/order-now" replace />} />
+          <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
+          <Route path="/signin" element={<MarketingLeaveToFullApp path="/signin" />} />
+          <Route path="/patient" element={<MarketingLeaveToFullApp path="/patient" />} />
+          <Route path="/patient/login" element={<MarketingLeaveToFullApp path="/patient/login" />} />
         </Route>
 
         <Route path="/provider/login" element={<MarketingProviderLogin />} />

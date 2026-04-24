@@ -1,5 +1,6 @@
 import type { Organization } from '@medplum/fhirtypes'
 import type { MedplumClient } from '@medplum/core'
+import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
 
 const EXT_BASE = 'https://wheatfillprecisionhealth.com/fhir/StructureDefinition'
 
@@ -8,34 +9,55 @@ export type PracticeIntegrations = {
   patientPortalUrl: string
   pharmacyUrl: string
   videoVisitUrl: string
+  fulfillmentPartnerName: string
+  catalogVenmoPayUrl: string
+  paymentProcessorsNote: string
 }
+
+type IntegrationUrlKey = 'bookingUrl' | 'patientPortalUrl' | 'pharmacyUrl' | 'videoVisitUrl' | 'catalogVenmoPayUrl'
 
 export function readIntegrations(org?: Organization | null): PracticeIntegrations {
   const ext = org?.extension || []
-  const get = (name: keyof PracticeIntegrations) =>
+  const getUrl = (name: IntegrationUrlKey) =>
     (ext.find((e) => e.url === `${EXT_BASE}/${name}`) as any)?.valueUrl?.toString().trim() || ''
+  const getString = (name: 'fulfillmentPartnerName' | 'paymentProcessorsNote') => {
+    const row = ext.find((e) => e.url === `${EXT_BASE}/${name}`) as any
+    const s = row?.valueString?.toString().trim() || row?.valueUrl?.toString().trim() || ''
+    return s
+  }
   return {
-    bookingUrl: get('bookingUrl'),
-    patientPortalUrl: get('patientPortalUrl'),
-    pharmacyUrl: get('pharmacyUrl'),
-    videoVisitUrl: get('videoVisitUrl'),
+    bookingUrl: getUrl('bookingUrl'),
+    patientPortalUrl: getUrl('patientPortalUrl'),
+    pharmacyUrl: getUrl('pharmacyUrl'),
+    videoVisitUrl: getUrl('videoVisitUrl'),
+    fulfillmentPartnerName: getString('fulfillmentPartnerName') || CONTRACTED_PHARMACY_NAME,
+    catalogVenmoPayUrl: getUrl('catalogVenmoPayUrl') || CATALOG_VENMO.payUrl,
+    paymentProcessorsNote: getString('paymentProcessorsNote'),
   }
 }
 
 export function writeIntegrations(org: Organization, next: PracticeIntegrations): Organization {
   const keep = (org.extension || []).filter((e) => !String(e.url || '').startsWith(`${EXT_BASE}/`))
-  const mk = (name: keyof PracticeIntegrations, value: string) =>
+  const mkUrl = (name: IntegrationUrlKey, value: string) =>
     value.trim()
       ? [{ url: `${EXT_BASE}/${name}`, valueUrl: value.trim() } as any]
       : []
+  const mkString = (name: 'fulfillmentPartnerName' | 'paymentProcessorsNote', value: string) =>
+    value.trim() ? ([{ url: `${EXT_BASE}/${name}`, valueString: value.trim() }] as any[]) : []
   return {
     ...org,
     extension: [
       ...keep,
-      ...mk('bookingUrl', next.bookingUrl),
-      ...mk('patientPortalUrl', next.patientPortalUrl),
-      ...mk('pharmacyUrl', next.pharmacyUrl),
-      ...mk('videoVisitUrl', next.videoVisitUrl),
+      ...mkUrl('bookingUrl', next.bookingUrl),
+      ...mkUrl('patientPortalUrl', next.patientPortalUrl),
+      ...mkUrl('pharmacyUrl', next.pharmacyUrl),
+      ...mkUrl('videoVisitUrl', next.videoVisitUrl),
+      ...mkString(
+        'fulfillmentPartnerName',
+        next.fulfillmentPartnerName.trim() === CONTRACTED_PHARMACY_NAME ? '' : next.fulfillmentPartnerName,
+      ),
+      ...mkUrl('catalogVenmoPayUrl', next.catalogVenmoPayUrl.trim() === CATALOG_VENMO.payUrl ? '' : next.catalogVenmoPayUrl),
+      ...mkString('paymentProcessorsNote', next.paymentProcessorsNote),
     ],
   }
 }

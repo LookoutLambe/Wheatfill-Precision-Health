@@ -11,6 +11,7 @@ import {
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { CATALOG_VENMO, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES, PROVIDER_NPI } from '../config/provider'
+import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
 export default function Shell() {
@@ -58,6 +59,7 @@ export default function Shell() {
 
   const appOrderCatalog = integ?.pharmacyUrl || (APP_URL ? `${APP_URL}/order-now` : internal('/order-now'))
   const appPatient = integ?.patientPortalUrl || (APP_URL ? `${APP_URL}/patient` : internal('/patient'))
+  const catalogVenmoPayUrl = resolvedCatalogVenmoPayUrl()
   const states = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
 
   return (
@@ -193,10 +195,10 @@ export default function Shell() {
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
             <div className="footerFineprint">
               Catalog Venmo (only as instructed):{' '}
-              <a href={CATALOG_VENMO.payUrl} target="_blank" rel="noopener noreferrer">
+              <a href={catalogVenmoPayUrl} target="_blank" rel="noopener noreferrer">
                 Pay here {CATALOG_VENMO.handle}
               </a>{' '}
-              <span className="muted">({CATALOG_VENMO.payUrl})</span>. Patient portal: Practice Better.
+              <span className="muted">({catalogVenmoPayUrl})</span>. Patient portal: Practice Better.
             </div>
             <div className="footerFineprint">
               <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>

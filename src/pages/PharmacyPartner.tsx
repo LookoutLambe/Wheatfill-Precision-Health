@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from '../components/CatalogVialThumb'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { CONTRACTED_PHARMACY_NAME, PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -50,7 +51,7 @@ export default function PharmacyPartner() {
         if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
           setPartner({
             slug,
-            name: CONTRACTED_PHARMACY_NAME,
+            name: resolvedFulfillmentPharmacyName(),
             products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
               sku: p.sku,
               name: p.name,
@@ -133,7 +134,7 @@ export default function PharmacyPartner() {
             {isPrimaryCatalog ? (
               <>
                 Add vials to your cart, then open <b>View Cart</b> for a full summary. You are ordering through
-                our practice—we coordinate preferred pricing and fulfillment with {CONTRACTED_PHARMACY_NAME} when
+                our practice—we coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
                 medication is prescribed, and your care team can resolve order issues on our side. For now, payment
                 is via <b>Venmo</b> after you submit from the summary page—the practice follows up with amount and
                 pay-to details.

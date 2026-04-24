@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { APP_URL } from '../config/mode'
 import {
   getMarketingProviderLoginDisplay,
   getMarketingIntegrations,
@@ -24,7 +25,10 @@ export default function MarketingProviderAdmin() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
-          <p className="muted pageSubtitle">Configure booking, portal, Order Now Catalog, and video links.</p>
+          <p className="muted pageSubtitle">
+            Configure booking, portal, Order Now Catalog, video, fulfillment partner name, catalog Venmo link, and
+            optional payment-rail notes.
+          </p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
@@ -92,6 +96,42 @@ export default function MarketingProviderAdmin() {
           </label>
         </div>
 
+        <div className="formRow" style={{ marginTop: 12 }}>
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Fulfillment partner name (patient-facing, e.g. compounding pharmacy)
+            </div>
+            <input
+              className="input"
+              value={form.fulfillmentPartnerName}
+              onChange={(e) => setForm((p) => ({ ...p, fulfillmentPartnerName: e.target.value }))}
+            />
+          </label>
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Catalog Venmo pay link (Venmo profile or pay link after amount is confirmed)
+            </div>
+            <input
+              className="input"
+              value={form.catalogVenmoPayUrl}
+              onChange={(e) => setForm((p) => ({ ...p, catalogVenmoPayUrl: e.target.value }))}
+            />
+          </label>
+        </div>
+
+        <label style={{ display: 'block', marginTop: 12 }}>
+          <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+            Payment processors note (Stripe/Clover — reference only on this marketing build; configure in full app)
+          </div>
+          <textarea
+            className="input"
+            rows={3}
+            value={form.paymentProcessorsNote}
+            onChange={(e) => setForm((p) => ({ ...p, paymentProcessorsNote: e.target.value }))}
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+        </label>
+
         {saved ? <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>Saved.</div> : null}
 
         <div className="btnRow" style={{ marginTop: 12 }}>
@@ -105,6 +145,9 @@ export default function MarketingProviderAdmin() {
                 patientPortalUrl: form.patientPortalUrl.trim(),
                 pharmacyUrl: form.pharmacyUrl.trim(),
                 videoVisitUrl: form.videoVisitUrl.trim(),
+                fulfillmentPartnerName: form.fulfillmentPartnerName.trim(),
+                catalogVenmoPayUrl: form.catalogVenmoPayUrl.trim(),
+                paymentProcessorsNote: form.paymentProcessorsNote.trim(),
               })
               setSaved(true)
               setTimeout(() => setSaved(false), 1500)
@@ -174,7 +217,8 @@ export default function MarketingProviderAdmin() {
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
             Opens your patient catalog. Orders run through the practice; patients submit from the summary page and get
-            Venmo payment instructions from the office. Stripe/Clover can be wired in later if you choose.
+            Venmo payment instructions from the office. Fulfillment copy references <b>{form.fulfillmentPartnerName.trim() || 'your pharmacy'}</b>.
+            Stripe/Clover: see Payments in the full practice app when deployed.
           </p>
           <div className="divider" />
           <a
@@ -215,6 +259,60 @@ export default function MarketingProviderAdmin() {
           >
             {form.videoVisitUrl.trim() ? 'Open video visit room' : 'Add video URL above'}
           </a>
+        </section>
+
+        <section className="card cardAccentNavy">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Catalog Venmo</h2>
+            <span className="pill">Pay link</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Same link patients see in the footer and checkout hints. Only pay after your team confirms the amount.
+          </p>
+          <div className="divider" />
+          <a
+            className="btn btnAccent"
+            style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            href={form.catalogVenmoPayUrl.trim() || '#'}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!form.catalogVenmoPayUrl.trim()}
+            onClick={(e) => {
+              if (!form.catalogVenmoPayUrl.trim()) e.preventDefault()
+            }}
+          >
+            {form.catalogVenmoPayUrl.trim() ? 'Open Venmo pay link' : 'Add Venmo URL above'}
+          </a>
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Card rails</h2>
+            <span className="pill pillRed">Stripe / Clover</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            {form.paymentProcessorsNote.trim()
+              ? form.paymentProcessorsNote.trim()
+              : 'Optional: note how you want Stripe vs Clover used. Connect accounts and toggles live in the full app under Payments.'}
+          </p>
+          <div className="divider" />
+          {APP_URL ? (
+            <a
+              className="btn"
+              style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+              href={`${APP_URL.replace(/\/$/, '')}/provider/payments`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open Payments (full app)
+            </a>
+          ) : (
+            <p className="muted" style={{ margin: 0, fontSize: 13 }}>
+              Set <code className="muted">VITE_APP_URL</code> on the marketing build to deep-link the hosted practice app.
+            </p>
+          )}
         </section>
       </div>
     </div>

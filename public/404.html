@@ -9,7 +9,12 @@
       // store the path the user tried to load, then redirect to the app root.
       (function () {
         var l = window.location;
-        var base = '/Wheatfill-Precision-Health/';
+        var h = l.hostname;
+        if (l.protocol === 'http:' && h && h !== 'localhost' && h !== '127.0.0.1') {
+          l.replace(l.href.replace(/^http:/, 'https:'));
+          return;
+        }
+        var base = '/';
         sessionStorage.setItem(
           'wph_redirect',
           l.pathname + l.search + l.hash
