@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   createOrderRequest,
   getPortalState,
   subscribePortalState,
+  type Glp1Medication,
   type OrderCategory,
 } from '../data/portalStore'
 
 export default function OrderingPortal() {
   const [patientName, setPatientName] = useState('')
   const [category, setCategory] = useState<OrderCategory>('GLP-1')
+  const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [request, setRequest] = useState('')
   const [state, setState] = useState(() => getPortalState())
   const [notice, setNotice] = useState<string | null>(null)
@@ -21,11 +24,16 @@ export default function OrderingPortal() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div>
-        <h1 style={{ margin: 0 }}>Ordering Portal</h1>
-        <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
-          Request refills, labs, or questions and track status updates from the provider.
-        </p>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Ordering Portal</h1>
+          <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+            Request refills, labs, or questions and track status updates from the provider.
+          </p>
+        </div>
+        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+          Home
+        </Link>
       </div>
 
       <div className="cardGrid">
@@ -65,6 +73,27 @@ export default function OrderingPortal() {
             </label>
           </div>
 
+          {category === 'GLP-1' ? (
+            <div className="formRow" style={{ marginTop: 12 }}>
+              <label>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  GLP-1
+                </div>
+                <select
+                  className="select"
+                  value={glp1}
+                  onChange={(e) => setGlp1(e.target.value as Glp1Medication)}
+                >
+                  <option>Semaglutide</option>
+                  <option>Tirzepatide</option>
+                  <option>Liraglutide</option>
+                  <option>Not sure</option>
+                </select>
+              </label>
+              <div />
+            </div>
+          ) : null}
+
           <label style={{ display: 'block', marginTop: 12 }}>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
               Request
@@ -84,7 +113,12 @@ export default function OrderingPortal() {
               disabled={!patientName.trim() || !request.trim()}
               style={{ opacity: !patientName.trim() || !request.trim() ? 0.6 : 1 }}
               onClick={() => {
-                createOrderRequest({ patientName, category, request })
+                createOrderRequest({
+                  patientName,
+                  category,
+                  item: category === 'GLP-1' ? glp1 : undefined,
+                  request,
+                })
                 setRequest('')
                 setNotice('Request submitted (prototype).')
                 setTimeout(() => setNotice(null), 1600)
@@ -123,6 +157,7 @@ export default function OrderingPortal() {
                 <tr>
                   <th>Submitted</th>
                   <th>Category</th>
+                  <th>Item</th>
                   <th>Request</th>
                   <th>Status</th>
                 </tr>
@@ -138,6 +173,7 @@ export default function OrderingPortal() {
                       })}
                     </td>
                     <td>{o.category}</td>
+                    <td className="muted">{o.item || '—'}</td>
                     <td>{o.request}</td>
                     <td>
                       <span className="pill">{o.status}</span>

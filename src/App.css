@@ -320,6 +320,31 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+
+.footerLinks {
+  display: inline-flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.footerLinks a {
+  color: rgba(31, 41, 55, 0.72);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.footerLinks a:hover {
+  border-color: var(--accent-border);
+  background: rgba(10, 30, 63, 0.05);
+}
+
+.footerLinks a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
 .counter {
   font-size: 16px;
   padding: 5px 10px;

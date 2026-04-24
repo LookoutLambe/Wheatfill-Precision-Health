@@ -15,6 +15,7 @@ export default function ProviderShell() {
           </div>
 
           <nav className="navLinks" aria-label="Provider navigation">
+            <NavLink to="/">Home</NavLink>
             <NavLink to="/provider">Dashboard</NavLink>
             <button
               type="button"

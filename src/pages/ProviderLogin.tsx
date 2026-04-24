@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { isProviderAuthed, setProviderAuthed } from '../provider/providerAuth'
 import '../provider/vbmsProvider.css'
 
@@ -26,6 +26,7 @@ export default function ProviderLogin() {
       <header className="vbmsTopbar">
         <div className="vbmsBrand">WPH</div>
         <nav className="vbmsMenu" aria-label="Provider login navigation">
+          <Link to="/">Home</Link>
           <span>Provider Portal</span>
         </nav>
         <div className="vbmsTopRight">

@@ -49,11 +49,16 @@ export default function BookOnline() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div>
-        <h1 style={{ margin: 0 }}>Book Online</h1>
-        <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
-          Choose an appointment type and select an available time. (Prototype availability)
-        </p>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Book Online</h1>
+          <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+            Choose an appointment type and select an available time. (Prototype availability)
+          </p>
+        </div>
+        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+          Home
+        </Link>
       </div>
 
       <div className="cardGrid">

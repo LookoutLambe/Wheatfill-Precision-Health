@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   createAppointmentRequest,
   createOrderRequest,
   getPortalState,
   subscribePortalState,
   type AppointmentType,
+  type Glp1Medication,
   type OrderCategory,
 } from '../data/portalStore'
 
@@ -16,6 +18,7 @@ export default function PatientPortal() {
   const [apptNotes, setApptNotes] = useState('')
 
   const [orderCategory, setOrderCategory] = useState<OrderCategory>('GLP-1')
+  const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [orderRequest, setOrderRequest] = useState('')
 
   const [state, setState] = useState(() => getPortalState())
@@ -40,7 +43,12 @@ export default function PatientPortal() {
             Prototype scheduling + ordering (no real appointments or prescriptions).
           </p>
         </div>
-        <span className="pill">Telehealth</span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Home
+          </Link>
+          <span className="pill">Telehealth</span>
+        </div>
       </div>
 
       <div className="cardGrid">
@@ -171,18 +179,34 @@ export default function PatientPortal() {
               </select>
             </label>
 
-            <label>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Request
-              </div>
-              <input
-                className="input"
-                value={orderRequest}
-                onChange={(e) => setOrderRequest(e.target.value)}
-                placeholder="Example: refill, lab panel, questions…"
-              />
-            </label>
+            {orderCategory === 'GLP-1' ? (
+              <label>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  GLP-1
+                </div>
+                <select className="select" value={glp1} onChange={(e) => setGlp1(e.target.value as Glp1Medication)}>
+                  <option>Semaglutide</option>
+                  <option>Tirzepatide</option>
+                  <option>Liraglutide</option>
+                  <option>Not sure</option>
+                </select>
+              </label>
+            ) : (
+              <div />
+            )}
           </div>
+
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Request
+            </div>
+            <input
+              className="input"
+              value={orderRequest}
+              onChange={(e) => setOrderRequest(e.target.value)}
+              placeholder="Example: refill, lab panel, questions…"
+            />
+          </label>
 
           <div style={{ marginTop: 12 }}>
             <button
@@ -192,6 +216,7 @@ export default function PatientPortal() {
                 createOrderRequest({
                   patientName,
                   category: orderCategory,
+                  item: orderCategory === 'GLP-1' ? glp1 : undefined,
                   request: orderRequest,
                 })
                 setOrderRequest('')

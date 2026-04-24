@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   clearPortalState,
   getPortalState,
@@ -43,7 +44,12 @@ export default function ProviderPortal() {
             Prototype queue for consults, follow-ups, and ordering.
           </p>
         </div>
-        <span className="pill pillRed">Provider</span>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Home
+          </Link>
+          <span className="pill pillRed">Provider</span>
+        </div>
       </div>
 
       <section className="card">
@@ -240,6 +246,7 @@ export default function ProviderPortal() {
                 <tr>
                   <th>Patient</th>
                   <th>Category</th>
+                  <th>Item</th>
                   <th>Request</th>
                   <th>Status</th>
                 </tr>
@@ -249,6 +256,7 @@ export default function ProviderPortal() {
                   <tr key={o.id}>
                     <td>{o.patientName}</td>
                     <td>{o.category}</td>
+                    <td className="muted">{o.item || '—'}</td>
                     <td>{o.request}</td>
                     <td>
                       <select

@@ -3,6 +3,7 @@ export type AppointmentStatus = 'Requested' | 'Scheduled' | 'Completed'
 
 export type OrderCategory = 'GLP-1' | 'Labs' | 'Supplements' | 'Other'
 export type OrderStatus = 'New' | 'In Review' | 'Ordered' | 'Closed'
+export type Glp1Medication = 'Semaglutide' | 'Tirzepatide' | 'Liraglutide' | 'Not sure'
 
 export type AppointmentRequest = {
   id: string
@@ -21,6 +22,7 @@ export type OrderRequest = {
   id: string
   patientName: string
   category: OrderCategory
+  item?: string
   request: string
   status: OrderStatus
   createdAt: string
@@ -202,6 +204,7 @@ export function updateAppointmentStatus(appointmentId: string, status: Appointme
 export function createOrderRequest(input: {
   patientName: string
   category: OrderCategory
+  item?: string
   request: string
 }) {
   const state = readState()
@@ -209,6 +212,7 @@ export function createOrderRequest(input: {
     id: uid('order'),
     patientName: input.patientName.trim(),
     category: input.category,
+    item: input.item?.trim() || undefined,
     request: input.request.trim(),
     status: 'New',
     createdAt: nowIso(),
