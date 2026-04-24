@@ -316,6 +316,120 @@ html.pharmacyCartOpen body {
   box-sizing: border-box;
 }
 
+/* —— Advanced peptide therapy (/peptides) —— */
+.peptidePage {
+  width: 100%;
+  max-width: min(720px, 100%);
+  margin-inline: auto;
+  box-sizing: border-box;
+  gap: 28px;
+}
+
+.peptideHero {
+  padding-bottom: 4px;
+}
+
+.peptideEyebrow {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(31, 41, 55, 0.55);
+}
+
+.peptideTagline {
+  margin: 0 0 16px;
+  font-size: clamp(17px, 2.4vw, 20px);
+  font-style: italic;
+  color: var(--text-h);
+  line-height: 1.45;
+}
+
+.peptideHeroBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.peptideDisclaimerList {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  line-height: 1.5;
+}
+
+.peptideSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.peptideSectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 14px;
+}
+
+.peptideSectionTitle {
+  margin: 0;
+  font-size: clamp(22px, 3.2vw, 28px);
+  font-weight: 600;
+  color: var(--text-h);
+  letter-spacing: -0.02em;
+}
+
+.peptideSectionLead {
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+.peptidePortfolioGrid {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.peptidePortfolioGrid > .card {
+  grid-column: 1 / -1;
+}
+
+.peptideAccordionCard .cardTitle h3 {
+  font-family: var(--heading);
+  font-weight: 600;
+}
+
+.peptideStandardList {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.peptideWaitlistFineprint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.peptideCheckboxRow {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.peptideCheckboxRow input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
 .pageHeaderRow {
   display: flex;
   align-items: baseline;

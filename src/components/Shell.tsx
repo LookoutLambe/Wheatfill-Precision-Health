@@ -116,6 +116,9 @@ export default function Shell() {
             <NavLink to="/pricing" onClick={closeMenu}>
               Pricing
             </NavLink>
+            <NavLink to="/peptides" onClick={closeMenu}>
+              Peptides
+            </NavLink>
             {MARKETING_ONLY ? (
               <a href={appBook} style={{ textDecoration: 'none' }} onClick={closeMenu}>
                 Book Online
@@ -163,6 +166,7 @@ export default function Shell() {
             <div className="footerLinks" aria-label="Footer navigation">
               <NavLink to="/about">About</NavLink>
               <NavLink to="/pricing">Pricing</NavLink>
+              <NavLink to="/peptides">Peptides</NavLink>
               {MARKETING_ONLY ? (
                 <a href={appBook} style={{ textDecoration: 'none' }}>
                   Book Online

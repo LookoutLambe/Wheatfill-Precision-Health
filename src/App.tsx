@@ -5,6 +5,7 @@ import ProviderShell from './components/ProviderShell'
 import ProviderGuard from './components/ProviderGuard'
 import PatientGuard from './components/PatientGuard'
 import Landing from './pages/Landing'
+import PeptideTherapy from './pages/PeptideTherapy'
 import About from './pages/About'
 import Pricing from './pages/Pricing'
 import Contact from './pages/Contact'
@@ -46,6 +47,7 @@ export default function App() {
       <Routes>
         <Route element={<Shell />}>
           <Route path="/" element={<Landing />} />
+          <Route path="/peptides" element={<PeptideTherapy />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/ordering" element={<OrderingPortal />} />
@@ -77,6 +79,7 @@ export default function App() {
     <Routes>
       <Route element={<Shell />}>
         <Route path="/" element={<Landing />} />
+        <Route path="/peptides" element={<PeptideTherapy />} />
         <Route path="/about" element={<About />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/book" element={<BookOnline />} />
