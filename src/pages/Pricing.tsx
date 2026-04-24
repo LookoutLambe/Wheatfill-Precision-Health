@@ -18,7 +18,7 @@ export default function Pricing() {
         <div className="divider" />
 
       <div className="cardGrid">
-        <section className="card" style={{ gridColumn: 'span 6' }}>
+        <section className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>New Patient</h2>
             <span className="pill pillRed">$110</span>
@@ -39,7 +39,7 @@ export default function Pricing() {
           </Link>
         </section>
 
-        <section className="card" style={{ gridColumn: 'span 6' }}>
+        <section className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Established patient</h2>
             <span className="pill">$85</span>
@@ -73,7 +73,7 @@ export default function Pricing() {
         <div className="divider" />
 
         <div className="cardGrid">
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Semaglutide</h2>
               <span className="pill">$180+</span>
@@ -82,7 +82,7 @@ export default function Pricing() {
               Starting at <b>$180</b>
             </p>
           </div>
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentRed" style={{ gridColumn: 'span 6' }}>
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Tirzepatide</h2>
               <span className="pill">$260+</span>
@@ -115,7 +115,7 @@ export default function Pricing() {
         <div className="divider" />
 
         <div className="cardGrid" style={{ marginTop: 12 }}>
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               Does insurance cover these services?
             </div>
@@ -127,7 +127,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               How often will I need follow-up appointments?
             </div>
@@ -140,7 +140,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>Can medication prices change?</div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
@@ -151,7 +151,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               What payment methods do you accept?
             </div>
