@@ -114,11 +114,12 @@ export default function Pricing() {
         </div>
         <div className="divider" />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
+        <div className="cardGrid" style={{ marginTop: 12 }}>
+          <div className="card" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               Does insurance cover these services?
             </div>
+            <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
               Most insurance does not cover weight loss medications or telehealth consultations for
               weight management. We provide transparent pricing so you know exactly what to expect.
@@ -126,10 +127,11 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div>
+          <div className="card" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               How often will I need follow-up appointments?
             </div>
+            <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
               Follow-up appointments are typically scheduled for your first refill to monitor your
               progress, adjust medications as needed, and provide ongoing support. The frequency may
@@ -138,8 +140,9 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div>
+          <div className="card" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>Can medication prices change?</div>
+            <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
               Medication pricing may vary based on dosage levels as you progress through your
               treatment plan, but it is completely your decision on which size of medication you can
@@ -148,10 +151,11 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div>
+          <div className="card" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               What payment methods do you accept?
             </div>
+            <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
               We accept Cash App, all major credit cards, debit cards, and HSA/FSA cards for both
               consultations and medications.
