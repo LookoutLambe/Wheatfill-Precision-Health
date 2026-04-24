@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  addBlackoutDate,
   clearPortalState,
   getPortalState,
+  removeBlackoutDate,
   scheduleAppointment,
   subscribePortalState,
   updateAppointmentStatus,
@@ -19,12 +21,15 @@ export default function ProviderPortal() {
 
   const appts = state.appointments
   const orders = state.orders
+  const blackoutDates = state.blackoutDates
 
   const [newPatientName, setNewPatientName] = useState('')
   const [newType, setNewType] = useState<AppointmentType>('New Patient Consultation')
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [newNotes, setNewNotes] = useState('')
+
+  const [blackoutDate, setBlackoutDate] = useState('')
 
   const requestedAppts = useMemo(
     () => appts.filter((a) => a.status === 'Requested'),
@@ -147,6 +152,72 @@ export default function ProviderPortal() {
             Reset prototype data
           </button>
         </div>
+      </section>
+
+      <section className="card">
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Availability / Time Off</h2>
+          <span className="pill pillRed">Blackout</span>
+        </div>
+        <p className="muted" style={{ marginTop: 6 }}>
+          Close specific dates. Closed dates disappear from “Book Online”.
+        </p>
+        <div className="divider" />
+
+        <div className="formRow">
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Blackout date
+            </div>
+            <input
+              className="input"
+              type="date"
+              value={blackoutDate}
+              onChange={(e) => setBlackoutDate(e.target.value)}
+            />
+          </label>
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btnAccent"
+              style={{ width: '100%' }}
+              disabled={!blackoutDate}
+              onClick={() => {
+                addBlackoutDate(blackoutDate)
+                setBlackoutDate('')
+              }}
+            >
+              Close date
+            </button>
+          </div>
+        </div>
+
+        <div className="divider" />
+
+        {blackoutDates.length === 0 ? (
+          <p className="muted">No closed dates.</p>
+        ) : (
+          <table className="table" aria-label="Blackout dates">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {blackoutDates.map((d) => (
+                <tr key={d}>
+                  <td className="muted">{d}</td>
+                  <td>
+                    <button type="button" className="btn" onClick={() => removeBlackoutDate(d)}>
+                      Re-open
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <div className="cardGrid">

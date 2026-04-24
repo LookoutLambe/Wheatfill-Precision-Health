@@ -32,6 +32,7 @@ type PortalState = {
   appointments: AppointmentRequest[]
   orders: OrderRequest[]
   bookedSlots: string[]
+  blackoutDates: string[]
 }
 
 const STORAGE_KEY = 'wph_portal_state_v1'
@@ -53,15 +54,16 @@ function uid(prefix: string) {
 function readState(): PortalState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { appointments: [], orders: [], bookedSlots: [] }
+    if (!raw) return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [] }
     const parsed = JSON.parse(raw) as PortalState
     return {
       appointments: Array.isArray(parsed.appointments) ? parsed.appointments : [],
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
       bookedSlots: Array.isArray(parsed.bookedSlots) ? parsed.bookedSlots : [],
+      blackoutDates: Array.isArray(parsed.blackoutDates) ? parsed.blackoutDates : [],
     }
   } catch {
-    return { appointments: [], orders: [], bookedSlots: [] }
+    return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [] }
   }
 }
 
@@ -118,6 +120,23 @@ export function isSlotBooked(date: string, time: string) {
   return state.bookedSlots.includes(slotKey(date, time))
 }
 
+export function isDateBlackout(date: string) {
+  const state = readState()
+  return state.blackoutDates.includes(date)
+}
+
+export function addBlackoutDate(date: string) {
+  const state = readState()
+  if (!date) return
+  if (state.blackoutDates.includes(date)) return
+  writeState({ ...state, blackoutDates: [date, ...state.blackoutDates].sort() })
+}
+
+export function removeBlackoutDate(date: string) {
+  const state = readState()
+  writeState({ ...state, blackoutDates: state.blackoutDates.filter((d) => d !== date) })
+}
+
 export function bookAppointment(input: {
   patientName: string
   type: AppointmentType
@@ -127,6 +146,9 @@ export function bookAppointment(input: {
 }) {
   const state = readState()
   const key = slotKey(input.date, input.time)
+  if (state.blackoutDates.includes(input.date)) {
+    return { ok: false as const, reason: 'That date is closed.' }
+  }
   if (state.bookedSlots.includes(key)) {
     return { ok: false as const, reason: 'Slot is already booked.' }
   }
@@ -228,6 +250,6 @@ export function updateOrderStatus(orderId: string, status: OrderStatus) {
 }
 
 export function clearPortalState() {
-  writeState({ appointments: [], orders: [], bookedSlots: [] })
+  writeState({ appointments: [], orders: [], bookedSlots: [], blackoutDates: [] })
 }
 

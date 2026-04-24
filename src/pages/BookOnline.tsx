@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  isDateBlackout,
   bookAppointment,
   isSlotBooked,
   subscribePortalState,
@@ -52,7 +53,10 @@ export default function BookOnline() {
 
   // "Forever" availability via progressive loading.
   const [rangeDays, setRangeDays] = useState(60)
-  const allSlots = useMemo(() => nextBusinessDaySlots(rangeDays), [rangeDays])
+  const allSlots = useMemo(
+    () => nextBusinessDaySlots(rangeDays).filter((s) => !isDateBlackout(s.date)),
+    [rangeDays],
+  )
   const grouped = useMemo(() => groupByDate(allSlots), [allSlots])
   const [selected, setSelected] = useState<Slot | null>(null)
   const [message, setMessage] = useState<string | null>(null)
