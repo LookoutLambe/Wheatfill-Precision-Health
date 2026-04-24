@@ -39,6 +39,21 @@ export default function MarketingProviderDashboard() {
       <div className="cardGrid">
         <section className="card cardAccentNavy">
           <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Demo dashboard</h2>
+            <span className="pill">VBMS</span>
+          </div>
+          <div className="divider" />
+          <p className="muted">
+            Use a full demo experience with sample patients, appointments, inbox, and orders.
+          </p>
+          <div className="divider" />
+          <Link to="/provider/demo" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
+            Open demo dashboard
+          </Link>
+        </section>
+
+        <section className="card cardAccentNavy">
+          <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Integrations</h2>
             <span className="pill pillRed">EHR</span>
           </div>
