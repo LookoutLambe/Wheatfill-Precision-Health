@@ -11,6 +11,8 @@ import Contact from './pages/Contact'
 import Privacy from './pages/Privacy'
 import BookOnline from './pages/BookOnline'
 import OrderingPortal from './pages/OrderingPortal'
+import PharmacyOptions from './pages/PharmacyOptions'
+import PharmacyPartner from './pages/PharmacyPartner'
 import PatientPortal from './pages/PatientPortal'
 import PatientLogin from './pages/PatientLogin'
 import ProviderLogin from './pages/ProviderLogin'
@@ -25,6 +27,8 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/book" element={<BookOnline />} />
         <Route path="/ordering" element={<OrderingPortal />} />
+        <Route path="/pharmacy" element={<PharmacyOptions />} />
+        <Route path="/pharmacy/:slug" element={<PharmacyPartner />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/patient/login" element={<PatientLogin />} />

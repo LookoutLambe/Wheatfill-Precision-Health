@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import {
-  createPatientAccount,
-  isPatientAuthed,
-  loginPatient,
-} from '../patient/patientAuth'
+import { apiPost } from '../api/client'
+import { isPatientAuthed, loginPatient } from '../patient/patientAuth'
 
 export default function PatientLogin() {
   const navigate = useNavigate()
@@ -271,23 +268,34 @@ export default function PatientLogin() {
                 navigate(redirectTo, { replace: true })
                 return
               }
-              const res = createPatientAccount({
-                username,
-                password,
-                firstName,
-                lastName,
-                birthdate,
-                email,
-                phone,
-                address1,
-                address2,
-                city,
-                state: stateProv,
-                postalCode,
-                country: 'US',
-              })
-              if (!res.ok) return setError(res.reason)
-              navigate(redirectTo, { replace: true })
+              ;(async () => {
+                try {
+                  const res = await apiPost<{ token: string }>(
+                    '/auth/signup',
+                    {
+                      role: 'patient',
+                      username,
+                      password,
+                      displayName: `${firstName} ${lastName}`.trim(),
+                      firstName,
+                      lastName,
+                      birthdate,
+                      email,
+                      phone,
+                      address1,
+                      address2,
+                      city,
+                      state: stateProv,
+                      postalCode,
+                      country: 'US',
+                    },
+                  )
+                  localStorage.setItem('wph_token_v1', res.token)
+                  navigate(redirectTo, { replace: true })
+                } catch (e: any) {
+                  setError(String(e?.message || e))
+                }
+              })()
             }}
           >
             {mode === 'login' ? 'Sign in' : 'Create account'}

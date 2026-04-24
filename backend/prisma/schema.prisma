@@ -68,6 +68,39 @@ enum SubscriptionStatus {
   incomplete
 }
 
+model PharmacyPartner {
+  id        String @id @default(cuid())
+  slug      String @unique
+  name      String
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  PharmacyProduct[]
+}
+
+model PharmacyProduct {
+  id        String @id @default(cuid())
+  partnerId String
+  partner   PharmacyPartner @relation(fields: [partnerId], references: [id])
+
+  sku       String
+  name      String
+  subtitle  String @default("")
+  strength  String @default("")
+  size      String @default("")
+  priceCents Int
+  currency  String @default("usd")
+  isActive  Boolean @default(true)
+  sortOrder Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([partnerId, sku])
+  @@index([partnerId, isActive, sortOrder])
+}
+
 model User {
   id           String   @id @default(cuid())
   role         Role
@@ -158,6 +191,21 @@ model Order {
   status     OrderStatus  @default(new)
   dosageNote String       @default("")
   providerNote String     @default("")
+  pharmacyPartnerId String?
+
+  // Shipping / consent (Warnock-style)
+  shippingAddress1 String @default("")
+  shippingAddress2 String @default("")
+  shippingCity     String @default("")
+  shippingState    String @default("")
+  shippingPostalCode String @default("")
+  shippingCountry  String @default("US")
+  shippingCents    Int    @default(0)
+  shippingInsuranceCents Int @default(0)
+  agreedToShippingTerms Boolean @default(false)
+  contactPermission Boolean @default(false)
+  signatureName String @default("")
+  signatureDate DateTime?
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   deletedAt  DateTime?
@@ -168,6 +216,24 @@ model Order {
   provider   User @relation("OrdersAsProvider", fields: [providerId], references: [id])
 
   payments   Payment[] @relation("PaymentOrder")
+
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order @relation(fields: [orderId], references: [id])
+
+  partnerSlug String
+  productSku  String
+  name        String
+  unitPriceCents Int
+  quantity   Int
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
 }
 
 model Payment {

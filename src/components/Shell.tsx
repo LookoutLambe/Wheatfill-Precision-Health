@@ -16,6 +16,7 @@ export default function Shell() {
             <NavLink to="/">Home</NavLink>
             <NavLink to="/pricing">Pricing</NavLink>
             <NavLink to="/book">Book Online</NavLink>
+            <NavLink to="/pharmacy">Pharmacy Options</NavLink>
             <NavLink to="/patient">Patient Portal</NavLink>
           </nav>
         </div>

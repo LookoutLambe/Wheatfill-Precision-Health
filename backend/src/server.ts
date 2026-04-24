@@ -4,6 +4,7 @@ import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
+import Stripe from 'stripe'
 
 import { prisma } from './db'
 import { hashPassword, verifyPassword } from './auth/password'
@@ -14,6 +15,12 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5176'
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_change_me'
 const JWT_ISSUER = process.env.JWT_ISSUER || 'wph-backend'
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
+const STRIPE_SUCCESS_URL = process.env.STRIPE_SUCCESS_URL || 'http://localhost:5176/patient'
+const STRIPE_CANCEL_URL = process.env.STRIPE_CANCEL_URL || 'http://localhost:5176/pharmacy'
+
+const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null
 
 const app = Fastify({
   logger: true,
@@ -39,6 +46,101 @@ app.get('/health', async () => {
 app.get('/v1/health', async () => {
   await prisma.$queryRaw`SELECT 1`
   return { ok: true }
+})
+
+async function ensurePharmacySeed() {
+  const existing = await prisma.pharmacyPartner.count()
+  if (existing > 0) return
+
+  const mv = await prisma.pharmacyPartner.create({
+    data: { slug: 'mountain-view', name: 'Mountain View Pharmacy' },
+  })
+  await prisma.pharmacyPartner.create({
+    data: { slug: 'strive', name: 'Strive Pharmacy' },
+  })
+
+  const products = [
+    { sku: 'TZ_12_5_2', name: 'Tirzepatide 12.5 mg/mL - 2 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 26000, sortOrder: 10 },
+    { sku: 'TZ_25_2', name: 'Tirzepatide 25 mg/mL - 2 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 43000, sortOrder: 20 },
+    { sku: 'TZ_25_3', name: 'Tirzepatide 25 mg/mL - 3 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 56000, sortOrder: 30 },
+    { sku: 'TZ_25_4', name: 'Tirzepatide 25 mg/mL - 4 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 66000, sortOrder: 40 },
+    { sku: 'SEMA_2_5_2', name: 'Semaglutide 2.5 mg/mL - 2 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 18000, sortOrder: 50 },
+    { sku: 'SEMA_5_2', name: 'Semaglutide 5 mg/mL - 2 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 24500, sortOrder: 60 },
+    { sku: 'SEMA_5_4', name: 'Semaglutide 5 mg/mL - 4 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 43000, sortOrder: 70 },
+  ]
+
+  await prisma.pharmacyProduct.createMany({
+    data: products.map((p) => ({ ...p, partnerId: mv.id, currency: 'usd' })),
+  })
+}
+
+app.get('/v1/pharmacies', async () => {
+  await ensurePharmacySeed()
+  const partners = await prisma.pharmacyPartner.findMany({
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+    select: { slug: true, name: true },
+  })
+  return { partners }
+})
+
+app.get('/v1/pharmacies/:slug', async (req, reply) => {
+  await ensurePharmacySeed()
+  const slug = (req.params as any).slug as string
+  const partner = await prisma.pharmacyPartner.findUnique({
+    where: { slug },
+    select: {
+      slug: true,
+      name: true,
+      isActive: true,
+      products: {
+        where: { isActive: true },
+        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+        select: { sku: true, name: true, subtitle: true, priceCents: true, currency: true },
+      },
+    },
+  })
+  if (!partner || !partner.isActive) return reply.notFound('Pharmacy not found.')
+  return { partner }
+})
+
+// Stripe webhook (kept unauthenticated)
+app.post('/v1/billing/webhook', async (req, reply) => {
+  if (!stripe || !STRIPE_WEBHOOK_SECRET) return reply.badRequest('Stripe not configured.')
+  const sig = req.headers['stripe-signature']
+  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Stripe signature.')
+
+  // Fastify default body parsing gives us an object; Stripe needs raw bytes.
+  // For now, we accept JSON events in dev if webhook secret is not used.
+  // Production should register a raw body parser for this route.
+  let event: Stripe.Event
+  try {
+    if (typeof req.body === 'string') {
+      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET)
+    } else {
+      event = req.body as Stripe.Event
+    }
+  } catch (e: any) {
+    return reply.badRequest(`Webhook error: ${String(e?.message || e)}`)
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const orderId = (session.metadata?.orderId as string | undefined) || ''
+    const paymentIntent = typeof session.payment_intent === 'string' ? session.payment_intent : ''
+    if (orderId) {
+      await prisma.payment.updateMany({
+        where: { stripeCheckoutSessionId: session.id },
+        data: { status: 'succeeded', stripePaymentIntentId: paymentIntent || undefined },
+      })
+      await prisma.order.updateMany({
+        where: { id: orderId },
+        data: { status: 'ordered' },
+      })
+    }
+  }
+
+  return { received: true }
 })
 
 const SignupBody = z.object({
@@ -173,6 +275,154 @@ await app.register(async (protectedScope) => {
         },
       })
       return { user: me }
+    },
+  )
+
+  const CreateOrderBody = z.object({
+    partnerSlug: z.string().min(2).max(80),
+    items: z
+      .array(
+        z.object({
+          sku: z.string().min(1).max(80),
+          quantity: z.number().int().min(1).max(20),
+        }),
+      )
+      .min(1),
+    agreedToShippingTerms: z.boolean(),
+    contactPermission: z.boolean(),
+    signatureName: z.string().min(2).max(120),
+    signatureDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/),
+    shippingInsurance: z.boolean().default(false),
+  })
+
+  protectedScope.post(
+    '/v1/patient/orders/pharmacy',
+    { preHandler: requireRole(['patient']) },
+    async (req, reply) => {
+      const body = CreateOrderBody.parse(req.body)
+      if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
+
+      const patient = await prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: {
+          id: true,
+          address1: true,
+          address2: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          country: true,
+        },
+      })
+      if (!patient) return reply.unauthorized('Invalid user.')
+
+      const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
+      if (!partner) return reply.notFound('Pharmacy not found.')
+
+      const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+      if (!provider) return reply.internalServerError('No provider configured.')
+
+      const products = await prisma.pharmacyProduct.findMany({
+        where: { partnerId: partner.id, isActive: true, sku: { in: body.items.map((i) => i.sku) } },
+        select: { sku: true, name: true, priceCents: true, currency: true },
+      })
+      const bySku = new Map(products.map((p) => [p.sku, p]))
+      for (const it of body.items) {
+        if (!bySku.has(it.sku)) return reply.badRequest(`Invalid item sku: ${it.sku}`)
+      }
+
+      const subtotal = body.items.reduce((sum, it) => sum + (bySku.get(it.sku)!.priceCents * it.quantity), 0)
+      const shippingCents = 0
+      const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
+      const total = subtotal + shippingCents + shippingInsuranceCents
+
+      const order = await prisma.order.create({
+        data: {
+          category: 'glp1',
+          item: 'Pharmacy',
+          request: `Pharmacy order: ${partner.name}`,
+          status: 'new',
+          pharmacyPartnerId: partner.id,
+          patientId: patient.id,
+          providerId: provider.id,
+          shippingAddress1: patient.address1 || '',
+          shippingAddress2: patient.address2 || '',
+          shippingCity: patient.city || '',
+          shippingState: patient.state || '',
+          shippingPostalCode: patient.postalCode || '',
+          shippingCountry: patient.country || 'US',
+          shippingCents,
+          shippingInsuranceCents,
+          agreedToShippingTerms: body.agreedToShippingTerms,
+          contactPermission: body.contactPermission,
+          signatureName: body.signatureName.trim(),
+          signatureDate: new Date(body.signatureDate),
+          items: {
+            create: body.items.map((it) => {
+              const p = bySku.get(it.sku)!
+              return {
+                partnerSlug: partner.slug,
+                productSku: p.sku,
+                name: p.name,
+                unitPriceCents: p.priceCents,
+                quantity: it.quantity,
+              }
+            }),
+          },
+        },
+        include: { items: true },
+      })
+
+      // Create Stripe checkout session (redirect) if configured.
+      if (!stripe) {
+        return { orderId: order.id, totalCents: total, checkoutUrl: null }
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        success_url: STRIPE_SUCCESS_URL,
+        cancel_url: STRIPE_CANCEL_URL,
+        line_items: [
+          ...order.items.map((it) => ({
+            quantity: it.quantity,
+            price_data: {
+              currency: 'usd',
+              unit_amount: it.unitPriceCents,
+              product_data: { name: it.name },
+            },
+          })),
+          ...(shippingInsuranceCents
+            ? [
+                {
+                  quantity: 1,
+                  price_data: {
+                    currency: 'usd',
+                    unit_amount: shippingInsuranceCents,
+                    product_data: { name: 'Shipping insurance' },
+                  },
+                },
+              ]
+            : []),
+        ],
+        metadata: { orderId: order.id, patientId: patient.id, providerId: provider.id },
+      })
+
+      await prisma.payment.create({
+        data: {
+          method: 'stripe',
+          status: 'pending',
+          amountCents: total,
+          currency: 'usd',
+          itemType: 'order',
+          itemId: order.id,
+          orderId: order.id,
+          patientId: patient.id,
+          providerId: provider.id,
+          stripeCheckoutSessionId: session.id,
+        },
+      })
+
+      return { orderId: order.id, totalCents: total, checkoutUrl: session.url }
     },
   )
 })
