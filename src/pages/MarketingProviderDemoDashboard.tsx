@@ -31,8 +31,15 @@ function seed() {
 
 export default function MarketingProviderDemoDashboard() {
   const navigate = useNavigate()
-  const { patients, appts, orders } = useMemo(() => seed(), [])
+  const { patients } = useMemo(() => seed(), [])
+  const [appts, setAppts] = useState(seed().appts)
+  const [orders] = useState(seed().orders)
   const [msgs, setMsgs] = useState(seed().msgs)
+  const [blackouts, setBlackouts] = useState<string[]>(['2026-04-30'])
+
+  const [qsPatient, setQsPatient] = useState('p1')
+  const [qsType, setQsType] = useState<'New Patient Consultation' | 'Follow-Up Consultation'>('New Patient Consultation')
+  const [qsWhen, setQsWhen] = useState('2026-05-02 10:00 AM')
 
   useEffect(() => {
     if (!isMarketingProviderAuthed()) navigate('/provider/login', { replace: true })
@@ -41,6 +48,8 @@ export default function MarketingProviderDemoDashboard() {
   const newCount = msgs.filter((m) => m.status === 'new').length
   const requestedCount = appts.filter((a) => a.status === 'Requested').length
   const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
+  const requested = appts.filter((a) => a.status === 'Requested')
+  const scheduled = appts.filter((a) => a.status !== 'Requested')
 
   return (
     <div className="page">
@@ -111,35 +120,223 @@ export default function MarketingProviderDemoDashboard() {
 
         <section className="card cardAccentNavy">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Appointments</h2>
+            <h2 style={{ margin: 0 }}>Requested</h2>
             <span className="pill">Queue</span>
+          </div>
+          <div className="divider" />
+          {requested.length === 0 ? (
+            <p className="muted">No appointment requests.</p>
+          ) : (
+            <div className="tableWrap">
+              <table className="table" aria-label="Demo requested appointments">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Type</th>
+                    <th>When</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {requested.map((a) => (
+                    <tr key={a.id}>
+                      <td className="muted">{patients.find((p) => p.id === a.patientId)?.label || '—'}</td>
+                      <td>{a.type}</td>
+                      <td className="muted">{a.when}</td>
+                      <td className="muted">{a.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
+            <span className="pill pillRed">Manage</span>
           </div>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
             Requested: <b>{requestedCount}</b> · Scheduled: <b>{scheduledCount}</b> · Total: <b>{appts.length}</b>
           </div>
           <div className="divider" />
-          <div className="tableWrap">
-            <table className="table" aria-label="Demo appointments">
-              <thead>
-                <tr>
-                  <th>Patient</th>
-                  <th>Type</th>
-                  <th>When</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appts.map((a) => (
-                  <tr key={a.id}>
-                    <td className="muted">{patients.find((p) => p.id === a.patientId)?.label || '—'}</td>
-                    <td>{a.type}</td>
-                    <td className="muted">{a.when}</td>
-                    <td className="muted">{a.status}</td>
+          {scheduled.length === 0 ? (
+            <p className="muted">No scheduled visits yet.</p>
+          ) : (
+            <div className="tableWrap">
+              <table className="table" aria-label="Demo scheduled appointments">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Type</th>
+                    <th>When</th>
+                    <th>Status</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {scheduled.map((a) => (
+                    <tr key={a.id}>
+                      <td className="muted">{patients.find((p) => p.id === a.patientId)?.label || '—'}</td>
+                      <td>{a.type}</td>
+                      <td className="muted">{a.when}</td>
+                      <td>
+                        <select
+                          className="select"
+                          value={a.status}
+                          onChange={(e) => {
+                            const next = e.target.value
+                            setAppts((prev) => prev.map((x) => (x.id === a.id ? { ...x, status: next } : x)))
+                          }}
+                          style={{ padding: '8px 10px' }}
+                        >
+                          <option value="Requested">Requested</option>
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="card cardAccentNavy">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Quick schedule</h2>
+            <span className="pill">Add</span>
+          </div>
+          <div className="divider" />
+          <div className="formRow">
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Patient
+              </div>
+              <select className="select" value={qsPatient} onChange={(e) => setQsPatient(e.target.value)}>
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </label>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Visit type
+              </div>
+              <select className="select" value={qsType} onChange={(e) => setQsType(e.target.value as any)}>
+                <option>New Patient Consultation</option>
+                <option>Follow-Up Consultation</option>
+              </select>
+            </label>
+          </div>
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              When
+            </div>
+            <input className="input" value={qsWhen} onChange={(e) => setQsWhen(e.target.value)} placeholder="May 02, 2026 10:00 AM" />
+          </label>
+          <div className="btnRow" style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              className="btn btnPrimary"
+              style={{ width: '100%' }}
+              onClick={() => {
+                const id = `a_${Math.random().toString(16).slice(2)}`
+                setAppts((prev) => [{ id, patientId: qsPatient, type: qsType, when: qsWhen.trim() || '—', status: 'Scheduled' }, ...prev])
+              }}
+            >
+              Schedule
+            </button>
+          </div>
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Availability / Time off</h2>
+            <span className="pill pillRed">Blackout</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Close dates (demo). In production these remove slots from the booking calendar.
+          </p>
+          <div className="divider" />
+          <div className="btnRow">
+            <button
+              type="button"
+              className="btn btnAccent"
+              onClick={() => {
+                const d = new Date()
+                const iso = new Date(d.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+                setBlackouts((prev) => (prev.includes(iso) ? prev : [iso, ...prev]))
+              }}
+            >
+              Add blackout (demo)
+            </button>
+          </div>
+          <div className="divider" />
+          {blackouts.length === 0 ? (
+            <p className="muted">No closed dates.</p>
+          ) : (
+            <div className="tableWrap">
+              <table className="table" aria-label="Demo blackouts">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blackouts.map((d) => (
+                    <tr key={d}>
+                      <td className="muted">{d}</td>
+                      <td>
+                        <button type="button" className="btn" onClick={() => setBlackouts((prev) => prev.filter((x) => x !== d))}>
+                          Re-open
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Payments (preview)</h2>
+            <span className="pill">Stripe/Clover</span>
+          </div>
+          <div className="divider" />
+          <p className="muted">In production, connect Stripe or Clover and choose which one is active.</p>
+          <div className="divider" />
+          <div className="btnRow">
+            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
+              Connect Stripe (demo)
+            </button>
+            <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
+              Connect Clover (demo)
+            </button>
+          </div>
+        </section>
+
+        <section className="card cardAccentSoft">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Audit log (preview)</h2>
+            <span className="pill">Compliance</span>
+          </div>
+          <div className="divider" />
+          <p className="muted">In production, every action writes an audit event. Demo shows examples only.</p>
+          <div className="divider" />
+          <div className="muted" style={{ fontSize: 13 }}>
+            - Apr 24 09:05 · inbox_mark_handled · m2
+            <br />- Apr 24 08:12 · appointment_status_changed · a2
+            <br />- Apr 23 14:10 · order_marked_ordered · o2
           </div>
         </section>
 
