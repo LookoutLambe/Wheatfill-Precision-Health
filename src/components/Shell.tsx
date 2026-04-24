@@ -2,11 +2,13 @@ import { NavLink, Outlet } from 'react-router-dom'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
+import { getMarketingIntegrations } from '../marketing/providerStore'
 
 export default function Shell() {
-  const appBook = APP_URL ? `${APP_URL}/book` : '/book'
-  const appPharmacy = APP_URL ? `${APP_URL}/pharmacy` : '/pharmacy'
-  const appPatient = APP_URL ? `${APP_URL}/patient` : '/patient'
+  const integ = MARKETING_ONLY ? getMarketingIntegrations() : null
+  const appBook = integ?.bookingUrl || (APP_URL ? `${APP_URL}/book` : '/book')
+  const appPharmacy = integ?.pharmacyUrl || (APP_URL ? `${APP_URL}/pharmacy` : '/pharmacy')
+  const appPatient = integ?.patientPortalUrl || (APP_URL ? `${APP_URL}/patient` : '/patient')
   return (
     <div className="appShell">
       <header className="topNav">
@@ -59,11 +61,7 @@ export default function Shell() {
             <NavLink to="/contact">Contact</NavLink>
             <NavLink to="/privacy">Privacy</NavLink>
             {MARKETING_ONLY ? (
-              APP_URL ? (
-                <a href={`${APP_URL}/provider`} style={{ textDecoration: 'none' }}>
-                  Provider
-                </a>
-              ) : null
+              <NavLink to="/provider/login">Provider</NavLink>
             ) : (
               <NavLink to="/provider">Provider</NavLink>
             )}

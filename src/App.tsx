@@ -21,11 +21,13 @@ import ProviderOrderingTest from './pages/ProviderOrderingTest'
 import ProviderPayments from './pages/ProviderPayments'
 import ProviderIntegrations from './pages/ProviderIntegrations'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
+import MarketingProviderLogin from './pages/MarketingProviderLogin'
+import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
 
 export default function App() {
   if (MARKETING_ONLY) {
     // Marketing-only build: no PHI routes on GitHub Pages.
-    // Route visitors to the AWS-hosted app for booking/portal.
+    // Allow a local "provider admin" (links only) with a test login.
     const toApp = (path: string) => (APP_URL ? `${APP_URL}${path}` : '/')
     return (
       <Routes>
@@ -44,8 +46,8 @@ export default function App() {
           <Route path="/patient" element={<Navigate to={toApp('/patient')} replace />} />
         </Route>
 
-        <Route path="/provider/login" element={<Navigate to={toApp('/provider/login')} replace />} />
-        <Route path="/provider/*" element={<Navigate to={toApp('/provider')} replace />} />
+        <Route path="/provider/login" element={<MarketingProviderLogin />} />
+        <Route path="/provider" element={<MarketingProviderAdmin />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
