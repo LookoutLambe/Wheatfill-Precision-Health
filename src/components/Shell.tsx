@@ -1,0 +1,35 @@
+import { NavLink, Outlet } from 'react-router-dom'
+import '../app.css'
+
+export default function Shell() {
+  return (
+    <div className="appShell">
+      <header className="topNav">
+        <div className="topNavInner">
+          <NavLink to="/" className="brand">
+            <span className="brandMark" aria-hidden="true" />
+            <span>Wheatfill Precision Health</span>
+            <span className="brandSub">Telehealth • Optimization • Longevity</span>
+          </NavLink>
+
+          <nav className="navLinks" aria-label="Primary navigation">
+            <NavLink to="/">Home</NavLink>
+            <NavLink to="/patient">Patient Portal</NavLink>
+          </nav>
+        </div>
+      </header>
+
+      <main className="main">
+        <Outlet />
+      </main>
+
+      <footer className="footer">
+        <div className="footerInner">
+          <span>© {new Date().getFullYear()} Wheatfill Precision Health</span>
+          <span className="muted">Prototype UI — no PHI, no real ordering</span>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
