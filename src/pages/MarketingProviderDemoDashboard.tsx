@@ -55,9 +55,9 @@ export default function MarketingProviderDemoDashboard() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Demo Provider Dashboard</h1>
+          <h1 style={{ margin: 0 }}>Provider Dashboard</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Sample data only (no patient data).
+            Preview data only (no patient data stored on this site).
           </p>
         </div>
         <div className="pageActions">
@@ -67,7 +67,7 @@ export default function MarketingProviderDemoDashboard() {
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
-          <span className="pill">Demo</span>
+          <span className="pill pillRed">Provider</span>
         </div>
       </div>
 
@@ -82,7 +82,7 @@ export default function MarketingProviderDemoDashboard() {
             <p className="muted">No messages.</p>
           ) : (
             <div className="tableWrap">
-              <table className="table" aria-label="Demo inbox">
+              <table className="table" aria-label="Inbox">
                 <thead>
                   <tr>
                     <th>When</th>
@@ -128,7 +128,7 @@ export default function MarketingProviderDemoDashboard() {
             <p className="muted">No appointment requests.</p>
           ) : (
             <div className="tableWrap">
-              <table className="table" aria-label="Demo requested appointments">
+              <table className="table" aria-label="Requested appointments">
                 <thead>
                   <tr>
                     <th>Patient</th>
@@ -166,7 +166,7 @@ export default function MarketingProviderDemoDashboard() {
             <p className="muted">No scheduled visits yet.</p>
           ) : (
             <div className="tableWrap">
-              <table className="table" aria-label="Demo scheduled appointments">
+              <table className="table" aria-label="Scheduled appointments">
                 <thead>
                   <tr>
                     <th>Patient</th>
@@ -262,7 +262,7 @@ export default function MarketingProviderDemoDashboard() {
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Close dates (demo). In production these remove slots from the booking calendar.
+            Close dates (preview). In production these remove slots from the booking calendar.
           </p>
           <div className="divider" />
           <div className="btnRow">
@@ -275,7 +275,7 @@ export default function MarketingProviderDemoDashboard() {
                 setBlackouts((prev) => (prev.includes(iso) ? prev : [iso, ...prev]))
               }}
             >
-              Add blackout (demo)
+              Add blackout (preview)
             </button>
           </div>
           <div className="divider" />
@@ -283,7 +283,7 @@ export default function MarketingProviderDemoDashboard() {
             <p className="muted">No closed dates.</p>
           ) : (
             <div className="tableWrap">
-              <table className="table" aria-label="Demo blackouts">
+              <table className="table" aria-label="Blackout dates">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -317,10 +317,10 @@ export default function MarketingProviderDemoDashboard() {
           <div className="divider" />
           <div className="btnRow">
             <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Connect Stripe (demo)
+              Connect Stripe (preview)
             </button>
             <button type="button" className="btn" disabled style={{ opacity: 0.6 }}>
-              Connect Clover (demo)
+              Connect Clover (preview)
             </button>
           </div>
         </section>
@@ -331,7 +331,7 @@ export default function MarketingProviderDemoDashboard() {
             <span className="pill">Compliance</span>
           </div>
           <div className="divider" />
-          <p className="muted">In production, every action writes an audit event. Demo shows examples only.</p>
+          <p className="muted">In production, every action writes an audit event. Preview shows examples only.</p>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
             - Apr 24 09:05 · inbox_mark_handled · m2
@@ -347,7 +347,7 @@ export default function MarketingProviderDemoDashboard() {
           </div>
           <div className="divider" />
           <div className="tableWrap">
-            <table className="table" aria-label="Demo orders">
+            <table className="table" aria-label="Orders">
               <thead>
                 <tr>
                   <th>When</th>
