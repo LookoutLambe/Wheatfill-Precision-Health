@@ -57,6 +57,132 @@ export default function ProviderPortal() {
         </div>
       </div>
 
+      <div className="cardGrid">
+        <section className="card">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Incoming patient requests</h2>
+            <span className="pill">Queue</span>
+          </div>
+
+          <div className="divider" />
+
+          {requestedAppts.length === 0 ? (
+            <p className="muted">No patient requests yet. Submit one from the Patient Portal.</p>
+          ) : (
+            <table className="table" aria-label="Requested appointments queue">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Type</th>
+                  <th>Preferred</th>
+                  <th>Schedule</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requestedAppts.map((a) => (
+                  <RequestedRow key={a.id} appt={a} />
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          <div className="divider" />
+
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
+            <span className="pill pillRed">Manage</span>
+          </div>
+
+          <div className="divider" />
+
+          {scheduledAppts.length === 0 ? (
+            <p className="muted">No scheduled visits yet.</p>
+          ) : (
+            <table className="table" aria-label="Scheduled appointments">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Type</th>
+                  <th>When</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scheduledAppts.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.patientName}</td>
+                    <td>{a.type}</td>
+                    <td className="muted">
+                      {a.scheduledDate && a.scheduledTime ? `${a.scheduledDate} • ${a.scheduledTime}` : '—'}
+                    </td>
+                    <td>
+                      <select
+                        className="select"
+                        value={a.status}
+                        onChange={(e) => updateAppointmentStatus(a.id, e.target.value as AppointmentStatus)}
+                        style={{ padding: '8px 10px' }}
+                      >
+                        <option>Requested</option>
+                        <option>Scheduled</option>
+                        <option>Completed</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <section className="card">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Ordering</h2>
+            <span className="pill pillRed">Queue</span>
+          </div>
+
+          <div className="divider" />
+
+          {orders.length === 0 ? (
+            <p className="muted">No order requests yet. Submit one from the Patient Portal.</p>
+          ) : (
+            <table className="table" aria-label="Orders queue">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Category</th>
+                  <th>Item</th>
+                  <th>Request</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id}>
+                    <td>{o.patientName}</td>
+                    <td>{o.category}</td>
+                    <td className="muted">{o.item || '—'}</td>
+                    <td>{o.request}</td>
+                    <td>
+                      <select
+                        className="select"
+                        value={o.status}
+                        onChange={(e) => updateOrderStatus(o.id, e.target.value as OrderStatus)}
+                        style={{ padding: '8px 10px' }}
+                      >
+                        <option>New</option>
+                        <option>In Review</option>
+                        <option>Ordered</option>
+                        <option>Closed</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      </div>
+
       <section className="card">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Quick schedule</h2>
@@ -219,138 +345,6 @@ export default function ProviderPortal() {
           </table>
         )}
       </section>
-
-      <div className="cardGrid">
-        <section className="card">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Incoming patient requests</h2>
-            <span className="pill">Queue</span>
-          </div>
-
-          <div className="divider" />
-
-          {requestedAppts.length === 0 ? (
-            <p className="muted">No patient requests yet. Submit one from the Patient Portal.</p>
-          ) : (
-            <table className="table" aria-label="Requested appointments queue">
-              <thead>
-                <tr>
-                  <th>Patient</th>
-                  <th>Type</th>
-                  <th>Preferred</th>
-                  <th>Schedule</th>
-                </tr>
-              </thead>
-              <tbody>
-                {requestedAppts.map((a) => (
-                  <RequestedRow key={a.id} appt={a} />
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          <div className="divider" />
-
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
-            <span className="pill pillRed">Manage</span>
-          </div>
-
-          <div className="divider" />
-
-          {scheduledAppts.length === 0 ? (
-            <p className="muted">No scheduled visits yet.</p>
-          ) : (
-            <table className="table" aria-label="Scheduled appointments">
-              <thead>
-                <tr>
-                  <th>Patient</th>
-                  <th>Type</th>
-                  <th>When</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scheduledAppts.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.patientName}</td>
-                    <td>{a.type}</td>
-                    <td className="muted">
-                      {a.scheduledDate && a.scheduledTime
-                        ? `${a.scheduledDate} • ${a.scheduledTime}`
-                        : '—'}
-                    </td>
-                    <td>
-                      <select
-                        className="select"
-                        value={a.status}
-                        onChange={(e) =>
-                          updateAppointmentStatus(a.id, e.target.value as AppointmentStatus)
-                        }
-                        style={{ padding: '8px 10px' }}
-                      >
-                        <option>Requested</option>
-                        <option>Scheduled</option>
-                        <option>Completed</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-
-        <section className="card">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Ordering</h2>
-            <span className="pill pillRed">Queue</span>
-          </div>
-
-          <div className="divider" />
-
-          {orders.length === 0 ? (
-            <p className="muted">No order requests yet. Submit one from the Patient Portal.</p>
-          ) : (
-            <table className="table" aria-label="Orders queue">
-              <thead>
-                <tr>
-                  <th>Patient</th>
-                  <th>Category</th>
-                  <th>Item</th>
-                  <th>Request</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id}>
-                    <td>{o.patientName}</td>
-                    <td>{o.category}</td>
-                    <td className="muted">{o.item || '—'}</td>
-                    <td>{o.request}</td>
-                    <td>
-                      <select
-                        className="select"
-                        value={o.status}
-                        onChange={(e) =>
-                          updateOrderStatus(o.id, e.target.value as OrderStatus)
-                        }
-                        style={{ padding: '8px 10px' }}
-                      >
-                        <option>New</option>
-                        <option>In Review</option>
-                        <option>Ordered</option>
-                        <option>Closed</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      </div>
     </div>
   )
 }
