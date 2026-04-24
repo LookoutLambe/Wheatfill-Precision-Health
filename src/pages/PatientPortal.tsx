@@ -9,11 +9,11 @@ import {
   type Glp1Medication,
   type OrderCategory,
 } from '../data/portalStore'
-import { getCurrentPatient, logoutPatient } from '../patient/patientAuth'
+import { formatPatientLabel, getCurrentPatient, logoutPatient } from '../patient/patientAuth'
 
 export default function PatientPortal() {
   const patient = getCurrentPatient()
-  const patientName = patient?.displayName || ''
+  const patientName = patient ? formatPatientLabel(patient) : ''
   const [apptType, setApptType] = useState<AppointmentType>('New Patient Consultation')
   const [preferredDate, setPreferredDate] = useState('')
   const [preferredTime, setPreferredTime] = useState('')
@@ -35,6 +35,9 @@ export default function PatientPortal() {
   )
 
   const selected = prices[apptType]
+  const myAppointments = state.appointments.filter((a) => a.patientName === patientName)
+  const myOrders = state.orders.filter((o) => o.patientName === patientName)
+  const myScheduled = myAppointments.filter((a) => a.status === 'Scheduled')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -240,7 +243,7 @@ export default function PatientPortal() {
 
       <section className="card">
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Your recent requests</h2>
+          <h2 style={{ margin: 0 }}>Your activity</h2>
           <span className="pill">Local only</span>
         </div>
 
@@ -248,26 +251,24 @@ export default function PatientPortal() {
 
         <div className="cardGrid" style={{ gap: 14 }}>
           <div className="card" style={{ gridColumn: 'span 6' }}>
-            <h2 style={{ marginTop: 0 }}>Appointments</h2>
-            {state.appointments.length === 0 ? (
-              <p className="muted">No appointment requests yet.</p>
+            <h2 style={{ marginTop: 0 }}>Scheduled visits</h2>
+            {myScheduled.length === 0 ? (
+              <p className="muted">No scheduled visits yet.</p>
             ) : (
-              <table className="table" aria-label="Appointment requests">
+              <table className="table" aria-label="Scheduled appointments">
                 <thead>
                   <tr>
                     <th>Type</th>
-                    <th>Preferred</th>
+                    <th>When</th>
                     <th>Notes</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {state.appointments.map((r) => (
+                  {myScheduled.map((r) => (
                     <tr key={r.id}>
                       <td>{r.type}</td>
                       <td>
-                        {r.preferredDate && r.preferredTime
-                          ? `${r.preferredDate} • ${r.preferredTime}`
-                          : '—'}
+                        {r.scheduledDate && r.scheduledTime ? `${r.scheduledDate} • ${r.scheduledTime}` : '—'}
                       </td>
                       <td className="muted">{r.notes || '—'}</td>
                     </tr>
@@ -279,21 +280,23 @@ export default function PatientPortal() {
 
           <div className="card" style={{ gridColumn: 'span 6' }}>
             <h2 style={{ marginTop: 0 }}>Orders</h2>
-            {state.orders.length === 0 ? (
+            {myOrders.length === 0 ? (
               <p className="muted">No order requests yet.</p>
             ) : (
               <table className="table" aria-label="Order requests">
                 <thead>
                   <tr>
                     <th>Category</th>
+                    <th>Item</th>
                     <th>Request</th>
                     <th>Submitted</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {state.orders.map((o) => (
+                  {myOrders.map((o) => (
                     <tr key={o.id}>
                       <td>{o.category}</td>
+                      <td className="muted">{o.item || '—'}</td>
                       <td>{o.request}</td>
                       <td className="muted">
                         {new Date(o.createdAt).toLocaleString(undefined, {

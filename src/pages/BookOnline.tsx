@@ -7,7 +7,7 @@ import {
   subscribePortalState,
   type AppointmentType,
 } from '../data/portalStore'
-import { getCurrentPatient } from '../patient/patientAuth'
+import { formatPatientLabel, getCurrentPatient } from '../patient/patientAuth'
 
 type Slot = { date: string; time: string }
 
@@ -39,7 +39,7 @@ function groupByDate(slots: Slot[]) {
 
 export default function BookOnline() {
   const patient = getCurrentPatient()
-  const patientName = patient?.displayName || ''
+  const patientName = patient ? formatPatientLabel(patient) : ''
   const [apptType, setApptType] = useState<AppointmentType>('New Patient Consultation')
   const [notes, setNotes] = useState('')
 

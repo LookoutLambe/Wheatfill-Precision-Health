@@ -17,7 +17,9 @@ export default function PatientLogin() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [displayName, setDisplayName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [birthdate, setBirthdate] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -74,18 +76,45 @@ export default function PatientLogin() {
         </div>
 
         {mode === 'signup' ? (
-          <label style={{ display: 'block', marginTop: 12 }}>
-            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Display name
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+            <div className="formRow">
+              <label>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  First name
+                </div>
+                <input
+                  className="input"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
+              </label>
+              <label>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Last name
+                </div>
+                <input
+                  className="input"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                />
+              </label>
             </div>
-            <input
-              className="input"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Example: Jordan M."
-              autoComplete="name"
-            />
-          </label>
+
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Birthdate
+              </div>
+              <input
+                className="input"
+                value={birthdate}
+                onChange={(e) => setBirthdate(e.target.value)}
+                type="date"
+                autoComplete="bday"
+              />
+            </label>
+          </div>
         ) : null}
 
         {error ? (
@@ -98,10 +127,16 @@ export default function PatientLogin() {
           <button
             type="button"
             className="btn btnPrimary"
-            disabled={!username.trim() || !password || (mode === 'signup' && !displayName.trim())}
+            disabled={
+              !username.trim() ||
+              !password ||
+              (mode === 'signup' && (!firstName.trim() || !lastName.trim() || !birthdate))
+            }
             style={{
               opacity:
-                !username.trim() || !password || (mode === 'signup' && !displayName.trim())
+                !username.trim() ||
+                !password ||
+                (mode === 'signup' && (!firstName.trim() || !lastName.trim() || !birthdate))
                   ? 0.6
                   : 1,
             }}
@@ -113,7 +148,7 @@ export default function PatientLogin() {
                 navigate(redirectTo, { replace: true })
                 return
               }
-              const res = createPatientAccount({ username, password, displayName })
+              const res = createPatientAccount({ username, password, firstName, lastName, birthdate })
               if (!res.ok) return setError(res.reason)
               navigate(redirectTo, { replace: true })
             }}
@@ -127,6 +162,9 @@ export default function PatientLogin() {
             onClick={() => {
               setMode((m) => (m === 'login' ? 'signup' : 'login'))
               setError(null)
+              setFirstName('')
+              setLastName('')
+              setBirthdate('')
             }}
           >
             {mode === 'login' ? 'Need an account?' : 'Have an account?'}

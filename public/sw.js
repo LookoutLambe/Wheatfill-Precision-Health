@@ -3,7 +3,7 @@
 // Minimal PWA service worker (prototype).
 // Cache static assets for offline use; use network-first for navigations.
 
-const CACHE = 'wph-cache-v1';
+const CACHE = 'wph-cache-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -46,7 +46,8 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((resp) => {
           const copy = resp.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          // Always cache the SPA shell, not the specific route URL.
+          caches.open(CACHE).then((cache) => cache.put('./index.html', copy)).catch(() => {});
           return resp;
         })
         .catch(() => caches.match('./index.html')),

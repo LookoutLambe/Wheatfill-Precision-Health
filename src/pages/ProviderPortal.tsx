@@ -14,6 +14,7 @@ import {
   type AppointmentType,
   type OrderStatus,
 } from '../data/portalStore'
+import { formatPatientLabel, listPatientUsers } from '../patient/patientAuth'
 
 export default function ProviderPortal() {
   const [state, setState] = useState(() => getPortalState())
@@ -23,7 +24,8 @@ export default function ProviderPortal() {
   const orders = state.orders
   const blackoutDates = state.blackoutDates
 
-  const [newPatientName, setNewPatientName] = useState('')
+  const patientOptions = useMemo(() => listPatientUsers().map((u) => formatPatientLabel(u)), [])
+  const [newPatientName, setNewPatientName] = useState(patientOptions[0] || '')
   const [newType, setNewType] = useState<AppointmentType>('New Patient Consultation')
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
@@ -192,14 +194,23 @@ export default function ProviderPortal() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient name
+              Patient
             </div>
-            <input
-              className="input"
-              value={newPatientName}
-              onChange={(e) => setNewPatientName(e.target.value)}
-              placeholder="Example: Alex P."
-            />
+            {patientOptions.length === 0 ? (
+              <div className="muted">No patients yet. Have a patient create an account first.</div>
+            ) : (
+              <select
+                className="select"
+                value={newPatientName}
+                onChange={(e) => setNewPatientName(e.target.value)}
+              >
+                {patientOptions.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            )}
           </label>
 
           <label>
@@ -259,7 +270,7 @@ export default function ProviderPortal() {
                 time: newTime,
                 notes: newNotes,
               })
-              setNewPatientName('')
+              setNewPatientName(patientOptions[0] || '')
               setNewType('New Patient Consultation')
               setNewDate('')
               setNewTime('')

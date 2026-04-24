@@ -7,11 +7,11 @@ import {
   type Glp1Medication,
   type OrderCategory,
 } from '../data/portalStore'
-import { getCurrentPatient } from '../patient/patientAuth'
+import { formatPatientLabel, getCurrentPatient } from '../patient/patientAuth'
 
 export default function OrderingPortal() {
   const patient = getCurrentPatient()
-  const patientName = patient?.displayName || ''
+  const patientName = patient ? formatPatientLabel(patient) : ''
   const [category, setCategory] = useState<OrderCategory>('GLP-1')
   const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [request, setRequest] = useState('')
@@ -20,9 +20,7 @@ export default function OrderingPortal() {
 
   useEffect(() => subscribePortalState(() => setState(getPortalState())), [])
 
-  const visibleOrders = patientName
-    ? state.orders.filter((o) => o.patientName.toLowerCase() === patientName.toLowerCase())
-    : []
+  const visibleOrders = patientName ? state.orders.filter((o) => o.patientName === patientName) : []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>

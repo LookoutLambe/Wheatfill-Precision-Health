@@ -5,8 +5,17 @@ const EVENT = 'wph_patient_auth_changed'
 export type PatientUser = {
   username: string
   password: string
-  displayName: string
+  firstName: string
+  lastName: string
+  birthdate: string // YYYY-MM-DD
   createdAt: string
+}
+
+export function formatPatientLabel(u: Pick<PatientUser, 'firstName' | 'lastName' | 'birthdate'>) {
+  const ln = u.lastName.trim()
+  const fn = u.firstName.trim()
+  const dob = u.birthdate
+  return `${ln}, ${fn} — ${dob}`
 }
 
 function readUsers(): PatientUser[] {
@@ -38,6 +47,10 @@ export function getCurrentPatient() {
   return readUsers().find((x) => x.username === u) || null
 }
 
+export function listPatientUsers() {
+  return readUsers()
+}
+
 export function setCurrentPatientUsername(username: string) {
   localStorage.setItem(USER_KEY, username)
   window.dispatchEvent(new Event(EVENT))
@@ -51,7 +64,9 @@ export function logoutPatient() {
 export function createPatientAccount(input: {
   username: string
   password: string
-  displayName: string
+  firstName: string
+  lastName: string
+  birthdate: string
 }) {
   const username = input.username.trim().toLowerCase()
   const users = readUsers()
@@ -61,10 +76,15 @@ export function createPatientAccount(input: {
   if (input.password.length < 6) {
     return { ok: false as const, reason: 'Password must be at least 6 characters.' }
   }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.birthdate.trim())) {
+    return { ok: false as const, reason: 'Birthdate must be YYYY-MM-DD.' }
+  }
   const user: PatientUser = {
     username,
     password: input.password,
-    displayName: input.displayName.trim() || username,
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    birthdate: input.birthdate.trim(),
     createdAt: new Date().toISOString(),
   }
   writeUsers([user, ...users])
