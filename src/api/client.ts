@@ -1,19 +1,27 @@
+import { isWheatfillLiveMarketingHost, WHEATFILL_LIVE_DEFAULT_API } from '../config/mode'
+
 function resolveApiUrl() {
   const fromEnv = import.meta.env.VITE_API_URL?.toString().trim()
   if (fromEnv) return fromEnv.replace(/\/$/, '')
 
   // Allow overriding at runtime without rebuilding (useful for GitHub Pages).
-  const fromStorage = localStorage.getItem('wph_api_url_v1')?.toString().trim()
-  if (fromStorage) return fromStorage.replace(/\/$/, '')
+  if (typeof window !== 'undefined') {
+    const fromStorage = localStorage.getItem('wph_api_url_v1')?.toString().trim()
+    if (fromStorage) return fromStorage.replace(/\/$/, '')
 
-  const url = new URL(window.location.href)
-  const qp = url.searchParams.get('api')?.trim()
-  if (qp) {
-    localStorage.setItem('wph_api_url_v1', qp)
-    return qp.replace(/\/$/, '')
+    const url = new URL(window.location.href)
+    const qp = url.searchParams.get('api')?.trim()
+    if (qp) {
+      localStorage.setItem('wph_api_url_v1', qp)
+      return qp.replace(/\/$/, '')
+    }
   }
 
-  // Default for local dev only.
+  if (isWheatfillLiveMarketingHost()) {
+    return WHEATFILL_LIVE_DEFAULT_API
+  }
+
+  // Default for local dev.
   return 'http://localhost:8080'
 }
 
