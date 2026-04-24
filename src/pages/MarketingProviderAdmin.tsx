@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
+  getMarketingProviderUser,
   getMarketingIntegrations,
   isMarketingProviderAuthed,
   setMarketingIntegrations,
@@ -10,6 +11,7 @@ import {
 
 export default function MarketingProviderAdmin() {
   const navigate = useNavigate()
+  const who = getMarketingProviderUser()
   const [form, setForm] = useState<MarketingIntegrations>(() => getMarketingIntegrations())
   const [saved, setSaved] = useState(false)
 
@@ -23,10 +25,14 @@ export default function MarketingProviderAdmin() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted pageSubtitle">Configure booking, portal, pharmacy, and video links.</p>
+          {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
             Back
+          </Link>
+          <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
+            Change password
           </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
@@ -55,13 +61,13 @@ export default function MarketingProviderAdmin() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Booking URL (EHR booking page)
+              Booking URL (Practice Better booking page)
             </div>
             <input className="input" value={form.bookingUrl} onChange={(e) => setForm((p) => ({ ...p, bookingUrl: e.target.value }))} />
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient portal URL (EHR portal)
+              Patient portal URL (Practice Better client portal)
             </div>
             <input
               className="input"
@@ -113,11 +119,11 @@ export default function MarketingProviderAdmin() {
         <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Booking</h2>
-            <span className="pill">EHR</span>
+            <span className="pill">Practice Better</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens your EHR booking page in a new tab (the EHR handles login + PHI).
+            Opens Practice Better booking in a new tab (Practice Better handles login + PHI).
           </p>
           <div className="divider" />
           <a
@@ -138,11 +144,11 @@ export default function MarketingProviderAdmin() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Patient portal</h2>
-            <span className="pill pillRed">EHR</span>
+            <span className="pill pillRed">Practice Better</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens the patient portal URL (patients sign in on the EHR’s site).
+            Opens the Practice Better client portal (patients sign in on Practice Better).
           </p>
           <div className="divider" />
           <a

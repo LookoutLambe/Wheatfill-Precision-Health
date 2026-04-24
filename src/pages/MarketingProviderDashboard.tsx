@@ -1,9 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { isMarketingProviderAuthed, setMarketingProviderAuthed } from '../marketing/providerStore'
+import { getMarketingProviderUser, isMarketingProviderAuthed, setMarketingProviderAuthed } from '../marketing/providerStore'
 
 export default function MarketingProviderDashboard() {
   const navigate = useNavigate()
+  const who = getMarketingProviderUser()
 
   useEffect(() => {
     if (!isMarketingProviderAuthed()) navigate('/provider/login', { replace: true })
@@ -17,6 +18,7 @@ export default function MarketingProviderDashboard() {
           <p className="muted" style={{ marginTop: 8 }}>
             VBMS-style dashboard (marketing-only). Configure links and preview workflow without patient data.
           </p>
+          {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>

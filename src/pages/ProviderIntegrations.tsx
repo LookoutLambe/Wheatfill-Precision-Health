@@ -86,7 +86,7 @@ export default function ProviderIntegrations() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Booking URL (EHR booking page)
+              Booking URL (Practice Better booking page)
             </div>
             <input
               className="input"
@@ -97,7 +97,7 @@ export default function ProviderIntegrations() {
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient portal URL (EHR portal)
+              Patient portal URL (Practice Better client portal)
             </div>
             <input
               className="input"
@@ -122,7 +122,7 @@ export default function ProviderIntegrations() {
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Video visit URL (Doxy.me room)
+              Video visit URL (video room link)
             </div>
             <input
               className="input"

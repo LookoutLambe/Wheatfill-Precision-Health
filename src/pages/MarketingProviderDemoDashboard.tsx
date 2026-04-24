@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import { isMarketingProviderAuthed } from '../marketing/providerStore'
+import { getMarketingProviderUser, isMarketingProviderAuthed } from '../marketing/providerStore'
 
 type DemoPatient = { id: string; label: string }
 type DemoAppt = { id: string; patientId: string; type: string; when: string; status: string }
@@ -31,6 +31,7 @@ function seed() {
 
 export default function MarketingProviderDemoDashboard() {
   const navigate = useNavigate()
+  const who = getMarketingProviderUser()
   const { patients } = useMemo(() => seed(), [])
   const [appts, setAppts] = useState(seed().appts)
   const [orders] = useState(seed().orders)
@@ -59,10 +60,14 @@ export default function MarketingProviderDemoDashboard() {
           <p className="muted" style={{ marginTop: 8 }}>
             Preview data only (no patient data stored on this site).
           </p>
+          {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
             Back
+          </Link>
+          <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
+            Change password
           </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home

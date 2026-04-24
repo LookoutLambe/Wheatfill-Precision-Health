@@ -24,6 +24,7 @@ import { APP_URL, MARKETING_ONLY } from './config/mode'
 import MarketingProviderLogin from './pages/MarketingProviderLogin'
 import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
 import MarketingProviderDemoDashboard from './pages/MarketingProviderDemoDashboard'
+import MarketingProviderSecurity from './pages/MarketingProviderSecurity'
 
 export default function App() {
   if (MARKETING_ONLY) {
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/provider/login" element={<MarketingProviderLogin />} />
         <Route path="/provider" element={<MarketingProviderDemoDashboard />} />
         <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
+        <Route path="/provider/security" element={<MarketingProviderSecurity />} />
         <Route path="/provider/demo" element={<Navigate to="/provider" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />

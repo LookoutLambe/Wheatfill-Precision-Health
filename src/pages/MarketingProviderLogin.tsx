@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { setMarketingProviderAuthed } from '../marketing/providerStore'
-
-const TEST_USERNAME = 'brett'
-const TEST_PASSWORD = 'wheatfill'
+import {
+  ensureDefaultMarketingProviderUsers,
+  isAllowedMarketingProviderUser,
+  setMarketingProviderAuthed,
+  verifyMarketingProviderPassword,
+} from '../marketing/providerStore'
 
 export default function MarketingProviderLogin() {
   const navigate = useNavigate()
@@ -73,11 +75,18 @@ export default function MarketingProviderLogin() {
               setBusy(true)
               ;(async () => {
                 try {
-                  if (username.trim().toLowerCase() !== TEST_USERNAME || password !== TEST_PASSWORD) {
+                  await ensureDefaultMarketingProviderUsers()
+                  const u = username.trim().toLowerCase()
+                  if (!isAllowedMarketingProviderUser(u)) {
                     setError('Invalid username or password.')
                     return
                   }
-                  setMarketingProviderAuthed(true)
+                  const ok = await verifyMarketingProviderPassword(u, password)
+                  if (!ok) {
+                    setError('Invalid username or password.')
+                    return
+                  }
+                  setMarketingProviderAuthed(true, u)
                   navigate(redirectTo, { replace: true })
                 } finally {
                   setBusy(false)
