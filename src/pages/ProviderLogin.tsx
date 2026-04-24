@@ -7,7 +7,6 @@ import {
   setProviderAuthed,
   setProviderPassword,
 } from '../provider/providerAuth'
-import '../provider/vbmsProvider.css'
 
 export default function ProviderLogin() {
   const navigate = useNavigate()
@@ -32,192 +31,204 @@ export default function ProviderLogin() {
   }, [navigate, redirectTo])
 
   return (
-    <div className="vbmsApp">
-      <header className="vbmsTopbar">
-        <div className="vbmsBrand">WPH</div>
-        <nav className="vbmsMenu" aria-label="Provider login navigation">
-          <Link to="/">Home</Link>
-          <span>Provider Portal</span>
-        </nav>
-        <div className="vbmsTopRight">
-          <span>Prototype</span>
+    <div className="page">
+      <div className="pageHeaderRow">
+        <div>
+          <h1 style={{ margin: 0 }}>Provider Portal</h1>
+          <p className="muted pageSubtitle">Sign in to manage scheduling, orders, and availability.</p>
         </div>
-      </header>
+        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+          Home
+        </Link>
+      </div>
 
-      <main className="vbmsShellMain">
-        <section className="vbmsLoginCard" aria-label="Provider login">
-          <div className="vbmsLoginHeader">
-            <span>Sign in</span>
-            <span className="vbmsHint" style={{ marginTop: 0 }}>
-              Wheatfill Precision Health
-            </span>
+      <section className="card cardAccentNavy" style={{ maxWidth: 760, margin: '0 auto', width: '100%' }}>
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Sign in</h2>
+          <span className="pill pillRed">Provider</span>
+        </div>
+        <div className="divider" />
+
+        <div className="formRow">
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Username
+            </div>
+            <input
+              className="input"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Provider username"
+              autoComplete="username"
+            />
+          </label>
+
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Password
+            </div>
+            <input
+              className="input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Provider password"
+              type="password"
+              autoComplete="current-password"
+            />
+          </label>
+        </div>
+
+        {error ? (
+          <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>
+            {error}
+          </div>
+        ) : null}
+
+        <div className="btnRow" style={{ marginTop: 12 }}>
+          <button
+            type="button"
+            className="btn btnPrimary"
+            disabled={!username.trim() || !password}
+            style={{ opacity: !username.trim() || !password ? 0.6 : 1 }}
+            onClick={() => {
+              setError(null)
+              if (username.trim().toLowerCase() !== getProviderUsername()) {
+                setError('Invalid username or password.')
+                return
+              }
+              if (password !== getProviderPassword()) {
+                setError('Invalid username or password.')
+                return
+              }
+              setProviderAuthed(true)
+              navigate(redirectTo, { replace: true })
+            }}
+          >
+            Sign in
+          </button>
+
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setUsername(getProviderUsername())
+              setPassword('')
+              setError(null)
+            }}
+          >
+            Clear
+          </button>
+
+          <span className="pill">Prototype</span>
+        </div>
+
+        <div className="divider" />
+
+        <div className="stack">
+          <div className="muted" style={{ fontSize: 13 }}>
+            Prototype login only. Username is <b>{getProviderUsername()}</b>.
           </div>
 
-          <div className="vbmsLoginBody">
-            <div className="vbmsRow">
-              <label>
-                <div className="vbmsFieldLabel">Username</div>
-                <input
-                  className="vbmsInput"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Provider username"
-                  autoComplete="username"
-                />
-              </label>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setShowChange((s) => !s)
+              setChangeMsg(null)
+              setCurrentPass('')
+              setNewPass('')
+              setConfirmPass('')
+              setError(null)
+            }}
+          >
+            {showChange ? 'Hide' : 'Change password'}
+          </button>
 
-              <label>
-                <div className="vbmsFieldLabel">Password</div>
-                <input
-                  className="vbmsInput"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Provider password"
-                  type="password"
-                  autoComplete="current-password"
-                />
-              </label>
-            </div>
-
-            {error ? (
-              <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 700 }}>
-                {error}
+          {showChange ? (
+            <div className="card cardAccentSoft" style={{ gridColumn: 'span 12' }}>
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Update password</h2>
+                <span className="pill">Local</span>
               </div>
-            ) : null}
+              <div className="divider" />
 
-            <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center' }}>
-              <button
-                type="button"
-                className="vbmsBtn vbmsBtnPrimary"
-                disabled={!username.trim() || !password}
-                onClick={() => {
-                  setError(null)
-                  if (username.trim().toLowerCase() !== getProviderUsername()) {
-                    setError('Invalid username or password.')
-                    return
-                  }
-                  if (password !== getProviderPassword()) {
-                    setError('Invalid username or password.')
-                    return
-                  }
-                  setProviderAuthed(true)
-                  navigate(redirectTo, { replace: true })
-                }}
-              >
-                Sign in
-              </button>
-
-              <button
-                type="button"
-                className="vbmsBtn"
-                onClick={() => {
-                  setUsername(getProviderUsername())
-                  setPassword('')
-                  setError(null)
-                }}
-              >
-                Clear
-              </button>
-            </div>
-
-            <div className="vbmsHint">
-              Prototype login only. Username is <b>{getProviderUsername()}</b>.
-            </div>
-
-            <div className="divider" style={{ margin: '14px 0' }} />
-
-            <button
-              type="button"
-              className="vbmsBtn"
-              onClick={() => {
-                setShowChange((s) => !s)
-                setChangeMsg(null)
-                setCurrentPass('')
-                setNewPass('')
-                setConfirmPass('')
-              }}
-            >
-              {showChange ? 'Hide' : 'Change password'}
-            </button>
-
-            {showChange ? (
-              <div style={{ marginTop: 12 }}>
-                <div className="vbmsRow">
-                  <label>
-                    <div className="vbmsFieldLabel">Current password</div>
-                    <input
-                      className="vbmsInput"
-                      value={currentPass}
-                      onChange={(e) => setCurrentPass(e.target.value)}
-                      type="password"
-                      autoComplete="current-password"
-                    />
-                  </label>
-
-                  <label>
-                    <div className="vbmsFieldLabel">New password</div>
-                    <input
-                      className="vbmsInput"
-                      value={newPass}
-                      onChange={(e) => setNewPass(e.target.value)}
-                      type="password"
-                      autoComplete="new-password"
-                    />
-                  </label>
-                </div>
-
-                <label style={{ display: 'block', marginTop: 10 }}>
-                  <div className="vbmsFieldLabel">Confirm new password</div>
+              <div className="formRow">
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Current password
+                  </div>
                   <input
-                    className="vbmsInput"
-                    value={confirmPass}
-                    onChange={(e) => setConfirmPass(e.target.value)}
+                    className="input"
+                    value={currentPass}
+                    onChange={(e) => setCurrentPass(e.target.value)}
+                    type="password"
+                    autoComplete="current-password"
+                  />
+                </label>
+
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    New password
+                  </div>
+                  <input
+                    className="input"
+                    value={newPass}
+                    onChange={(e) => setNewPass(e.target.value)}
                     type="password"
                     autoComplete="new-password"
                   />
                 </label>
-
-                {changeMsg ? (
-                  <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
-                    {changeMsg}
-                  </div>
-                ) : null}
-
-                <div style={{ display: 'flex', gap: 10, marginTop: 12, alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    className="vbmsBtn vbmsBtnPrimary"
-                    disabled={
-                      !currentPass ||
-                      !newPass ||
-                      newPass.length < 6 ||
-                      confirmPass !== newPass
-                    }
-                    onClick={() => {
-                      setChangeMsg(null)
-                      if (currentPass !== getProviderPassword()) {
-                        setError('Current password is incorrect.')
-                        return
-                      }
-                      setError(null)
-                      setProviderPassword(newPass)
-                      setCurrentPass('')
-                      setNewPass('')
-                      setConfirmPass('')
-                      setChangeMsg('Password updated (stored locally for this browser).')
-                    }}
-                  >
-                    Update password
-                  </button>
-                  <span className="vbmsHint" style={{ marginTop: 0 }}>
-                    Must be at least 6 characters.
-                  </span>
-                </div>
               </div>
-            ) : null}
-          </div>
-        </section>
-      </main>
+
+              <label style={{ display: 'block', marginTop: 12 }}>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Confirm new password
+                </div>
+                <input
+                  className="input"
+                  value={confirmPass}
+                  onChange={(e) => setConfirmPass(e.target.value)}
+                  type="password"
+                  autoComplete="new-password"
+                />
+              </label>
+
+              {changeMsg ? (
+                <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
+                  {changeMsg}
+                </div>
+              ) : null}
+
+              <div className="btnRow" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="btn btnPrimary"
+                  disabled={!currentPass || !newPass || newPass.length < 6 || confirmPass !== newPass}
+                  style={{
+                    opacity: !currentPass || !newPass || newPass.length < 6 || confirmPass !== newPass ? 0.6 : 1,
+                  }}
+                  onClick={() => {
+                    setChangeMsg(null)
+                    if (currentPass !== getProviderPassword()) {
+                      setError('Current password is incorrect.')
+                      return
+                    }
+                    setError(null)
+                    setProviderPassword(newPass)
+                    setCurrentPass('')
+                    setNewPass('')
+                    setConfirmPass('')
+                    setChangeMsg('Password updated (stored locally for this browser).')
+                  }}
+                >
+                  Update password
+                </button>
+                <span className="pill">6+ chars</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
     </div>
   )
 }

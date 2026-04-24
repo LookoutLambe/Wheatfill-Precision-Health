@@ -40,15 +40,15 @@ export default function PatientPortal() {
   const myScheduled = myAppointments.filter((a) => a.status === 'Scheduled')
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <div className="page">
+      <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Patient Portal</h1>
           <p className="muted" style={{ marginTop: 8 }}>
             Prototype scheduling + ordering (no real appointments or prescriptions).
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="pageActions">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
@@ -65,7 +65,7 @@ export default function PatientPortal() {
       </div>
 
       <div className="cardGrid">
-        <section className="card">
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Schedule a visit</h2>
             <span className="pill pillRed">
@@ -164,7 +164,7 @@ export default function PatientPortal() {
           </label>
         </section>
 
-        <section className="card">
+        <section className="card cardAccentRed">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Request an order</h2>
             <span className="pill">Prototype</span>
@@ -241,7 +241,7 @@ export default function PatientPortal() {
         </section>
       </div>
 
-      <section className="card">
+      <section className="card cardAccentSoft">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Your activity</h2>
           <span className="pill">Local only</span>
@@ -250,7 +250,7 @@ export default function PatientPortal() {
         <div className="divider" />
 
         <div className="cardGrid" style={{ gap: 14 }}>
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <h2 style={{ marginTop: 0 }}>Scheduled visits</h2>
             {myScheduled.length === 0 ? (
               <p className="muted">No scheduled visits yet.</p>
@@ -278,7 +278,7 @@ export default function PatientPortal() {
             )}
           </div>
 
-          <div className="card" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <h2 style={{ marginTop: 0 }}>Orders</h2>
             {myOrders.length === 0 ? (
               <p className="muted">No order requests yet.</p>

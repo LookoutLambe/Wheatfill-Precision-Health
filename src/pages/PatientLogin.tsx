@@ -27,11 +27,11 @@ export default function PatientLogin() {
   }, [navigate, redirectTo])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <div className="page">
+      <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Patient Portal</h1>
-          <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+          <p className="muted pageSubtitle">
             Sign in to view and submit your requests.
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function PatientLogin() {
         </Link>
       </div>
 
-      <section className="card" style={{ maxWidth: 640, margin: '0 auto', width: '100%' }}>
+      <section className="card cardAccentNavy" style={{ maxWidth: 640, margin: '0 auto', width: '100%' }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>{mode === 'login' ? 'Sign in' : 'Create account'}</h2>
           <span className="pill">Patient</span>

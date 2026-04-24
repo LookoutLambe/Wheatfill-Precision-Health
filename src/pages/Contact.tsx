@@ -11,16 +11,16 @@ export default function Contact() {
   useEffect(() => subscribeMessages(() => setMessages(getMessages())), [])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="page">
       <div>
         <h1 style={{ margin: 0 }}>Contact</h1>
-        <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+        <p className="muted pageSubtitle">
           Send a message or question. (Prototype form — stored locally in your browser.)
         </p>
       </div>
 
       <div className="cardGrid">
-        <section className="card">
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Message</h2>
             <span className="pill">Prototype</span>
@@ -98,7 +98,7 @@ export default function Contact() {
           </div>
         </section>
 
-        <section className="card">
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Recent messages</h2>
             <span className="pill pillRed">Local only</span>

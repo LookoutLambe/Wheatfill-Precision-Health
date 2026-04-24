@@ -5,25 +5,35 @@ const EVENT = 'wph_patient_auth_changed'
 export type PatientUser = {
   username: string
   password: string
-  firstName: string
-  lastName: string
-  birthdate: string // YYYY-MM-DD
+  // New schema
+  firstName?: string
+  lastName?: string
+  birthdate?: string // YYYY-MM-DD
+  // Legacy schema (kept for backward compatibility with existing localStorage)
+  displayName?: string
   createdAt: string
 }
 
-export function formatPatientLabel(u: Pick<PatientUser, 'firstName' | 'lastName' | 'birthdate'>) {
-  const ln = u.lastName.trim()
-  const fn = u.firstName.trim()
-  const dob = u.birthdate
-  return `${ln}, ${fn} — ${dob}`
+export function formatPatientLabel(u: Pick<PatientUser, 'username' | 'firstName' | 'lastName' | 'birthdate' | 'displayName'>) {
+  const ln = (u.lastName || '').trim()
+  const fn = (u.firstName || '').trim()
+  const dob = (u.birthdate || '').trim()
+  if (ln && fn && dob) return `${ln}, ${fn} — ${dob}`
+  const dn = (u.displayName || '').trim()
+  if (dn) return dn
+  return u.username
 }
 
 function readUsers(): PatientUser[] {
   try {
     const raw = localStorage.getItem(USERS_KEY)
     if (!raw) return []
-    const parsed = JSON.parse(raw) as PatientUser[]
-    return Array.isArray(parsed) ? parsed : []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    // Coerce shape to avoid crashes from older stored schemas.
+    return parsed
+      .filter((x) => x && typeof x === 'object')
+      .map((x) => x as PatientUser)
   } catch {
     return []
   }

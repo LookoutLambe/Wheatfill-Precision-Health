@@ -43,15 +43,15 @@ export default function ProviderPortal() {
   )
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <div className="page">
+      <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Provider Portal</h1>
           <p className="muted" style={{ marginTop: 8 }}>
             Prototype queue for consults, follow-ups, and ordering.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="pageActions">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
@@ -60,7 +60,7 @@ export default function ProviderPortal() {
       </div>
 
       <div className="cardGrid">
-        <section className="card">
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Incoming patient requests</h2>
             <span className="pill">Queue</span>
@@ -136,7 +136,7 @@ export default function ProviderPortal() {
           )}
         </section>
 
-        <section className="card">
+        <section className="card cardAccentRed">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Ordering</h2>
             <span className="pill pillRed">Queue</span>
@@ -185,7 +185,7 @@ export default function ProviderPortal() {
         </section>
       </div>
 
-      <section className="card">
+      <section className="card cardAccentNavy">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Quick schedule</h2>
           <span className="pill">Add</span>
@@ -291,7 +291,7 @@ export default function ProviderPortal() {
         </div>
       </section>
 
-      <section className="card">
+      <section className="card cardAccentSoft">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Availability / Time Off</h2>
           <span className="pill pillRed">Blackout</span>

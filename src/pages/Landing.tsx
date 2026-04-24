@@ -4,7 +4,7 @@ import brettPortrait from '../assets/brett.png'
 
 export default function Landing() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="page">
       <div className="twoCol">
         <section>
           <span className="pill">Precision health. Elevated living.</span>
@@ -12,7 +12,7 @@ export default function Landing() {
             Personalized, evidence-based care designed to optimize your health, performance, and
             longevity.
           </h1>
-          <p className="muted" style={{ fontSize: 18 }}>
+          <p className="muted pageSubtitle" style={{ marginTop: 0 }}>
             Specializing in metabolic optimization, weight management, and advanced wellness
             therapies.
           </p>
@@ -28,7 +28,7 @@ export default function Landing() {
           <div className="divider" />
 
           <div className="cardGrid">
-            <div className="card">
+            <div className="card cardAccentSoft">
               <div className="cardTitle">
                 <h2 style={{ margin: 0 }}>Telehealth Convenience</h2>
                 <span className="pill">Remote</span>
@@ -38,7 +38,7 @@ export default function Landing() {
                 high-touch support.
               </p>
             </div>
-            <div className="card">
+            <div className="card cardAccentRed">
               <div className="cardTitle">
                 <h2 style={{ margin: 0 }}>Metabolic Optimization</h2>
                 <span className="pill pillRed">Evidence-based</span>
@@ -48,7 +48,7 @@ export default function Landing() {
                 sustainable results.
               </p>
             </div>
-            <div className="card">
+            <div className="card cardAccentNavy">
               <div className="cardTitle">
                 <h2 style={{ margin: 0 }}>Medication Options</h2>
                 <span className="pill">GLP-1</span>
@@ -58,7 +58,7 @@ export default function Landing() {
                 advanced peptide therapies as they become available.
               </p>
             </div>
-            <div className="card">
+            <div className="card cardAccentSoft">
               <div className="cardTitle">
                 <h2 style={{ margin: 0 }}>Performance + Longevity</h2>
                 <span className="pill pillRed">Long-term</span>
@@ -76,7 +76,7 @@ export default function Landing() {
             <img src={brettPortrait} alt="Provider portrait" />
           </div>
 
-          <div className="card">
+          <div className="card cardAccentNavy">
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
               <span className="pill">Founder</span>

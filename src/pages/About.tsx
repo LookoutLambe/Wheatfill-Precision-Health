@@ -2,17 +2,17 @@ import brettPortrait from '../assets/brett.png'
 
 export default function About() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="page">
       <div>
         <h1 style={{ margin: 0 }}>About</h1>
-        <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+        <p className="muted pageSubtitle">
           Precision-based, patient-centered telehealth for metabolic optimization and long-term
           wellness.
         </p>
       </div>
 
       <div className="twoCol">
-        <section className="card">
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
             <span className="pill">Founder</span>
@@ -47,7 +47,7 @@ export default function About() {
             <img src={brettPortrait} alt="Provider portrait" />
           </div>
 
-          <div className="card">
+          <div className="card cardAccentRed">
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Mission</h2>
               <span className="pill pillRed">Elevated living</span>

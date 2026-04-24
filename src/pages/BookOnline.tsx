@@ -67,11 +67,11 @@ export default function BookOnline() {
   const chosen = prices[apptType]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <div className="page">
+      <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Book Online</h1>
-          <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+          <p className="muted pageSubtitle">
             Choose an appointment type and select an available time. (Prototype availability)
           </p>
         </div>
@@ -81,7 +81,7 @@ export default function BookOnline() {
       </div>
 
       <div className="cardGrid">
-        <section className="card">
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Your appointment</h2>
             <span className="pill pillRed">
@@ -173,7 +173,7 @@ export default function BookOnline() {
           ) : null}
         </section>
 
-        <section className="card">
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Select a time</h2>
             <span className="pill">Availability</span>

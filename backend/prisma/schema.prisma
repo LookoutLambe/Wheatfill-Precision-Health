@@ -1,0 +1,255 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  patient
+  provider
+  admin
+}
+
+enum AppointmentType {
+  new_patient
+  follow_up
+}
+
+enum AppointmentStatus {
+  requested
+  scheduled
+  completed
+  cancelled
+}
+
+enum OrderCategory {
+  glp1
+  labs
+  supplements
+  other
+}
+
+enum OrderStatus {
+  new
+  in_review
+  ordered
+  closed
+}
+
+enum BillingItemType {
+  appointment
+  order
+  other
+}
+
+enum PaymentMethod {
+  stripe
+  manual_venmo
+}
+
+enum PaymentStatus {
+  pending
+  requires_action
+  succeeded
+  failed
+  refunded
+  cancelled
+}
+
+enum SubscriptionStatus {
+  active
+  trialing
+  past_due
+  canceled
+  unpaid
+  incomplete
+}
+
+model User {
+  id           String   @id @default(cuid())
+  role         Role
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  firstName    String?
+  lastName     String?
+  birthdate    DateTime?
+  deletedAt    DateTime?
+  stripeCustomerId String?
+
+  // Stripe Connect (provider payouts)
+  stripeConnectedAccountId String?
+  stripeOnboardingStatus   String? // e.g. 'pending','complete'
+  stripeChargesEnabled     Boolean @default(false)
+  stripePayoutsEnabled     Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patientAppointments Appointment[] @relation("PatientAppointments")
+  providerAppointments Appointment[] @relation("ProviderAppointments")
+  ordersAsPatient Order[] @relation("OrdersAsPatient")
+  ordersAsProvider Order[] @relation("OrdersAsProvider")
+  blackoutDates BlackoutDate[]
+  threadsAsPatient MessageThread[] @relation("ThreadAsPatient")
+  threadsAsProvider MessageThread[] @relation("ThreadAsProvider")
+  sentMessages MessageEvent[] @relation("SentMessages")
+  auditEvents AuditLog[]
+
+  paymentsAsPatient Payment[] @relation("PaymentsAsPatient")
+  paymentsAsProvider Payment[] @relation("PaymentsAsProvider")
+  subscriptions Subscription[]
+
+  @@index([role])
+}
+
+model Appointment {
+  id         String            @id @default(cuid())
+  type       AppointmentType
+  status     AppointmentStatus @default(requested)
+  startTs    DateTime?
+  endTs      DateTime?
+  notes      String            @default("")
+  source     String            @default("patient_request") // 'patient_request' | 'provider_scheduled'
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  deletedAt  DateTime?
+
+  patientId  String
+  providerId String
+  patient    User @relation("PatientAppointments", fields: [patientId], references: [id])
+  provider   User @relation("ProviderAppointments", fields: [providerId], references: [id])
+
+  payments   Payment[] @relation("PaymentAppointment")
+
+  @@index([providerId, startTs])
+  @@index([patientId, startTs])
+}
+
+model BlackoutDate {
+  id         String   @id @default(cuid())
+  providerId String
+  date       DateTime
+  reason     String   @default("")
+  createdAt  DateTime @default(now())
+
+  provider   User @relation(fields: [providerId], references: [id])
+
+  @@unique([providerId, date])
+}
+
+model Order {
+  id         String       @id @default(cuid())
+  category   OrderCategory
+  item       String?
+  request    String
+  status     OrderStatus  @default(new)
+  dosageNote String       @default("")
+  providerNote String     @default("")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  deletedAt  DateTime?
+
+  patientId  String
+  providerId String
+  patient    User @relation("OrdersAsPatient", fields: [patientId], references: [id])
+  provider   User @relation("OrdersAsProvider", fields: [providerId], references: [id])
+
+  payments   Payment[] @relation("PaymentOrder")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  method    PaymentMethod
+  status    PaymentStatus @default(pending)
+  amountCents Int
+  currency  String        @default("usd")
+  itemType  BillingItemType
+  itemId    String?
+
+  // Stripe identifiers
+  stripeCheckoutSessionId String?
+  stripePaymentIntentId   String?
+  stripeSubscriptionId    String?
+
+  patientId  String
+  providerId String
+  patient    User @relation("PaymentsAsPatient", fields: [patientId], references: [id])
+  provider   User @relation("PaymentsAsProvider", fields: [providerId], references: [id])
+
+  appointmentId String?
+  appointment   Appointment? @relation("PaymentAppointment", fields: [appointmentId], references: [id])
+
+  orderId String?
+  order   Order? @relation("PaymentOrder", fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([patientId, createdAt])
+  @@index([providerId, createdAt])
+  @@index([status])
+}
+
+model Subscription {
+  id        String             @id @default(cuid())
+  status    SubscriptionStatus
+  planKey   String
+  stripeSubscriptionId String  @unique
+  currentPeriodEnd DateTime?
+  cancelAtPeriodEnd Boolean @default(false)
+
+  patientId String
+  patient   User @relation(fields: [patientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@index([patientId, status])
+}
+
+model MessageThread {
+  id         String   @id @default(cuid())
+  patientId  String
+  providerId String
+  createdAt  DateTime @default(now())
+
+  patient    User @relation("ThreadAsPatient", fields: [patientId], references: [id])
+  provider   User @relation("ThreadAsProvider", fields: [providerId], references: [id])
+  events     MessageEvent[]
+
+  @@unique([patientId, providerId])
+}
+
+model MessageEvent {
+  id         String   @id @default(cuid())
+  threadId   String
+  senderId   String
+  body       String
+  createdAt  DateTime @default(now())
+
+  thread     MessageThread @relation(fields: [threadId], references: [id])
+  sender     User @relation("SentMessages", fields: [senderId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  entityType String
+  entityId   String
+  action     String
+  beforeJson Json?
+  afterJson  Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  actor      User @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+

@@ -1,14 +1,14 @@
 export default function Privacy() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div className="page">
       <div>
         <h1 style={{ margin: 0 }}>Privacy Policy</h1>
-        <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+        <p className="muted pageSubtitle">
           Prototype policy content — replace with your finalized legal language.
         </p>
       </div>
 
-      <section className="card">
+      <section className="card cardAccentSoft">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Overview</h2>
           <span className="pill">Privacy</span>
@@ -21,7 +21,7 @@ export default function Privacy() {
         </p>
       </section>
 
-      <section className="card">
+      <section className="card cardAccentRed">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Information we may collect</h2>
           <span className="pill pillRed">Prototype</span>
@@ -33,7 +33,7 @@ export default function Privacy() {
         </ul>
       </section>
 
-      <section className="card">
+      <section className="card cardAccentNavy">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Local storage</h2>
           <span className="pill">Browser</span>

@@ -23,11 +23,11 @@ export default function OrderingPortal() {
   const visibleOrders = patientName ? state.orders.filter((o) => o.patientName === patientName) : []
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+    <div className="page">
+      <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Ordering Portal</h1>
-          <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
+          <p className="muted pageSubtitle">
             Request refills, labs, or questions and track status updates from the provider.
           </p>
         </div>
@@ -37,7 +37,7 @@ export default function OrderingPortal() {
       </div>
 
       <div className="cardGrid">
-        <section className="card">
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Submit an order request</h2>
             <span className="pill">Patient</span>
@@ -135,7 +135,7 @@ export default function OrderingPortal() {
           ) : null}
         </section>
 
-        <section className="card">
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Status</h2>
             <span className="pill pillRed">Updates</span>
