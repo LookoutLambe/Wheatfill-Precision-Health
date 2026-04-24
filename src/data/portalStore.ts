@@ -119,7 +119,7 @@ export function scheduleAppointment(input: {
       a.id === input.appointmentId
         ? {
             ...a,
-            status: 'Scheduled',
+            status: 'Scheduled' as const,
             scheduledDate: input.date,
             scheduledTime: input.time,
             notes: input.notes?.trim() ?? a.notes,

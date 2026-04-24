@@ -9,7 +9,6 @@ import {
   type AppointmentRequest,
   type AppointmentStatus,
   type AppointmentType,
-  type OrderRequest,
   type OrderStatus,
 } from '../data/portalStore'
 
