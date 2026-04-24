@@ -47,6 +47,7 @@ enum BillingItemType {
 
 enum PaymentMethod {
   stripe
+  clover
   manual_venmo
 }
 
@@ -249,6 +250,10 @@ model Payment {
   stripeCheckoutSessionId String?
   stripePaymentIntentId   String?
   stripeSubscriptionId    String?
+
+  // Clover Hosted Checkout identifiers
+  cloverCheckoutSessionId String?
+  cloverCheckoutHref      String?
 
   patientId  String
   providerId String

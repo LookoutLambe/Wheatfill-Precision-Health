@@ -4,7 +4,6 @@ import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
-import Stripe from 'stripe'
 
 import { prisma } from './db'
 import { hashPassword, verifyPassword } from './auth/password'
@@ -15,12 +14,11 @@ const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5176'
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_change_me'
 const JWT_ISSUER = process.env.JWT_ISSUER || 'wph-backend'
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
-const STRIPE_SUCCESS_URL = process.env.STRIPE_SUCCESS_URL || 'http://localhost:5176/patient'
-const STRIPE_CANCEL_URL = process.env.STRIPE_CANCEL_URL || 'http://localhost:5176/pharmacy'
-
-const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null
+const CLOVER_ENV = (process.env.CLOVER_ENV || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox'
+const CLOVER_MERCHANT_ID = process.env.CLOVER_MERCHANT_ID || ''
+const CLOVER_PRIVATE_KEY = process.env.CLOVER_PRIVATE_KEY || ''
+const CLOVER_API_BASE =
+  CLOVER_ENV === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
 
 const app = Fastify({
   logger: true,
@@ -102,45 +100,6 @@ app.get('/v1/pharmacies/:slug', async (req, reply) => {
   })
   if (!partner || !partner.isActive) return reply.notFound('Pharmacy not found.')
   return { partner }
-})
-
-// Stripe webhook (kept unauthenticated)
-app.post('/v1/billing/webhook', async (req, reply) => {
-  if (!stripe || !STRIPE_WEBHOOK_SECRET) return reply.badRequest('Stripe not configured.')
-  const sig = req.headers['stripe-signature']
-  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Stripe signature.')
-
-  // Fastify default body parsing gives us an object; Stripe needs raw bytes.
-  // For now, we accept JSON events in dev if webhook secret is not used.
-  // Production should register a raw body parser for this route.
-  let event: Stripe.Event
-  try {
-    if (typeof req.body === 'string') {
-      event = stripe.webhooks.constructEvent(req.body, sig, STRIPE_WEBHOOK_SECRET)
-    } else {
-      event = req.body as Stripe.Event
-    }
-  } catch (e: any) {
-    return reply.badRequest(`Webhook error: ${String(e?.message || e)}`)
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
-    const orderId = (session.metadata?.orderId as string | undefined) || ''
-    const paymentIntent = typeof session.payment_intent === 'string' ? session.payment_intent : ''
-    if (orderId) {
-      await prisma.payment.updateMany({
-        where: { stripeCheckoutSessionId: session.id },
-        data: { status: 'succeeded', stripePaymentIntentId: paymentIntent || undefined },
-      })
-      await prisma.order.updateMany({
-        where: { id: orderId },
-        data: { status: 'ordered' },
-      })
-    }
-  }
-
-  return { received: true }
 })
 
 const SignupBody = z.object({
@@ -373,43 +332,54 @@ await app.register(async (protectedScope) => {
         include: { items: true },
       })
 
-      // Create Stripe checkout session (redirect) if configured.
-      if (!stripe) {
+      // Create Clover Hosted Checkout session (redirect)
+      if (!CLOVER_MERCHANT_ID || !CLOVER_PRIVATE_KEY) {
         return { orderId: order.id, totalCents: total, checkoutUrl: null }
       }
 
-      const session = await stripe.checkout.sessions.create({
-        mode: 'payment',
-        success_url: STRIPE_SUCCESS_URL,
-        cancel_url: STRIPE_CANCEL_URL,
-        line_items: [
-          ...order.items.map((it) => ({
-            quantity: it.quantity,
-            price_data: {
-              currency: 'usd',
-              unit_amount: it.unitPriceCents,
-              product_data: { name: it.name },
-            },
-          })),
-          ...(shippingInsuranceCents
-            ? [
-                {
-                  quantity: 1,
-                  price_data: {
-                    currency: 'usd',
-                    unit_amount: shippingInsuranceCents,
-                    product_data: { name: 'Shipping insurance' },
+      const cloverPayload = {
+        customer: {},
+        shoppingCart: {
+          lineItems: [
+            ...order.items.map((it) => ({
+              name: it.name,
+              note: `${it.partnerSlug}:${it.productSku}`,
+              price: it.unitPriceCents,
+              unitQty: it.quantity,
+            })),
+            ...(shippingInsuranceCents
+              ? [
+                  {
+                    name: 'Shipping insurance',
+                    note: '2% of subtotal',
+                    price: shippingInsuranceCents,
+                    unitQty: 1,
                   },
-                },
-              ]
-            : []),
-        ],
-        metadata: { orderId: order.id, patientId: patient.id, providerId: provider.id },
+                ]
+              : []),
+          ],
+        },
+      }
+
+      const cloverRes = await fetch(`${CLOVER_API_BASE}/invoicingcheckoutservice/v1/checkouts`, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: `Bearer ${CLOVER_PRIVATE_KEY}`,
+          'X-Clover-Merchant-Id': CLOVER_MERCHANT_ID,
+        },
+        body: JSON.stringify(cloverPayload),
       })
+      if (!cloverRes.ok) {
+        const text = await cloverRes.text()
+        return reply.internalServerError(`Clover checkout failed: ${text}`)
+      }
+      const created = (await cloverRes.json()) as { href: string; checkoutSessionId: string }
 
       await prisma.payment.create({
         data: {
-          method: 'stripe',
+          method: 'clover',
           status: 'pending',
           amountCents: total,
           currency: 'usd',
@@ -418,11 +388,12 @@ await app.register(async (protectedScope) => {
           orderId: order.id,
           patientId: patient.id,
           providerId: provider.id,
-          stripeCheckoutSessionId: session.id,
+          cloverCheckoutSessionId: created.checkoutSessionId,
+          cloverCheckoutHref: created.href,
         },
       })
 
-      return { orderId: order.id, totalCents: total, checkoutUrl: session.url }
+      return { orderId: order.id, totalCents: total, checkoutUrl: created.href }
     },
   )
 })
