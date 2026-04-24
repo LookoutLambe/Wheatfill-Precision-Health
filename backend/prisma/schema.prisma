@@ -77,6 +77,15 @@ model User {
   firstName    String?
   lastName     String?
   birthdate    DateTime?
+  email        String?
+  phone        String?
+
+  address1     String?
+  address2     String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String? @default("US")
   deletedAt    DateTime?
   stripeCustomerId String?
 
@@ -103,6 +112,7 @@ model User {
   subscriptions Subscription[]
 
   @@index([role])
+  @@index([email])
 }
 
 model Appointment {

@@ -9,6 +9,14 @@ export type PatientUser = {
   firstName?: string
   lastName?: string
   birthdate?: string // YYYY-MM-DD
+  email?: string
+  phone?: string
+  address1?: string
+  address2?: string
+  city?: string
+  state?: string
+  postalCode?: string
+  country?: string
   // Legacy schema (kept for backward compatibility with existing localStorage)
   displayName?: string
   createdAt: string
@@ -77,6 +85,14 @@ export function createPatientAccount(input: {
   firstName: string
   lastName: string
   birthdate: string
+  email: string
+  phone: string
+  address1: string
+  address2?: string
+  city: string
+  state: string
+  postalCode: string
+  country?: string
 }) {
   const username = input.username.trim().toLowerCase()
   const users = readUsers()
@@ -89,12 +105,29 @@ export function createPatientAccount(input: {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.birthdate.trim())) {
     return { ok: false as const, reason: 'Birthdate must be YYYY-MM-DD.' }
   }
+  if (!input.email.trim() || !input.email.includes('@')) {
+    return { ok: false as const, reason: 'Email is required.' }
+  }
+  if (!input.phone.trim()) {
+    return { ok: false as const, reason: 'Phone is required.' }
+  }
+  if (!input.address1.trim() || !input.city.trim() || !input.state.trim() || !input.postalCode.trim()) {
+    return { ok: false as const, reason: 'Address is required.' }
+  }
   const user: PatientUser = {
     username,
     password: input.password,
     firstName: input.firstName.trim(),
     lastName: input.lastName.trim(),
     birthdate: input.birthdate.trim(),
+    email: input.email.trim(),
+    phone: input.phone.trim(),
+    address1: input.address1.trim(),
+    address2: input.address2?.trim() || undefined,
+    city: input.city.trim(),
+    state: input.state.trim(),
+    postalCode: input.postalCode.trim(),
+    country: input.country?.trim() || 'US',
     createdAt: new Date().toISOString(),
   }
   writeUsers([user, ...users])

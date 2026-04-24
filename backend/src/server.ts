@@ -52,6 +52,30 @@ const SignupBody = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
+  email: z.string().email().optional(),
+  phone: z.string().min(7).max(30).optional(),
+  address1: z.string().min(2).max(120).optional(),
+  address2: z.string().min(0).max(120).optional(),
+  city: z.string().min(2).max(80).optional(),
+  state: z.string().min(2).max(30).optional(),
+  postalCode: z.string().min(3).max(16).optional(),
+  country: z.string().min(2).max(2).optional(),
+}).superRefine((v, ctx) => {
+  if (v.role !== 'patient') return
+  const missing: Array<[keyof typeof v, string]> = [
+    ['firstName', 'First name is required.'],
+    ['lastName', 'Last name is required.'],
+    ['birthdate', 'Birthdate is required.'],
+    ['email', 'Email is required.'],
+    ['phone', 'Phone is required.'],
+    ['address1', 'Address is required.'],
+    ['city', 'City is required.'],
+    ['state', 'State is required.'],
+    ['postalCode', 'ZIP/Postal code is required.'],
+  ]
+  for (const [k, msg] of missing) {
+    if (!v[k] || String(v[k]).trim() === '') ctx.addIssue({ code: 'custom', message: msg, path: [k] })
+  }
 })
 
 app.post('/auth/signup', async (req, reply) => {
@@ -69,6 +93,14 @@ app.post('/auth/signup', async (req, reply) => {
       firstName: body.firstName,
       lastName: body.lastName,
       birthdate: body.birthdate ? new Date(body.birthdate) : undefined,
+      email: body.email,
+      phone: body.phone,
+      address1: body.address1,
+      address2: body.address2,
+      city: body.city,
+      state: body.state,
+      postalCode: body.postalCode,
+      country: body.country,
     },
     select: { id: true, role: true, username: true, displayName: true, createdAt: true },
   })
