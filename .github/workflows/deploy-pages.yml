@@ -31,6 +31,9 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_MARKETING_ONLY: "1"
+          VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
         run: npm run build:marketing
 
       - name: Upload artifact
