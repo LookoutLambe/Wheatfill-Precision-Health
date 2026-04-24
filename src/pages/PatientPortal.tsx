@@ -9,9 +9,11 @@ import {
   type Glp1Medication,
   type OrderCategory,
 } from '../data/portalStore'
+import { getCurrentPatient, logoutPatient } from '../patient/patientAuth'
 
 export default function PatientPortal() {
-  const [patientName, setPatientName] = useState('')
+  const patient = getCurrentPatient()
+  const patientName = patient?.displayName || ''
   const [apptType, setApptType] = useState<AppointmentType>('New Patient Consultation')
   const [preferredDate, setPreferredDate] = useState('')
   const [preferredTime, setPreferredTime] = useState('')
@@ -47,6 +49,14 @@ export default function PatientPortal() {
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => logoutPatient()}
+            title="Sign out"
+          >
+            Logout
+          </button>
           <span className="pill">Telehealth</span>
         </div>
       </div>
@@ -61,17 +71,12 @@ export default function PatientPortal() {
           </div>
 
           <div className="formRow" style={{ marginTop: 12 }}>
-            <label>
+            <div>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Your name
+                Signed in as
               </div>
-              <input
-                className="input"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                placeholder="Example: Jordan M."
-              />
-            </label>
+              <div className="pill">{patientName}</div>
+            </div>
             <div />
           </div>
 
@@ -132,9 +137,9 @@ export default function PatientPortal() {
                   setPreferredTime('')
                   setApptNotes('')
                 }}
-                disabled={!patientName.trim() || !preferredDate || !preferredTime}
+                disabled={!preferredDate || !preferredTime}
                 style={{
-                  opacity: !patientName.trim() || !preferredDate || !preferredTime ? 0.6 : 1,
+                  opacity: !preferredDate || !preferredTime ? 0.6 : 1,
                   width: '100%',
                 }}
               >
@@ -221,9 +226,9 @@ export default function PatientPortal() {
                 })
                 setOrderRequest('')
               }}
-              disabled={!patientName.trim() || !orderRequest.trim()}
+              disabled={!orderRequest.trim()}
               style={{
-                opacity: !patientName.trim() || !orderRequest.trim() ? 0.6 : 1,
+                opacity: !orderRequest.trim() ? 0.6 : 1,
                 width: '100%',
               }}
             >

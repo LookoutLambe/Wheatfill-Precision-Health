@@ -7,9 +7,11 @@ import {
   type Glp1Medication,
   type OrderCategory,
 } from '../data/portalStore'
+import { getCurrentPatient } from '../patient/patientAuth'
 
 export default function OrderingPortal() {
-  const [patientName, setPatientName] = useState('')
+  const patient = getCurrentPatient()
+  const patientName = patient?.displayName || ''
   const [category, setCategory] = useState<OrderCategory>('GLP-1')
   const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [request, setRequest] = useState('')
@@ -18,9 +20,9 @@ export default function OrderingPortal() {
 
   useEffect(() => subscribePortalState(() => setState(getPortalState())), [])
 
-  const visibleOrders = patientName.trim()
-    ? state.orders.filter((o) => o.patientName.toLowerCase() === patientName.trim().toLowerCase())
-    : state.orders
+  const visibleOrders = patientName
+    ? state.orders.filter((o) => o.patientName.toLowerCase() === patientName.toLowerCase())
+    : []
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -45,17 +47,17 @@ export default function OrderingPortal() {
           <div className="divider" />
 
           <div className="formRow">
-            <label>
+            <div>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Your name
+                Signed in as
               </div>
-              <input
-                className="input"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                placeholder="Example: Jordan M."
-              />
-            </label>
+              <div className="pill">{patientName || '—'}</div>
+              {!patientName ? (
+                <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
+                  Please sign in via <Link to="/patient/login">Patient Portal</Link> to submit orders.
+                </div>
+              ) : null}
+            </div>
             <label>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 Category
@@ -110,8 +112,8 @@ export default function OrderingPortal() {
             <button
               type="button"
               className="btn btnAccent"
-              disabled={!patientName.trim() || !request.trim()}
-              style={{ opacity: !patientName.trim() || !request.trim() ? 0.6 : 1 }}
+              disabled={!patientName || !request.trim()}
+              style={{ opacity: !patientName || !request.trim() ? 0.6 : 1 }}
               onClick={() => {
                 createOrderRequest({
                   patientName,
@@ -142,14 +144,9 @@ export default function OrderingPortal() {
           </div>
           <div className="divider" />
 
-          {!patientName.trim() ? (
-            <p className="muted">
-              Enter your name to filter to your requests, or leave it blank to view all prototype
-              requests.
-            </p>
-          ) : null}
-
-          {visibleOrders.length === 0 ? (
+          {!patientName ? (
+            <p className="muted">Sign in to view your order status.</p>
+          ) : visibleOrders.length === 0 ? (
             <p className="muted">No order requests found.</p>
           ) : (
             <table className="table" aria-label="Order status">
