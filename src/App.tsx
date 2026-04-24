@@ -23,7 +23,6 @@ import ProviderIntegrations from './pages/ProviderIntegrations'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
 import MarketingProviderLogin from './pages/MarketingProviderLogin'
 import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
-import MarketingProviderDashboard from './pages/MarketingProviderDashboard'
 import MarketingProviderDemoDashboard from './pages/MarketingProviderDemoDashboard'
 
 export default function App() {
@@ -49,9 +48,9 @@ export default function App() {
         </Route>
 
         <Route path="/provider/login" element={<MarketingProviderLogin />} />
-        <Route path="/provider" element={<MarketingProviderDashboard />} />
+        <Route path="/provider" element={<MarketingProviderDemoDashboard />} />
         <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
-        <Route path="/provider/demo" element={<MarketingProviderDemoDashboard />} />
+        <Route path="/provider/demo" element={<Navigate to="/provider" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
