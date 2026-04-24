@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import brandMarkImg from '../assets/wheatfill-mark.png'
+import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from '../config/providerAuth'
 
 export default function ProviderShell() {
@@ -37,12 +38,15 @@ export default function ProviderShell() {
       <div className={`topNavShell topNavShell--alwaysDrawer ${menuOpen ? 'isMenuOpen' : ''}`}>
         <header className="topNav">
           <div className="topNavInner">
-            <div className="brand brandWithMark isProviderBrand" aria-label="Wheatfill Precision Health — Provider Portal">
+            <div
+              className="brand brandWithMark isProviderBrand"
+              aria-label={`Wheatfill Precision Health — ${PROVIDER_TEAM_LABEL} workspace`}
+            >
               <img src={brandMarkImg} alt="" className="brandMarkImg" decoding="async" />
               <span className="brandDivider" aria-hidden="true" />
               <span className="brandLockup">
                 <span className="brandPrimary">Wheatfill</span>
-                <span className="brandProviderLine">Provider Portal</span>
+                <span className="brandProviderLine">Team workspace</span>
               </span>
             </div>
 
@@ -89,7 +93,7 @@ export default function ProviderShell() {
           ) : (
             <>
               <NavLink to="/provider" onClick={closeMenu}>
-                Provider&apos;s Portal
+                Workspace
               </NavLink>
               <NavLink to="/provider/demo" onClick={closeMenu}>
                 Demo
@@ -116,7 +120,7 @@ export default function ProviderShell() {
       <footer className="footer">
         <div className="footerInner">
           <span>© {new Date().getFullYear()} Wheatfill Precision Health</span>
-          <span className="muted">Provider Portal</span>
+          <span className="muted">{PROVIDER_TEAM_LABEL}</span>
         </div>
       </footer>
     </div>

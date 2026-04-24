@@ -18,7 +18,7 @@ export default function SignIn() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Sign in</h1>
-          <p className="muted pageSubtitle">Secure sign-in powered by Medplum.</p>
+          <p className="muted pageSubtitle">Secure account sign-in.</p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -28,13 +28,13 @@ export default function SignIn() {
       <section className="card cardAccentNavy" style={{ maxWidth: 760, margin: '0 auto', width: '100%' }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Account</h2>
-          <span className="pill">Medplum</span>
+          <span className="pill">Account</span>
         </div>
         <div className="divider" />
 
         {!MEDPLUM_CLIENT_ID ? (
           <div style={{ color: '#7a0f1c', fontSize: 13, fontWeight: 900, textAlign: 'left' }}>
-            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>. Add it to your frontend environment and reload.
+            Sign-in is not configured. Add <code>VITE_MEDPLUM_CLIENT_ID</code> to the frontend environment and reload.
           </div>
         ) : null}
 
@@ -106,7 +106,7 @@ export default function SignIn() {
                         return
                       }
                     }
-                    setError('Login did not return an authorization code. Check your Medplum project settings.')
+                    setError('Login did not return an authorization code. Check your OAuth / auth app settings.')
                   } catch (e: any) {
                     setError(String(e?.message || e))
                   } finally {

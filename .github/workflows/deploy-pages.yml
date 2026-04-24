@@ -35,6 +35,8 @@ jobs:
           VITE_MARKETING_ONLY: "1"
           # Public marketing site + deep links; matches custom domain in public/CNAME. Override with repo secret if needed.
           VITE_APP_URL: ${{ secrets.VITE_APP_URL || 'https://wheatfillprecisionhealth.com' }}
+          # Required for provider login + book/contact on GitHub Pages: your public Node API (https), e.g. https://api.example.com — no trailing slash.
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build:marketing
 
       - name: Upload artifact

@@ -28,7 +28,26 @@ if not exist "node_modules" (
   )
 )
 
-echo Starting local demo server at http://localhost:5176 ...
+if not exist "backend\node_modules" (
+  echo Installing backend API dependencies...
+  pushd backend
+  call npm install
+  if errorlevel 1 (
+    echo backend npm install failed.
+    popd
+    pause
+    exit /b 1
+  )
+  popd
+)
+
+echo.
+echo Starting the API in a new window (http://localhost:8080^) — leave it open.
+start "WPH API (port 8080)" cmd /k "cd /d %~dp0backend && npm run dev"
+echo Waiting 2 seconds for the API to start...
+timeout /t 2 /nobreak >nul
+echo.
+echo Starting Vite at http://localhost:5176 — this window is only the website; the other window is the API.
 start "" "http://localhost:5176"
 set VITE_MARKETING_ONLY=1
 npm run dev -- --mode marketing --port 5176

@@ -42,6 +42,13 @@
   position: relative;
 }
 
+.topNavRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .navMenuToggle {
   display: none;
   flex-shrink: 0;
@@ -1696,6 +1703,26 @@ html.pharmacyCartOpen body {
   line-height: 1;
 }
 
+/* Warnock-style: dark badge with white count in the top nav */
+.pharmacyCartBtn--header {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(10, 30, 63, 0.16);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.pharmacyCartBadge--header {
+  top: 2px;
+  right: 2px;
+  min-width: 20px;
+  height: 20px;
+  font-size: 12px;
+  background: #1a1d24;
+  color: #fff;
+  font-weight: 800;
+}
+
 .pharmacyCatalog {
   max-width: 820px;
   margin: 0 auto;
@@ -1976,6 +2003,31 @@ html.pharmacyCartOpen body {
   min-width: 0;
 }
 
+.pharmacyDrawerLineHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pharmacyDrawerTrash {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 8px;
+  opacity: 0.75;
+  color: var(--text-h);
+}
+
+.pharmacyDrawerTrash:hover {
+  opacity: 1;
+  background: rgba(10, 30, 63, 0.06);
+}
+
 .pharmacyDrawerLineName {
   font-weight: 750;
   font-size: 14px;
@@ -2034,6 +2086,39 @@ html.pharmacyCartOpen body {
   flex-direction: column;
   gap: 10px;
   margin-top: 8px;
+}
+
+.pharmacyDrawerSecure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: rgba(31, 41, 55, 0.65);
+}
+
+.pharmacyDrawerSecureIcon {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid rgba(31, 41, 55, 0.5);
+  border-radius: 2px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.pharmacyDrawerSecureIcon::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 6px;
+  height: 4px;
+  border: 1.5px solid rgba(31, 41, 55, 0.5);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  transform: translateX(-50%);
 }
 
 @media (max-width: 560px) {
@@ -2391,11 +2476,15 @@ html.pharmacyCartOpen body {
   text-align: center;
 }
 
-.venmoPayToHint--inline a {
+.venmoPayToHint--inline p a {
   font-weight: 700;
   color: var(--navy);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.venmoPayToHint--inline .btnRow a {
+  text-decoration: none;
 }
 
 .orderNowSummaryPage {
@@ -2604,5 +2693,211 @@ html.pharmacyCartOpen body {
 
   .orderNowSummaryLineTotal {
     justify-self: end;
+  }
+}
+
+/* ——— Mountain View Pharmacy (accessible product landing) ——— */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mountainViewPharmacyPage {
+  max-width: 900px;
+  margin: 0 auto;
+  gap: 20px;
+}
+
+.mountainViewSkip {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+  padding: 10px 16px;
+  background: var(--navy, #0a1e3f);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  border-radius: 8px;
+}
+.mountainViewSkip:focus {
+  left: 16px;
+  top: 8px;
+  outline: 2px solid var(--red, #7a0f1c);
+  outline-offset: 2px;
+}
+
+.mountainViewBreadcrumb {
+  font-size: 14px;
+  color: rgba(31, 41, 55, 0.72);
+}
+.mountainViewBreadcrumbList {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+.mountainViewBreadcrumb a {
+  color: var(--navy, #0a1e3f);
+  font-weight: 800;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(10, 30, 63, 0.35);
+}
+.mountainViewBreadcrumb a:hover,
+.mountainViewBreadcrumb a:focus {
+  border-color: var(--navy, #0a1e3f);
+  outline: none;
+}
+.mountainViewBreadcrumb a:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--navy, #0a1e3f);
+  border-radius: 2px;
+}
+
+.mountainViewH1 {
+  margin: 0 0 10px;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  scroll-margin-top: 100px;
+}
+
+.mountainViewLead {
+  max-width: 700px;
+  line-height: 1.6;
+  margin: 0 0 4px;
+}
+
+.mountainViewCtas {
+  margin-top: 14px;
+}
+
+.mountainViewHeader {
+  margin-bottom: 8px;
+}
+
+.mountainViewMain {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 4px;
+}
+.mountainViewMain:focus {
+  outline: none;
+}
+.mountainViewMain:focus-visible {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--navy, #0a1e3f);
+  border-radius: 12px;
+  padding: 2px;
+}
+
+.mountainViewLive {
+  min-height: 1.2em;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--navy, #0a1e3f);
+  margin: 0;
+}
+
+.mountainViewSection {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 18px;
+}
+.mountainViewH2 {
+  font-size: 1.2rem;
+  margin: 0 0 12px;
+  color: var(--text-h, #1b2434);
+}
+.mountainViewCaption {
+  text-align: left;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(31, 41, 55, 0.8);
+  margin: 0 0 8px;
+  font-weight: 500;
+  caption-side: top;
+}
+.mountainViewTableWrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  border: 1px solid rgba(10, 30, 63, 0.1);
+  margin-top: 6px;
+}
+.mountainViewTableWrap:focus {
+  outline: 2px solid var(--navy, #0a1e3f);
+  outline-offset: 2px;
+}
+.mountainViewTable {
+  width: 100%;
+  min-width: 300px;
+  border-collapse: collapse;
+  background: #fff;
+}
+.mountainViewTable th,
+.mountainViewTable td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(10, 30, 63, 0.08);
+}
+.mountainViewTable thead th {
+  background: rgba(10, 30, 63, 0.06);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(31, 41, 55, 0.75);
+}
+.mountainViewActionHead {
+  display: block;
+  text-align: right;
+}
+.mountainViewProductName {
+  font-size: 1rem;
+  color: var(--text-h, #1b2434);
+  line-height: 1.4;
+  max-width: 240px;
+}
+.mountainViewSub {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-width: 280px;
+}
+.mountainViewPrice {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mountainViewTable td:last-child {
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.mountainViewAddBtn {
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 14px;
+}
+.mountainViewNext {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 20px 18px;
+}
+@media (max-width: 640px) {
+  .mountainViewTable thead th:last-child,
+  .mountainViewTable tbody td:last-child {
+    min-width: 7rem;
   }
 }

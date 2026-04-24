@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { apiPost } from '../api/client'
+import ApiConnectionHint from '../components/ApiConnectionHint'
 import {
   ensureDefaultMarketingProviderUsers,
+  isAllowedMarketingProviderUser,
   resolveMarketingProviderSlot,
   setMarketingProviderAuthed,
-  verifyMarketingProviderPassword,
+  setMarketingProviderPassword,
+  teamApiUsernameForSlot,
 } from '../marketing/providerStore'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from '../config/providerAuth'
 import MedplumProviderLogin from './MedplumProviderLogin'
@@ -35,17 +39,25 @@ export default function ProviderLogin() {
         await ensureDefaultMarketingProviderUsers()
         const u = username.trim().toLowerCase()
         const slot = resolveMarketingProviderSlot(u)
-        if (!slot) {
+        if (!slot || !isAllowedMarketingProviderUser(slot)) {
           setError('Invalid username or password.')
           return
         }
-        const ok = await verifyMarketingProviderPassword(u, password)
-        if (!ok) {
-          setError('Invalid username or password.')
+        const res = await apiPost<{ token: string }>(
+          '/auth/login',
+          { username: teamApiUsernameForSlot(slot), password },
+          '',
+        )
+        if (!res?.token) {
+          setError('Sign-in failed. Try again.')
           return
         }
-        setMarketingProviderAuthed(true, slot)
+        localStorage.setItem('wph_token_v1', res.token)
+        await setMarketingProviderPassword(slot, password)
+        setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })
+      } catch (e: unknown) {
+        setError(String((e as Error)?.message || e || 'Sign-in failed. Is the API running?'))
       } finally {
         setBusy(false)
       }
@@ -110,8 +122,10 @@ export default function ProviderLogin() {
         </form>
 
         <div className="divider" />
-        <p className="muted" style={{ margin: 0 }}>
-          This is a <b>configuration</b> provider area. Patient-facing actions should happen on your configured systems (for example Charm EHR / PHR).
+        <ApiConnectionHint />
+        <p className="muted" style={{ margin: '16px 0 0' }}>
+          This is a <b>configuration</b> team area. Customer-facing actions use your public links, Venmo, PayPal, Zelle, and
+          Stripe (when enabled).
         </p>
       </section>
     </div>

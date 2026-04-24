@@ -87,7 +87,7 @@ export default function MedplumProviderLogin() {
 
         {!MEDPLUM_CLIENT_ID ? (
           <div style={{ color: '#7a0f1c', fontSize: 13, fontWeight: 900, textAlign: 'left' }}>
-            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>. This Medplum-backed provider login only works when Medplum is configured.
+            Missing <code>VITE_MEDPLUM_CLIENT_ID</code>. This provider test login only runs when the auth app is configured.
           </div>
         ) : null}
 

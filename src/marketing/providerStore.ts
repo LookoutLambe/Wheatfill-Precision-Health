@@ -1,15 +1,18 @@
 import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
 
 export type MarketingIntegrations = {
+  /** Staff: internal calendar (after sign-in to your schedulers). */
   bookingUrl: string
+  /** Public self-service booking (web embed / scheduling). Used to redirect /book. */
+  publicBookingUrl: string
   patientPortalUrl: string
   pharmacyUrl: string
   videoVisitUrl: string
-  /** Catalog / fulfillment partner shown to patients (e.g. Mountain View Pharmacy). */
+  /** Catalog / fulfillment partner shown to customers (e.g. compounding pharmacy). */
   fulfillmentPartnerName: string
-  /** Patient Venmo pay link after the practice confirms amount (marketing site can override repo default). */
+  /** Customer Venmo pay link after the team confirms amount (marketing can override repo default). */
   catalogVenmoPayUrl: string
-  /** Staff notes for Stripe/Clover (full app / backend). */
+  /** Staff notes for PayPal, Venmo, Zelle, Stripe, etc. */
   paymentProcessorsNote: string
 }
 
@@ -119,6 +122,11 @@ export function isAllowedMarketingProviderUser(u: string): u is MarketingProvide
   return u === 'admin' || u === 'brett' || u === 'bridgette'
 }
 
+/** Server /auth/login username (matches DB) — not a display alias. */
+export function teamApiUsernameForSlot(slot: MarketingProviderUser): string {
+  return slot
+}
+
 export async function verifyMarketingProviderPassword(username: string, password: string) {
   const slot = resolveMarketingProviderSlot(username)
   if (!slot) return false
@@ -182,7 +190,7 @@ function normalizeCatalogUrl(url: unknown): string {
   return s
 }
 
-/** Generic vendor homepages are not real booking pages — paste your Charm EHR scheduling link from the practice. */
+/** Generic vendor homepages are not real booking pages — paste your real staff calendar URL. */
 function normalizeProviderBookingUrl(url: unknown): string {
   const s = String(url ?? '').trim()
   if (!s) return ''
@@ -190,7 +198,7 @@ function normalizeProviderBookingUrl(url: unknown): string {
   return s
 }
 
-/** Old marketing default was Practice Better PHR; clear so staff pastes Charm PHR URL. */
+/** Old marketing default was a generic PHR home; clear so staff pastes a real customer account URL. */
 function normalizePatientPortalUrl(url: unknown): string {
   const s = String(url ?? '').trim()
   if (!s) return ''
@@ -200,8 +208,10 @@ function normalizePatientPortalUrl(url: unknown): string {
 
 export function getMarketingIntegrations(): MarketingIntegrations {
   const defaults: MarketingIntegrations = {
-    // Provider-only: paste Charm EHR scheduling URL in /provider/integrations (not used for public Book Online).
+    // Team: staff calendar URL from /provider/integrations.
     bookingUrl: '',
+    // Public self-service booking. When set, /book can redirect here.
+    publicBookingUrl: '',
     patientPortalUrl: '',
     // Empty = use same-origin /order-now (GitHub Pages + local marketing builds).
     pharmacyUrl: '',
@@ -221,8 +231,10 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     const pharmacyUrl = normalizeCatalogUrl(parsed.pharmacyUrl ?? defaults.pharmacyUrl)
     const bookingUrl = normalizeProviderBookingUrl(parsed.bookingUrl ?? defaults.bookingUrl)
     const patientPortalUrl = normalizePatientPortalUrl(parsed.patientPortalUrl ?? defaults.patientPortalUrl)
+    const publicBookingUrl = String((parsed as Partial<MarketingIntegrations>).publicBookingUrl ?? '').trim()
     const next: MarketingIntegrations = {
       bookingUrl,
+      publicBookingUrl,
       patientPortalUrl,
       pharmacyUrl,
       videoVisitUrl: String(parsed.videoVisitUrl || defaults.videoVisitUrl || ''),
@@ -239,8 +251,9 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     const needsCompatWrite =
       typeof (parsed as Partial<MarketingIntegrations>).fulfillmentPartnerName !== 'string' ||
       typeof (parsed as Partial<MarketingIntegrations>).catalogVenmoPayUrl !== 'string' ||
-      typeof (parsed as Partial<MarketingIntegrations>).paymentProcessorsNote !== 'string'
-    // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking" / default PHR.
+      typeof (parsed as Partial<MarketingIntegrations>).paymentProcessorsNote !== 'string' ||
+      typeof (parsed as Partial<MarketingIntegrations>).publicBookingUrl !== 'string'
+    // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking" / default portal.
     if (
       needsCompatWrite ||
       (String(parsed.pharmacyUrl || '').includes('example.com') && pharmacyUrl === '') ||
@@ -288,6 +301,8 @@ export function setMarketingProviderAuthed(v: boolean, username?: string) {
   } else {
     localStorage.removeItem(KEY_SESSION)
     localStorage.removeItem(KEY_SESSION_USER)
+    localStorage.removeItem('wph_token_v1')
+    // Do not remove wph_marketing_workspace_v1 (team preview), wph_portal_state_v1, wph_marketing_integrations_v1, etc.
   }
   window.dispatchEvent(new Event(MARKETING_PROVIDER_AUTH_EVENT))
 }

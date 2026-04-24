@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import brettPortrait from '../assets/brett.png'
 import VenmoPayToHint from '../components/VenmoPayToHint'
+import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import {
@@ -64,8 +65,9 @@ const ACCORDION_ITEMS: AccordionItem[] = [
         </p>
         <h3 className="landingAccordionSubhead">How To Book</h3>
         <p className="muted landingAccordionPara">
-          Use <Link to="/book">Book Online</Link> to choose a time that fits your schedule. New patients
-          typically start with a comprehensive visit; established patients can book follow-ups as directed
+          Use <Link to="/book">Book Online</Link> in the site menu. Booking and follow-up details are handled through
+          this website and the practice; any separate clinical or billing sign-in is only when the team gives you
+          that link. New patients usually start with a comprehensive visit; established patients follow the cadence
           in their plan.
         </p>
       </>
@@ -206,9 +208,8 @@ export default function Landing() {
             <div className="divider" />
 
             <div className="btnRow">
-              <Link to="/patient" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-                Patient Portal
-              </Link>
+              <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
+              <PatientPortalCta className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }} />
             </div>
           </div>
 
@@ -224,8 +225,8 @@ export default function Landing() {
             <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
               Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
               coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
-              medication is prescribed. Payment for now is completed via <b>Venmo</b> after the
-              practice confirms your order (amount and pay-to details from your care team). If something goes
+              medication is prescribed. Payment for now is via <b>Venmo</b> or <b>PayPal</b> (see details below) after
+              the practice confirms your order (amount and pay-to from your care team). If something goes
               wrong with your order, your care team handles it from our side.
             </p>
             <VenmoPayToHint style={{ marginTop: 8, marginBottom: 14 }} />

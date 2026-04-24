@@ -33,7 +33,7 @@ export default function PatientBackendLogin() {
         <div className="divider" />
 
         <p className="muted" style={{ marginTop: 0, fontSize: 14 }}>
-          Uses your Wheatfill Precision Health portal account (not Medplum). Local demo: <b>demo</b> / <b>wheatfill</b> when the backend has seeded a demo patient.
+          Uses your Wheatfill Precision Health customer account. Local demo: <b>demo</b> / <b>wheatfill</b> when the backend has seeded a demo customer.
         </p>
 
         <div className="formRow" style={{ marginTop: 12 }}>

@@ -106,7 +106,7 @@ export default function ProviderPortal() {
         <div>
           <h1 style={{ margin: 0 }}>Provider Portal</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Scheduling and time off (Medplum).
+            Scheduling, requests, and team tools.
           </p>
         </div>
         <div className="pageActions">
@@ -328,8 +328,8 @@ export default function ProviderPortal() {
           </div>
           <div className="divider" />
           <p className="muted">
-            Patient catalog checkout uses <b>Venmo</b> after the practice confirms amount and recipient. Optional Stripe or
-            Clover can still be configured for other billing flows.
+            Customer checkout: <b>Venmo</b>, <b>PayPal</b>, <b>Zelle</b>, and optional <b>Stripe</b> (see public site) after
+            the team confirms amount. Configure rails under Payments.
           </p>
           <div className="divider" />
           <Link to="/provider/payments" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
@@ -340,10 +340,10 @@ export default function ProviderPortal() {
         <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Integrations</h2>
-            <span className="pill pillRed">EHR/Video</span>
+            <span className="pill pillRed">Links &amp; video</span>
           </div>
           <div className="divider" />
-          <p className="muted">Configure booking, portal, Order Now Catalog, and video visit links.</p>
+          <p className="muted">Configure public booking, customer account, order catalog, and video visit links.</p>
           <div className="divider" />
           <Link to="/provider/integrations" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
             Open integrations

@@ -17,6 +17,7 @@ export default function ProviderIntegrations() {
 
   const [form, setForm] = useState<PracticeIntegrations>({
     bookingUrl: '',
+    publicBookingUrl: '',
     patientPortalUrl: '',
     pharmacyUrl: '',
     videoVisitUrl: '',
@@ -56,9 +57,9 @@ export default function ProviderIntegrations() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Configure Charm EHR links for booking and patient portal, plus Order Now Catalog and video; fulfillment partner name and
-            catalog Venmo link shown on the public site; optional notes for card rails (Stripe/Clover in{' '}
-            <Link to="/provider/payments">Payments</Link>).
+            Set public booking, staff calendar, and customer sign-in links; order catalog and video; fulfillment name and
+            catalog Venmo link for the public site. PayPal, Venmo, Zelle, and card checkout notes live under{' '}
+            <Link to="/provider/payments">Payments</Link>.
           </p>
         </div>
         <div className="pageActions">
@@ -82,17 +83,30 @@ export default function ProviderIntegrations() {
 
       <section className="card cardAccentSoft" style={{ maxWidth: 980 }}>
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Charm EHR &amp; public links</h2>
+          <h2 style={{ margin: 0 }}>Public links &amp; storefront</h2>
           <span className="pill">Router</span>
         </div>
         <div className="divider" />
 
         {loading ? <p className="muted">Loading…</p> : null}
 
+        <label style={{ display: 'block', marginTop: 12 }}>
+          <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+            Public customer booking (scheduling or embed — when set, &quot;Book Online&quot; can use this URL)
+          </div>
+          <input
+            className="input"
+            value={form.publicBookingUrl}
+            onChange={(e) => setForm((p) => ({ ...p, publicBookingUrl: e.target.value }))}
+            placeholder="https://..."
+            style={{ width: '100%' }}
+          />
+        </label>
+
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Charm EHR scheduling URL (staff — paste your Charm booking / scheduling link)
+              Staff calendar (internal / team scheduling link)
             </div>
             <input
               className="input"
@@ -103,7 +117,7 @@ export default function ProviderIntegrations() {
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient portal URL (Charm PHR / patient portal sign-in)
+              Customer account URL (order history, account sign-in, or your hosted page)
             </div>
             <input
               className="input"
@@ -142,7 +156,7 @@ export default function ProviderIntegrations() {
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Fulfillment partner name (patient-facing copy, e.g. compounding pharmacy)
+              Fulfillment partner name (customer-facing copy, e.g. compounding pharmacy)
             </div>
             <input
               className="input"
@@ -153,7 +167,7 @@ export default function ProviderIntegrations() {
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Catalog Venmo pay link (after the practice confirms amount)
+              Catalog Venmo pay link (after the team confirms amount)
             </div>
             <input
               className="input"
@@ -166,14 +180,14 @@ export default function ProviderIntegrations() {
 
         <label style={{ display: 'block', marginTop: 12 }}>
           <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-            Payment processors note (Stripe/Clover — internal reference; connect accounts under Payments)
+            Payment note (PayPal, Venmo, Zelle, Stripe, etc. — internal reference; details under Payments)
           </div>
           <textarea
             className="input"
             rows={3}
             value={form.paymentProcessorsNote}
             onChange={(e) => setForm((p) => ({ ...p, paymentProcessorsNote: e.target.value }))}
-            placeholder="e.g. Use Stripe for catalog prepay; Clover in-office only."
+            placeholder="e.g. Zelle to practice@…; Stripe checkout for catalog; Venmo for confirmed amounts."
             style={{ width: '100%', resize: 'vertical' }}
           />
         </label>

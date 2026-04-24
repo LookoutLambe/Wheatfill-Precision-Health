@@ -26,8 +26,8 @@ export default function MarketingProviderAdmin() {
         <div>
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted pageSubtitle">
-            Configure Charm EHR booking and patient portal, Order Now Catalog, video, fulfillment partner name, catalog
-            Venmo link, and optional payment-rail notes.
+            Configure public links (booking, account, catalog, video), fulfillment partner name, catalog pay link, and
+            payment notes. Consumer DTC site—no EHR product names in the public experience.
           </p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
@@ -62,16 +62,29 @@ export default function MarketingProviderAdmin() {
         </div>
         <div className="divider" />
 
+        <label style={{ display: 'block', marginTop: 12 }}>
+          <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+            Public customer booking (online scheduling or embed; &quot;Book Online&quot; uses this when set)
+          </div>
+          <input
+            className="input"
+            value={form.publicBookingUrl}
+            onChange={(e) => setForm((p) => ({ ...p, publicBookingUrl: e.target.value }))}
+            placeholder="https://… (patient self-service, not staff calendar)"
+            style={{ width: '100%' }}
+          />
+        </label>
+
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Charm EHR scheduling URL (provider only — not shown on public Book Online)
+              Internal staff / provider calendar (not the public book link)
             </div>
             <input className="input" value={form.bookingUrl} onChange={(e) => setForm((p) => ({ ...p, bookingUrl: e.target.value }))} />
           </label>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Patient portal URL (Charm PHR / patient portal)
+              Customer account URL (orders, subscription, or partner app—optional)
             </div>
             <input
               className="input"
@@ -142,6 +155,7 @@ export default function MarketingProviderAdmin() {
             onClick={() => {
               setMarketingIntegrations({
                 bookingUrl: form.bookingUrl.trim(),
+                publicBookingUrl: form.publicBookingUrl.trim(),
                 patientPortalUrl: form.patientPortalUrl.trim(),
                 pharmacyUrl: form.pharmacyUrl.trim(),
                 videoVisitUrl: form.videoVisitUrl.trim(),
@@ -162,11 +176,11 @@ export default function MarketingProviderAdmin() {
         <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Booking</h2>
-            <span className="pill">Charm EHR</span>
+            <span className="pill">Staff</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens your Charm EHR scheduling page in a new tab for staff. Patients use <b>Book Online</b> on the site for the calendar.
+            Internal calendar for the care team. Public <b>Book online</b> uses the <b>public booking</b> URL above.
           </p>
           <div className="divider" />
           <a
@@ -180,18 +194,43 @@ export default function MarketingProviderAdmin() {
               if (!form.bookingUrl.trim()) e.preventDefault()
             }}
           >
-            {form.bookingUrl.trim() ? 'Open booking' : 'Add booking URL above'}
+            {form.bookingUrl.trim() ? 'Open staff calendar' : 'Add staff calendar URL above'}
+          </a>
+        </section>
+
+        <section className="card cardAccentNavy">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Book online (patients)</h2>
+            <span className="pill">Public</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Same link as the &quot;Book online&quot; menu: customer self-service scheduling.
+          </p>
+          <div className="divider" />
+          <a
+            className="btn btnAccent"
+            style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            href={form.publicBookingUrl.trim() || '#'}
+            target="_blank"
+            rel="noreferrer"
+            aria-disabled={!form.publicBookingUrl.trim()}
+            onClick={(e) => {
+              if (!form.publicBookingUrl.trim()) e.preventDefault()
+            }}
+          >
+            {form.publicBookingUrl.trim() ? 'Test patient booking' : 'Add public patient booking URL above'}
           </a>
         </section>
 
         <section className="card cardAccentSoft">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Patient portal</h2>
-            <span className="pill pillRed">Charm PHR</span>
+            <h2 style={{ margin: 0 }}>Customer account</h2>
+            <span className="pill pillRed">Optional</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens the Charm EHR patient portal (PHR); patients sign in with their Charm credentials.
+            Optional link for subscription, partner checkout, or account sign-in. The main site is still the storefront.
           </p>
           <div className="divider" />
           <a
@@ -205,7 +244,7 @@ export default function MarketingProviderAdmin() {
               if (!form.patientPortalUrl.trim()) e.preventDefault()
             }}
           >
-            {form.patientPortalUrl.trim() ? 'Open patient portal' : 'Add portal URL above'}
+            {form.patientPortalUrl.trim() ? 'Test customer account link' : 'Add customer account URL above'}
           </a>
         </section>
 

@@ -15,9 +15,11 @@ import BookOnline from './pages/BookOnline'
 import OrderingPortal from './pages/OrderingPortal'
 import PharmacyOptions from './pages/PharmacyOptions'
 import PharmacyPartner from './pages/PharmacyPartner'
+import MountainViewPharmacy from './pages/MountainViewPharmacy'
 import OrderNowSummary from './pages/OrderNowSummary'
 import PatientBackendLogin from './pages/PatientBackendLogin'
 import PatientPortal from './pages/PatientPortal'
+import PatientPortalInfo from './pages/PatientPortalInfo'
 import ProviderPortal from './pages/ProviderPortal'
 import SignIn from './pages/SignIn'
 import ProviderLogin from './pages/ProviderLogin'
@@ -25,6 +27,7 @@ import ProviderOrderingTest from './pages/ProviderOrderingTest'
 import ProviderPayments from './pages/ProviderPayments'
 import ProviderIntegrations from './pages/ProviderIntegrations'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
+import { PATIENT_USES_MEDPLUM } from './config/patientFeatures'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from './config/providerAuth'
 import MarketingProviderLogin from './pages/MarketingProviderLogin'
 import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
@@ -80,7 +83,9 @@ export default function App() {
           <Route path="/order-now" element={<PharmacyOptions />} />
           <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
           <Route path="/order-now/:slug" element={<PharmacyPartner />} />
-          <Route path="/pharmacy" element={<Navigate to="/order-now" replace />} />
+          <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
+          <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
+          <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
           <Route path="/signin" element={<MarketingLeaveToFullApp path="/signin" />} />
           <Route path="/patient" element={<MarketingLeaveToFullApp path="/patient" />} />
@@ -109,7 +114,9 @@ export default function App() {
         <Route path="/order-now" element={<PharmacyOptions />} />
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />
-        <Route path="/pharmacy" element={<Navigate to="/order-now" replace />} />
+        <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
+        <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
+        <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
@@ -118,9 +125,13 @@ export default function App() {
         <Route
           path="/patient"
           element={
-            <PatientGuard>
-              <PatientPortal />
-            </PatientGuard>
+            PATIENT_USES_MEDPLUM ? (
+              <PatientGuard>
+                <PatientPortal />
+              </PatientGuard>
+            ) : (
+              <PatientPortalInfo />
+            )
           }
         />
       </Route>

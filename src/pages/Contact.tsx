@@ -15,26 +15,32 @@ export default function Contact() {
         <div>
           <h1 style={{ margin: 0 }}>Contact</h1>
           <p className="muted pageSubtitle">
-            For privacy, please don’t send medical details from this page. Use the secure portal for messages.
+            For privacy, don’t send medical details in this form. Urgent or clinical questions—use the paths on the For
+            patients page or the contact options your practice provides.
           </p>
         </div>
 
         <section className="card cardAccentNavy" style={{ maxWidth: 920 }}>
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Secure messaging</h2>
-            <span className="pill">Portal</span>
+            <h2 style={{ margin: 0 }}>On this website</h2>
+            <span className="pill">Patients</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Use the patient portal to message the provider securely.
+            Book a visit, see pricing, and browse the order catalog from this site. The For patients page pulls those
+            links together in one place.
           </p>
           <div className="btnRow" style={{ marginTop: 12 }}>
             {APP_URL ? (
-              <a className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }} href={`${APP_URL}/patient`}>
-                Open secure portal
+              <a
+                className="btn btnPrimary"
+                style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+                href={`${String(APP_URL).replace(/\/$/, '')}/patient`}
+              >
+                For patients
               </a>
             ) : (
-              <span className="muted">Portal link not configured.</span>
+              <span className="muted">Set <code>VITE_APP_URL</code> so this button can open the full site.</span>
             )}
           </div>
         </section>

@@ -61,7 +61,7 @@ export default function ProviderOrderingTest() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Provider Ordering (Test)</h1>
-          <p className="muted pageSubtitle">Creates MedicationRequests in Medplum. No payment.</p>
+          <p className="muted pageSubtitle">Test flow: creates medication request records. No payment.</p>
         </div>
         <div className="pageActions">
           <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>

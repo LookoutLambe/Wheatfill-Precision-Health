@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { Practitioner } from '@medplum/fhirtypes'
+import { publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { MARKETING_ONLY } from '../config/mode'
+import { getMarketingIntegrations } from '../marketing/providerStore'
 import { bookAppointment, getPortalState, subscribePortalState } from '../data/portalStore'
-import { useMedplumApp } from '../medplum/provider'
-import { createBookedAppointment, ensureSchedule, listAppointmentsForRange, listBlackoutSlots, type UiApptType } from '../medplum/scheduling'
-import { PROVIDER_PRACTITIONER_ID } from '../medplum/client'
+import { apiPost } from '../api/client'
+import type { UiApptType } from '../medplum/scheduling'
 
 type Slot = { date: string; time: string }
 
@@ -77,9 +77,22 @@ function buildMonthCells(month: Date) {
 }
 
 export default function BookOnline() {
-  const { medplum, profile } = useMedplumApp()
+  const publicBookingMarketing = MARKETING_ONLY
+    ? getMarketingIntegrations().publicBookingUrl?.trim() || ''
+    : ''
+  const publicBookingFull = !MARKETING_ONLY ? publicSchedulingUrlForFullApp() : ''
+  useEffect(() => {
+    if (MARKETING_ONLY && publicBookingMarketing) {
+      window.location.replace(publicBookingMarketing)
+    }
+  }, [publicBookingMarketing])
+  useEffect(() => {
+    if (publicBookingFull) {
+      window.location.replace(publicBookingFull)
+    }
+  }, [publicBookingFull])
+
   const [step, setStep] = useState<'choose' | 'schedule'>('choose')
-  const [patientName, setPatientName] = useState('')
   const [apptType, setApptType] = useState<UiApptType>('New Patient Consultation')
   const [notes, setNotes] = useState('')
   const [availability, setAvailability] = useState<{ blackouts: string[]; booked: string[] }>({ blackouts: [], booked: [] })
@@ -114,75 +127,20 @@ export default function BookOnline() {
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [provider, setProvider] = useState<Practitioner | null>(null)
-  const [scheduleId, setScheduleId] = useState<string>('')
   const [guestName, setGuestName] = useState('')
 
   useEffect(() => {
-    if (!profile || profile.resourceType !== 'Patient') {
-      setPatientName('')
-      return
-    }
-    const p: any = profile
-    const name = p.name?.[0]
-    const ln = (name?.family || '').toString().trim()
-    const fn = (name?.given?.[0] || '').toString().trim()
-    const dob = p.birthDate ? String(p.birthDate) : ''
-    setPatientName(ln && fn && dob ? `${ln}, ${fn} — ${dob}` : `${fn} ${ln}`.trim())
-  }, [profile])
-
-  useEffect(() => {
-    if (MARKETING_ONLY) {
-      setAvailError(null)
-      setProvider(null)
-      setScheduleId('')
-      const applyPortal = () => {
-        const s = getPortalState()
-        setAvailability({
-          blackouts: [...s.blackoutDates],
-          booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
-        })
-      }
-      applyPortal()
-      return subscribePortalState(applyPortal)
-    }
-
     setAvailError(null)
-    ;(async () => {
-      try {
-        const providerUser = PROVIDER_PRACTITIONER_ID
-          ? await medplum.readResource('Practitioner', PROVIDER_PRACTITIONER_ID)
-          : await medplum.searchOne('Practitioner', '')
-        if (!providerUser) throw new Error('No provider Practitioner found in Medplum project.')
-        const prac = providerUser as any as Practitioner
-        setProvider(prac)
-
-        const schedule = await ensureSchedule(medplum, prac)
-        setScheduleId(schedule.id || '')
-
-        const startDt = new Date()
-        const endDt = new Date(startDt.getTime() + rangeDays * 24 * 60 * 60 * 1000)
-        const startIso = startDt.toISOString()
-        const endIso = endDt.toISOString()
-
-        const [blackoutSlots, appts] = await Promise.all([
-          listBlackoutSlots(medplum, schedule.id || '', startIso, endIso),
-          listAppointmentsForRange(medplum, `Practitioner/${prac.id}`, startIso, endIso),
-        ])
-
-        const blackouts = new Set<string>()
-        for (const s of blackoutSlots) if (s.start) blackouts.add(String(s.start).slice(0, 10))
-        const booked = appts
-          .filter((a) => a.status === 'booked' || a.status === 'arrived')
-          .map((a) => (a.start ? String(a.start).slice(0, 16) : ''))
-          .filter(Boolean)
-
-        setAvailability({ blackouts: Array.from(blackouts), booked })
-      } catch (e: any) {
-        setAvailError(String(e?.message || e))
-      }
-    })()
-  }, [medplum, rangeDays])
+    const applyPortal = () => {
+      const s = getPortalState()
+      setAvailability({
+        blackouts: [...s.blackoutDates],
+        booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
+      })
+    }
+    applyPortal()
+    return subscribePortalState(applyPortal)
+  }, [rangeDays])
 
   const chosen = prices[apptType]
   const blackoutSet = useMemo(() => new Set(availability.blackouts), [availability.blackouts])
@@ -215,12 +173,66 @@ export default function BookOnline() {
     return ''
   }, [selectedDate, slotsByDate, blackoutSet, bookedSet])
 
+  if (MARKETING_ONLY && publicBookingMarketing) {
+    return (
+      <div className="page" style={{ padding: 32, maxWidth: 560 }}>
+        <h1 style={{ margin: 0 }}>Book online</h1>
+        <p className="muted" style={{ marginTop: 12 }}>
+          Taking you to our scheduling page to complete your booking…
+        </p>
+      </div>
+    )
+  }
+
+  if (publicBookingFull) {
+    return (
+      <div className="page" style={{ padding: 32, maxWidth: 560 }}>
+        <h1 style={{ margin: 0 }}>Book online</h1>
+        <p className="muted" style={{ marginTop: 12 }}>
+          Opening your scheduling link…
+        </p>
+      </div>
+    )
+  }
+
+  if (MARKETING_ONLY) {
+    return (
+      <div className="page" style={{ maxWidth: 720 }}>
+        <div className="pageHeaderRow">
+          <div>
+            <h1 style={{ margin: 0 }}>Book online</h1>
+            <p className="muted pageSubtitle" style={{ marginTop: 8 }}>
+              Add your <strong>public booking</strong> URL in Team → Integrations so &quot;Book online&quot; opens your
+              scheduling page.
+            </p>
+          </div>
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Home
+          </Link>
+        </div>
+        <section className="card cardAccentSoft" style={{ marginTop: 16 }}>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Open{' '}
+            <Link to="/provider/integrations" style={{ fontWeight: 800 }}>
+              Integrations
+            </Link>
+            , paste the URL where <strong>customers</strong> self-book (the public page—not an internal staff link),
+            then save.
+          </p>
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="page">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Book Online</h1>
-          <p className="muted pageSubtitle">Pick a day on the calendar, then choose an available time.</p>
+          <p className="muted pageSubtitle">
+            It&rsquo;s a simple form: you pick a preferred time, we send the team an alert. Someone will follow up to
+            confirm—nothing here is a medical record.
+          </p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -230,11 +242,11 @@ export default function BookOnline() {
       {step === 'choose' ? (
         <section className="card cardAccentSoft">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Choose Your Appointment Type</h2>
-            <span className="pill">Consultation</span>
+            <h2 style={{ margin: 0 }}>What kind of visit?</h2>
+            <span className="pill">Request</span>
           </div>
           <p className="muted" style={{ marginTop: 6 }}>
-            Select the option that best fits your needs.
+            Choose an option; next step is just your name, notes, and a time preference.
           </p>
           <div className="divider" />
 
@@ -245,14 +257,12 @@ export default function BookOnline() {
                 <span className="pill pillRed">$110</span>
               </div>
               <p className="muted" style={{ marginTop: 6 }}>
-                Approximately 30 minutes
+                About 30 minutes
               </p>
               <ul className="muted" style={{ margin: '10px 0 0', paddingLeft: 18 }}>
-                <li>Comprehensive health assessment</li>
-                <li>Medical history review</li>
-                <li>Treatment plan development</li>
-                <li>Medication consultation</li>
-                <li>Answer all your questions</li>
+                <li>Intro conversation</li>
+                <li>Your questions, pricing, next steps</li>
+                <li>See if we&rsquo;re a good fit</li>
               </ul>
               <div className="divider" />
               <button
@@ -264,7 +274,7 @@ export default function BookOnline() {
                   setStep('schedule')
                 }}
               >
-                Schedule New Patient Visit
+                Continue
               </button>
             </div>
 
@@ -274,14 +284,12 @@ export default function BookOnline() {
                 <span className="pill">$85</span>
               </div>
               <p className="muted" style={{ marginTop: 6 }}>
-                Approximately 15 minutes
+                About 15 minutes
               </p>
               <ul className="muted" style={{ margin: '10px 0 0', paddingLeft: 18 }}>
-                <li>Progress check-in</li>
-                <li>Medication adjustments</li>
-                <li>Address concerns</li>
-                <li>Ongoing support</li>
-                <li>Treatment optimization</li>
+                <li>Quick check-in</li>
+                <li>Continue from a prior call</li>
+                <li>Lightweight touchpoint</li>
               </ul>
               <div className="divider" />
               <button
@@ -293,7 +301,7 @@ export default function BookOnline() {
                   setStep('schedule')
                 }}
               >
-                Schedule Follow-Up
+                Continue
               </button>
             </div>
           </div>
@@ -304,7 +312,7 @@ export default function BookOnline() {
         <div className="cardGrid" style={{ alignItems: 'start' }}>
           <section className="card cardAccentNavy">
             <div className="cardTitle">
-              <h2 style={{ margin: 0 }}>Service details</h2>
+              <h2 style={{ margin: 0 }}>Your request</h2>
               <span className="pill pillRed">
                 ${chosen.price} • ~{chosen.minutes} min
               </span>
@@ -314,47 +322,38 @@ export default function BookOnline() {
             <div className="formRow">
               <div>
                 <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                  Signed in as
+                  Request details
                 </div>
-                <div className="pill">{patientName || '—'}</div>
-                {MARKETING_ONLY ? (
-                  <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                    This page uses the calendar below. Enter your name in the field under Notes to hold a time (saved
-                    in this browser only). For PHI and Charm EHR scheduling, staff use the link in Provider&apos;s
-                    Portal.
-                  </div>
-                ) : !patientName ? (
-                  <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                    Please sign in via <Link to="/signin">Sign in</Link> before booking.
-                  </div>
-                ) : null}
+                <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
+                  This form does one thing: it <strong>alerts the people on the team</strong> (Brett and/or Bridget) with
+                  your name, preference, and notes.                   It isn&rsquo;t a confirmed slot in some other system and doesn&rsquo;t open a record
+                  elsewhere—just a notification in <Link to="/provider">team workspace</Link> on this site.
+                </p>
               </div>
 
               <label>
                 <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                  Appointment type
+                  Visit type
                 </div>
                 <select className="select" value={apptType} onChange={(e) => setApptType(e.target.value as UiApptType)}>
-                  <option>New Patient Consultation</option>
-                  <option>Follow-Up Consultation</option>
+                  <option value="New Patient Consultation">New visit (first time)</option>
+                  <option value="Follow-Up Consultation">Return visit</option>
                 </select>
               </label>
             </div>
 
-            {MARKETING_ONLY ? (
-              <label style={{ display: 'block', marginTop: 12 }}>
-                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                  Your name (required to hold this time in preview)
-                </div>
-                <input
-                  className="input"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="First and last name"
-                  autoComplete="name"
-                />
-              </label>
-            ) : null}
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Your name (required)
+              </div>
+              <input
+                className="input"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                placeholder="First and last name"
+                autoComplete="name"
+              />
+            </label>
 
             <label style={{ display: 'block', marginTop: 12 }}>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
@@ -372,16 +371,9 @@ export default function BookOnline() {
               <button
                 type="button"
                 className="btn btnPrimary"
-                disabled={
-                  !selected ||
-                  busy ||
-                  (MARKETING_ONLY ? !(patientName || guestName).trim() : !patientName)
-                }
+                disabled={!selected || busy || !guestName.trim()}
                 style={{
-                  opacity:
-                    !selected || busy || (MARKETING_ONLY ? !(patientName || guestName).trim() : !patientName)
-                      ? 0.6
-                      : 1,
+                  opacity: !selected || busy || !guestName.trim() ? 0.6 : 1,
                 }}
                 onClick={() => {
                   setMessage(null)
@@ -389,63 +381,50 @@ export default function BookOnline() {
                   setBusy(true)
                   ;(async () => {
                     try {
-                      if (MARKETING_ONLY) {
-                        const who = (patientName || guestName).trim()
-                        if (!who) throw new Error('Enter your name to hold this time.')
-                        const res = bookAppointment({
-                          patientName: who,
-                          type: apptType,
+                      const who = guestName.trim()
+                      if (!who) throw new Error('Enter your name.')
+
+                      const bodyLines = [
+                        `Type: ${apptType}`,
+                        `Preferred date: ${selected.date}`,
+                        `Preferred time: ${selected.time}`,
+                        notes?.trim() ? `Notes: ${notes.trim()}` : null,
+                      ].filter(Boolean) as string[]
+
+                      await apiPost('/v1/public/team-inbox', {
+                        kind: 'online_booking',
+                        fromName: who,
+                        fromEmail: '',
+                        body: bodyLines.join('\n'),
+                        meta: {
+                          apptType,
                           date: selected.date,
                           time: selected.time,
-                          notes,
-                        })
-                        if (!res.ok) {
-                          setMessage(res.reason)
-                          return
-                        }
-                        setMessage(`Booked ${selected.date} ${selected.time} (preview—stored in this browser only).`)
-                        setSelectedTime('')
-                        setNotes('')
-                        const s = getPortalState()
-                        setAvailability({
-                          blackouts: [...s.blackoutDates],
-                          booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
-                        })
-                        return
-                      }
-
-                      if (!profile || profile.resourceType !== 'Patient') throw new Error('Not signed in as a patient.')
-                      if (!provider) throw new Error('Provider not configured.')
-
-                      const minutes = apptType === 'Follow-Up Consultation' ? 15 : 30
-                      const startLocal = new Date(`${selected.date}T${selected.time}:00`)
-                      const startIso = startLocal.toISOString()
-                      const endIso = new Date(startLocal.getTime() + minutes * 60_000).toISOString()
-
-                      const appt = await createBookedAppointment({
-                        medplum,
-                        patient: profile as any,
-                        practitioner: provider,
-                        startIso,
-                        endIso,
-                        type: apptType,
-                        notes,
+                          notes: (notes || '').trim(),
+                        },
                       })
 
-                      setMessage(`Booked ${appt.start ? new Date(appt.start).toLocaleString() : `${selected.date} ${selected.time}`}.`)
+                      const res = bookAppointment({
+                        patientName: who,
+                        type: apptType,
+                        date: selected.date,
+                        time: selected.time,
+                        notes,
+                      })
+                      if (!res.ok) {
+                        setMessage(`Saved to team inbox. Calendar: ${res.reason}`)
+                        return
+                      }
+                      setMessage(
+                        `Alert sent: ${selected.date} at ${selected.time}. The team will follow up. The team inbox on this site has your request; the slot grid here is only to pick a preference in this browser.`,
+                      )
                       setSelectedTime('')
                       setNotes('')
-
-                      if (scheduleId) {
-                        const startDt = new Date()
-                        const endDt = new Date(startDt.getTime() + rangeDays * 24 * 60 * 60 * 1000)
-                        const appts = await listAppointmentsForRange(medplum, `Practitioner/${provider.id}`, startDt.toISOString(), endDt.toISOString())
-                        const booked = appts
-                          .filter((a) => a.status === 'booked' || a.status === 'arrived')
-                          .map((a) => (a.start ? String(a.start).slice(0, 16) : ''))
-                          .filter(Boolean)
-                        setAvailability((prev) => ({ ...prev, booked }))
-                      }
+                      const s = getPortalState()
+                      setAvailability({
+                        blackouts: [...s.blackoutDates],
+                        booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
+                      })
                     } catch (e: any) {
                       setMessage(String(e?.message || e))
                     } finally {
@@ -454,10 +433,10 @@ export default function BookOnline() {
                   })()
                 }}
               >
-                Next
+                Send request
               </button>
               <Link to="/patient" className="btn" style={{ textDecoration: 'none' }}>
-                Go to Patient Portal
+                For patients
               </Link>
             </div>
 
@@ -470,9 +449,10 @@ export default function BookOnline() {
 
           <section className="card cardAccentSoft">
             <div style={{ textAlign: 'center', marginBottom: 10 }}>
-              <h2 style={{ margin: 0 }}>Schedule your service</h2>
+              <h2 style={{ margin: 0 }}>Preferred time</h2>
               <p className="muted" style={{ marginTop: 8 }}>
-                Check availability and book the date and time that works for you.
+                Choose a day and time you&rsquo;d like—that preference goes out as the alert. The grid is for convenience
+                on this page, not a guarantee until someone confirms with you.
               </p>
             </div>
             <div className="divider" />

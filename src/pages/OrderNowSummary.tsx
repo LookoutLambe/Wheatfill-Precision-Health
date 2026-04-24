@@ -136,7 +136,7 @@ export default function OrderNowSummary() {
           return
         }
         setCheckoutError(
-          'We could not complete the online handoff for this order. Your request may still be on file—check with the office for Venmo payment instructions or next steps.',
+          'We could not complete the online handoff for this order. Your request may still be on file—check with the office for Venmo or PayPal payment instructions or next steps.',
         )
       } catch (e: any) {
         setCheckoutError(String(e?.message || e))
@@ -345,8 +345,8 @@ export default function OrderNowSummary() {
               </button>
               <p className="muted orderNowSecureNote">
                 Submitting sends your request to the practice—you are not charged here. When your care team confirms the
-                total, pay with Venmo using the <strong>Payment</strong> section at the top of this page (only as they
-                instruct).
+                total, use <strong>Venmo</strong> or <strong>PayPal</strong> as shown in the <strong>Payment</strong>{' '}
+                section at the top of this page (only as they instruct).
               </p>
             </div>
           </>

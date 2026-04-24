@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { apiPost } from '../api/client'
+import ApiConnectionHint from '../components/ApiConnectionHint'
 import {
   ensureDefaultMarketingProviderUsers,
+  isAllowedMarketingProviderUser,
   resolveMarketingProviderSlot,
   setMarketingProviderAuthed,
-  verifyMarketingProviderPassword,
+  setMarketingProviderPassword,
+  teamApiUsernameForSlot,
 } from '../marketing/providerStore'
 
 export default function MarketingProviderLogin() {
@@ -31,17 +35,26 @@ export default function MarketingProviderLogin() {
         await ensureDefaultMarketingProviderUsers()
         const u = username.trim().toLowerCase()
         const slot = resolveMarketingProviderSlot(u)
-        if (!slot) {
+        if (!slot || !isAllowedMarketingProviderUser(slot)) {
           setError('Invalid username or password.')
           return
         }
-        const ok = await verifyMarketingProviderPassword(u, password)
-        if (!ok) {
-          setError('Invalid username or password.')
+        const apiName = teamApiUsernameForSlot(slot)
+        const res = await apiPost<{ token: string }>(
+          '/auth/login',
+          { username: apiName, password },
+          '', // do not send an existing session token
+        )
+        if (!res?.token) {
+          setError('Sign-in failed. Try again.')
           return
         }
-        setMarketingProviderAuthed(true, slot)
+        localStorage.setItem('wph_token_v1', res.token)
+        await setMarketingProviderPassword(slot, password)
+        setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })
+      } catch (e: unknown) {
+        setError(String((e as Error)?.message || e || 'Sign-in failed. Is the API running and VITE_API_URL correct?'))
       } finally {
         setBusy(false)
       }
@@ -53,7 +66,10 @@ export default function MarketingProviderLogin() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Provider Login</h1>
-            <p className="muted pageSubtitle">Demo access (no patient data stored on this site).</p>
+            <p className="muted pageSubtitle">
+              Team sign-in for this ad site. Brett and Bridget share the same inbox for contact and time-request forms—
+              alerts for follow-up, not a medical chart.
+            </p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -111,7 +127,8 @@ export default function MarketingProviderLogin() {
         </form>
 
         <div className="divider" />
-        <p className="muted" style={{ margin: 0 }}>
+        <ApiConnectionHint />
+        <p className="muted" style={{ margin: '16px 0 0' }}>
           This is a <b>demo</b> provider area. It does not access patient data.
         </p>
       </section>

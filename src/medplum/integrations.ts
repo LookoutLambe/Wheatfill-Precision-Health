@@ -5,7 +5,10 @@ import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
 const EXT_BASE = 'https://wheatfillprecisionhealth.com/fhir/StructureDefinition'
 
 export type PracticeIntegrations = {
+  /** Staff / internal calendar link. */
   bookingUrl: string
+  /** Public self-service online booking; marketing /book can redirect here. */
+  publicBookingUrl: string
   patientPortalUrl: string
   pharmacyUrl: string
   videoVisitUrl: string
@@ -14,7 +17,13 @@ export type PracticeIntegrations = {
   paymentProcessorsNote: string
 }
 
-type IntegrationUrlKey = 'bookingUrl' | 'patientPortalUrl' | 'pharmacyUrl' | 'videoVisitUrl' | 'catalogVenmoPayUrl'
+type IntegrationUrlKey =
+  | 'bookingUrl'
+  | 'publicBookingUrl'
+  | 'patientPortalUrl'
+  | 'pharmacyUrl'
+  | 'videoVisitUrl'
+  | 'catalogVenmoPayUrl'
 
 export function readIntegrations(org?: Organization | null): PracticeIntegrations {
   const ext = org?.extension || []
@@ -27,6 +36,7 @@ export function readIntegrations(org?: Organization | null): PracticeIntegration
   }
   return {
     bookingUrl: getUrl('bookingUrl'),
+    publicBookingUrl: getUrl('publicBookingUrl'),
     patientPortalUrl: getUrl('patientPortalUrl'),
     pharmacyUrl: getUrl('pharmacyUrl'),
     videoVisitUrl: getUrl('videoVisitUrl'),
@@ -49,6 +59,7 @@ export function writeIntegrations(org: Organization, next: PracticeIntegrations)
     extension: [
       ...keep,
       ...mkUrl('bookingUrl', next.bookingUrl),
+      ...mkUrl('publicBookingUrl', next.publicBookingUrl),
       ...mkUrl('patientPortalUrl', next.patientPortalUrl),
       ...mkUrl('pharmacyUrl', next.pharmacyUrl),
       ...mkUrl('videoVisitUrl', next.videoVisitUrl),

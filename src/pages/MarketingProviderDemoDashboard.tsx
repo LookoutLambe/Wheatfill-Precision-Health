@@ -330,12 +330,13 @@ export default function MarketingProviderDemoDashboard() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments (preview)</h2>
-            <span className="pill">Venmo</span>
+            <span className="pill">Venmo · PayPal</span>
           </div>
           <div className="divider" />
           <p className="muted">
-            Catalog checkout uses <b>Venmo</b> after the practice confirms amount and recipient with the patient. Optional
-            card processors (Stripe/Clover) can be wired later for other flows.
+            Catalog checkout uses <b>Venmo</b> (or <b>PayPal</b> to the site’s pay-to email) after the practice confirms
+            amount and recipient with the patient. Optional card processors (Stripe/Clover) can be wired later for other
+            flows.
           </p>
           <VenmoPayToHint style={{ marginTop: 10 }} />
         </section>
@@ -413,10 +414,10 @@ export default function MarketingProviderDemoDashboard() {
         <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Integrations</h2>
-            <span className="pill pillRed">EHR</span>
+            <span className="pill pillRed">Storefront</span>
           </div>
           <div className="divider" />
-          <p className="muted">Set your booking URL, patient portal URL, Order Now Catalog link, and video visit room.</p>
+          <p className="muted">Set your public booking URL, customer account URL, order catalog, and video visit room.</p>
           <div className="divider" />
           <Link to="/provider/integrations" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>
             Open integrations
@@ -429,7 +430,7 @@ export default function MarketingProviderDemoDashboard() {
             <span className="pill">Demo</span>
           </div>
           <div className="divider" />
-          <p className="muted">In the production app this shows contact + patient messages. Here it’s a preview area.</p>
+          <p className="muted">In the production app this shows contact + customer messages. Here it’s a preview area.</p>
           <div className="divider" />
           <div className="pill">No messages (demo)</div>
         </section>

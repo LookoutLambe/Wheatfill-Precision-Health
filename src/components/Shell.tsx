@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import CatalogCartDrawer from './CatalogCartDrawer'
+import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
@@ -10,12 +12,31 @@ import {
   isMarketingProviderAuthed,
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
-import { CATALOG_VENMO, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES, PROVIDER_NPI } from '../config/provider'
+import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
+import {
+  CATALOG_PAYPAL,
+  CATALOG_VENMO,
+  CONTRACTED_PHARMACY_NAME,
+  PROVIDER_DISPLAY_NAME,
+  PROVIDER_LICENSED_STATES,
+  PROVIDER_NPI,
+} from '../config/provider'
 import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
+function headerCatalogSlugForPath(pathname: string): string | null {
+  if (pathname === '/pharmacy/mountain-view') return DEFAULT_CATALOG_PARTNER_SLUG
+  return null
+}
+
 export default function Shell() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const headerCartSlug = useMemo(() => headerCatalogSlugForPath(location.pathname), [location.pathname])
+  const headerCartProducts = useMemo(
+    () => CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({ sku: p.sku, name: p.name, subtitle: p.subtitle, priceCents: p.priceCents })),
+    [],
+  )
   const integ = MARKETING_ONLY ? getMarketingIntegrations() : null
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
@@ -58,7 +79,13 @@ export default function Shell() {
   const internal = (p: string) => `${base.replace(/\/$/, '')}${p.startsWith('/') ? p : `/${p}`}`
 
   const appOrderCatalog = integ?.pharmacyUrl || (APP_URL ? `${APP_URL}/order-now` : internal('/order-now'))
-  const appPatient = integ?.patientPortalUrl || (APP_URL ? `${APP_URL}/patient` : internal('/patient'))
+  const phr = integ?.patientPortalUrl?.trim() || ''
+  const phrFull = !MARKETING_ONLY ? optionalCustomerAccountUrl() : ''
+  const appPatient = MARKETING_ONLY
+    ? phr || internal('/contact')
+    : phrFull || (APP_URL ? `${APP_URL}/patient` : internal('/patient'))
+  const extBookMarketing = integ?.publicBookingUrl?.trim() || ''
+  const extBookFull = !MARKETING_ONLY ? publicSchedulingUrlForFullApp() : ''
   const catalogVenmoPayUrl = resolvedCatalogVenmoPayUrl()
   const states = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
 
@@ -86,16 +113,26 @@ export default function Shell() {
               </span>
             </NavLink>
 
-            <button
-              type="button"
-              className="navMenuToggle"
-              aria-expanded={menuOpen}
-              aria-controls="primary-navigation"
-              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              {menuOpen ? '×' : '☰'}
-            </button>
+            <div className="topNavRight">
+              {headerCartSlug ? (
+                <CatalogCartDrawer
+                  key={headerCartSlug}
+                  slug={headerCartSlug}
+                  products={headerCartProducts}
+                  placement="header"
+                />
+              ) : null}
+              <button
+                type="button"
+                className="navMenuToggle"
+                aria-expanded={menuOpen}
+                aria-controls="primary-navigation"
+                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+                onClick={() => setMenuOpen((o) => !o)}
+              >
+                {menuOpen ? '×' : '☰'}
+              </button>
+            </div>
           </div>
         </header>
 
@@ -120,9 +157,31 @@ export default function Shell() {
             <NavLink to="/peptides" onClick={closeMenu}>
               Peptides
             </NavLink>
-            <NavLink to="/book" onClick={closeMenu}>
-              Book Online
-            </NavLink>
+            {MARKETING_ONLY && extBookMarketing ? (
+              <a
+                href={extBookMarketing}
+                onClick={closeMenu}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
+              >
+                Book Online
+              </a>
+            ) : !MARKETING_ONLY && extBookFull ? (
+              <a
+                href={extBookFull}
+                onClick={closeMenu}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'none' }}
+              >
+                Book Online
+              </a>
+            ) : (
+              <NavLink to="/book" onClick={closeMenu}>
+                Book Online
+              </NavLink>
+            )}
             {MARKETING_ONLY ? (
               <a href={appOrderCatalog} style={{ textDecoration: 'none' }} onClick={closeMenu}>
                 Order Now
@@ -134,11 +193,21 @@ export default function Shell() {
             )}
             {MARKETING_ONLY ? (
               <a href={appPatient} style={{ textDecoration: 'none' }} onClick={closeMenu}>
-                Patient Portal
+                For patients
+              </a>
+            ) : phrFull ? (
+              <a
+                href={phrFull}
+                style={{ textDecoration: 'none' }}
+                onClick={closeMenu}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                For patients
               </a>
             ) : (
               <NavLink to="/patient" onClick={closeMenu}>
-                Patient Portal
+                For patients
               </NavLink>
             )}
           {MARKETING_ONLY || !USE_MEDPLUM_PROVIDER_PORTAL ? null : <AuthStatus onMenuClose={closeMenu} />}
@@ -162,7 +231,22 @@ export default function Shell() {
               <NavLink to="/about">About</NavLink>
               <NavLink to="/pricing">Pricing</NavLink>
               <NavLink to="/peptides">Peptides</NavLink>
-              <NavLink to="/book">Book Online</NavLink>
+              {MARKETING_ONLY && extBookMarketing ? (
+                <a href={extBookMarketing} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                  Book Online
+                </a>
+              ) : !MARKETING_ONLY && extBookFull ? (
+                <a
+                  href={extBookFull}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Book Online
+                </a>
+              ) : (
+                <NavLink to="/book">Book Online</NavLink>
+              )}
               <NavLink to="/ordering">Ordering</NavLink>
               {MARKETING_ONLY ? (
                 <a href={appOrderCatalog} style={{ textDecoration: 'none' }}>
@@ -171,12 +255,19 @@ export default function Shell() {
               ) : (
                 <NavLink to="/order-now">Order Now</NavLink>
               )}
+              <NavLink to="/pharmacy/mountain-view" style={{ textDecoration: 'none' }} title="Accessible price list">
+                {CONTRACTED_PHARMACY_NAME}
+              </NavLink>
               {MARKETING_ONLY ? (
                 <a href={appPatient} style={{ textDecoration: 'none' }}>
-                  Patient Portal
+                  For patients
+                </a>
+              ) : phrFull ? (
+                <a href={phrFull} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                  For patients
                 </a>
               ) : (
-                <NavLink to="/patient">Patient Portal</NavLink>
+                <NavLink to="/patient">For patients</NavLink>
               )}
             </div>
 
@@ -194,11 +285,16 @@ export default function Shell() {
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
             <div className="footerFineprint">
-              Catalog Venmo (only as instructed):{' '}
+              Catalog pay (only as instructed): <strong>Venmo</strong>{' '}
               <a href={catalogVenmoPayUrl} target="_blank" rel="noopener noreferrer">
-                Pay here {CATALOG_VENMO.handle}
+                {CATALOG_VENMO.handle}
               </a>{' '}
-              <span className="muted">({catalogVenmoPayUrl})</span>. Patient portal: Charm EHR (PHR).
+              <span className="muted">({catalogVenmoPayUrl})</span> · <strong>PayPal</strong>{' '}
+              <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer">
+                Pay on PayPal
+              </a>{' '}
+              <span className="muted">({CATALOG_PAYPAL.email})</span>. This site is the practice storefront—booking,
+              catalog, and how to reach the team.
             </div>
             <div className="footerFineprint">
               <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>

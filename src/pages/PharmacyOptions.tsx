@@ -66,10 +66,17 @@ export default function PharmacyOptions() {
               You are ordering through {PRACTICE_PUBLIC_NAME}: browse products and prices here, build your
               bag, then open <b>View Cart</b> for a full summary. We coordinate fulfillment with{' '}
               {resolvedFulfillmentPharmacyName()} when medication is prescribed, and your care team can step in if
-              your order needs attention. For now, payment is via <b>Venmo</b> after you submit your order from
-              the summary page—the practice sends amount and pay-to details.
+              your order needs attention. For now, payment is <b>Venmo</b> (or <b>PayPal</b> as the practice directs)
+              after you submit your order from the summary page—the practice sends amount and pay-to details.
             </p>
             <VenmoPayToHint style={{ marginTop: 12 }} />
+            <p className="muted" style={{ marginTop: 14, fontSize: 14, marginBottom: 0 }}>
+              Browse an accessible, table-style price list:{' '}
+              <Link to="/pharmacy/mountain-view" style={{ fontWeight: 800 }}>
+                {resolvedFulfillmentPharmacyName()}
+              </Link>{' '}
+              (same vials; add to cart on either page).
+            </p>
           </div>
           <Link to="/" className="btn orderNowHubHomeBtn" style={{ textDecoration: 'none' }}>
             Home
@@ -137,8 +144,8 @@ export default function PharmacyOptions() {
             </Link>
           </div>
           <p className="muted orderNowFineprint">
-            Use <b>View Cart & Summary</b> when you are ready to review lines, acknowledgments, and submit for Venmo
-            payment instructions.
+            Use <b>View Cart & Summary</b> when you are ready to review lines, acknowledgments, and submit for payment
+            instructions (Venmo or PayPal, as your care team uses).
           </p>
         </div>
       </section>
@@ -177,7 +184,8 @@ export default function PharmacyOptions() {
             <div>
               <div className="orderNowMiniCartLabel">Your cart</div>
               <div className="orderNowMiniCartCount">
-                {cartCount} {cartCount === 1 ? 'item' : 'items'} in cart — continue to summary for Venmo payment steps
+                {cartCount} {cartCount === 1 ? 'item' : 'items'} in cart — continue to summary for payment (Venmo or
+                PayPal) steps
               </div>
             </div>
             <Link

@@ -129,9 +129,9 @@ export default function PatientPortal() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Patient Portal</h1>
+          <h1 style={{ margin: 0 }}>Your account</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Your appointments and medication requests (Medplum).
+            Appointments, messages, and refill-style requests in one place.
           </p>
         </div>
         <div className="pageActions">
@@ -272,7 +272,7 @@ export default function PatientPortal() {
                 ;(async () => {
                   try {
                     if (!patient?.id) return
-                    // Create a lightweight Questionnaire + QuestionnaireResponse to keep data structured in Medplum.
+                    // Create a lightweight Questionnaire + QuestionnaireResponse to keep data structured in the backend.
                     let q: Questionnaire | null = null
                     try {
                       q = (await medplum.searchOne('Questionnaire', 'identifier=wph-intake-v1')) as any

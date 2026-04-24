@@ -324,7 +324,7 @@ export default function PeptideTherapy() {
         <p className="muted" style={{ marginBottom: 0 }}>
           Timelines for compounding categories have shifted repeatedly. We will not publish a firm “on sale” date
           here. When Brett’s contracted partner, {resolvedFulfillmentPharmacyName()}, and counsel confirm a lawful path for
-          specific protocols, we will update this page and the patient portal—not before.
+          specific protocols, we will update this page on the website—not before.
         </p>
       </section>
 
@@ -341,8 +341,9 @@ export default function PeptideTherapy() {
           leave your email below. This is not a clinical intake and does not create a patient relationship.
         </p>
         <p className="muted peptideWaitlistFineprint">
-          We keep this form minimal on purpose. Do not include symptoms, diagnoses, or medication names here; use the
-          secure patient portal for clinical communication when you are an established patient.
+          We keep this form minimal on purpose. Do not include symptoms, diagnoses, or medication names here; when you
+          are an established patient, use the contact and care channels the practice gives you (including this site
+          where appropriate).
         </p>
 
         <label style={{ display: 'block', marginTop: 14 }}>

@@ -25,9 +25,10 @@ export default function OrderingPortal() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Ordering Portal</h1>
+          <h1 style={{ margin: 0 }}>Order requests</h1>
           <p className="muted pageSubtitle">
-            Request refills, labs, or questions and track status updates from the provider.
+            Request refills, labs, or follow-up questions and track status from the practice (signed-in area on this
+            site).
           </p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
@@ -51,7 +52,7 @@ export default function OrderingPortal() {
               <div className="pill">{patientName || '—'}</div>
               {!patientName ? (
                 <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  Please sign in via <Link to="/patient/login">Patient Portal</Link> to submit orders.
+                  Please <Link to="/patient/login">sign in</Link> to submit order requests on this site.
                 </div>
               ) : null}
             </div>

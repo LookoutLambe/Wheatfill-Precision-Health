@@ -11,12 +11,18 @@ export function readCartForSlug(slug: string): Record<string, number> {
   }
 }
 
+function notifyCartChange(slug: string) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent('wph_pharmacy_cart', { detail: { slug } }))
+}
+
 export function writeCartForSlug(slug: string, cart: Record<string, number>) {
   try {
     const raw = localStorage.getItem(PHARMACY_CART_LS_KEY)
     const all = raw ? (JSON.parse(raw) as Record<string, Record<string, number>>) : {}
     all[slug] = cart
     localStorage.setItem(PHARMACY_CART_LS_KEY, JSON.stringify(all))
+    notifyCartChange(slug)
   } catch {
     /* ignore */
   }

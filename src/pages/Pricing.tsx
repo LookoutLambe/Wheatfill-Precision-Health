@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { CATALOG_VENMO } from '../config/provider'
+import { BookVisitCta } from '../components/CharmMarketingCtas'
+import { CATALOG_PAYPAL, CATALOG_VENMO, CATALOG_ZELLE_EMAIL, STRIPE_CHECKOUT_URL } from '../config/provider'
 import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 
 export default function Pricing() {
@@ -36,9 +37,9 @@ export default function Pricing() {
             <li>Answer all your questions</li>
           </ul>
           <div className="divider" />
-          <Link to="/book" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-            Book Your Consultation
-          </Link>
+          <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary">
+            Book your consultation
+          </BookVisitCta>
         </section>
 
         <section className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
@@ -57,9 +58,9 @@ export default function Pricing() {
             <li>Treatment optimization</li>
           </ul>
           <div className="divider" />
-          <Link to="/book" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-            Book Your Consultation
-          </Link>
+          <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary">
+            Book your consultation
+          </BookVisitCta>
         </section>
       </div>
       </section>
@@ -168,13 +169,26 @@ export default function Pricing() {
             </div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
-              We accept Venmo (
+              For catalog-style orders (after the team confirms amount), we use <strong>Venmo</strong> (
               <a href={resolvedCatalogVenmoPayUrl()} target="_blank" rel="noopener noreferrer">
                 pay here
               </a>
-              , {CATALOG_VENMO.handle} — only when your care team confirms amount and recipient for catalog orders),
-              Cash App, all major credit cards, debit cards, and HSA/FSA cards for consultations and medications where
-              applicable.
+              , {CATALOG_VENMO.handle}), <strong>PayPal</strong> (
+              <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
+                pay page
+              </a>
+              , {CATALOG_PAYPAL.email}
+              ), <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
+              {STRIPE_CHECKOUT_URL ? (
+                <>
+                  , and <strong>cards</strong> (
+                  <a href={STRIPE_CHECKOUT_URL} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
+                    Stripe
+                  </a>
+                  )
+                </>
+              ) : null}
+              . Cash App and other cards may apply for visits and programs.
             </div>
           </div>
         </div>
@@ -189,9 +203,9 @@ export default function Pricing() {
           Take the first step toward your weight loss goals with personalized, board-certified care
         </p>
         <div className="divider" />
-        <Link to="/book" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-          Book Your Consultation
-        </Link>
+        <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary">
+          Book your consultation
+        </BookVisitCta>
       </section>
     </div>
   )

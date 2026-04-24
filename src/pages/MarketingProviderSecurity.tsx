@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { apiPost, getToken } from '../api/client'
 import {
   ensureDefaultMarketingProviderUsers,
   getMarketingProviderLoginDisplay,
@@ -24,6 +25,7 @@ export default function MarketingProviderSecurity() {
     return canManageOthers ? targetUser : signedInAs
   }, [canManageOthers, signedInAs, targetUser])
 
+  const [curPw, setCurPw] = useState('')
   const [pw1, setPw1] = useState('')
   const [pw2, setPw2] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +40,7 @@ export default function MarketingProviderSecurity() {
 
   const loginDisplay = getMarketingProviderLoginDisplay()
   const canChangeUsername = effectiveTarget === 'brett' || effectiveTarget === 'bridgette'
+  const needServerCurrentPassword = effectiveTarget === signedInAs && Boolean(getToken())
 
   useEffect(() => {
     if (!isMarketingProviderAuthed()) navigate('/provider/login', { replace: true })
@@ -201,6 +204,28 @@ export default function MarketingProviderSecurity() {
           </label>
         ) : null}
 
+        {canManageOthers && effectiveTarget !== signedInAs ? (
+          <p className="muted" style={{ fontSize: 14, marginTop: 12 }}>
+            To change <b>{effectiveTarget}</b>&rsquo;s server password, they can sign in here, or you set
+            <code> TEAM_BRETT_PASSWORD</code> / <code>TEAM_BRIDGETTE_PASSWORD</code> on the API.
+          </p>
+        ) : null}
+
+        {getToken() && effectiveTarget === signedInAs ? (
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Current password
+            </div>
+            <input
+              className="input"
+              value={curPw}
+              onChange={(e) => setCurPw(e.target.value)}
+              type="password"
+              autoComplete="current-password"
+            />
+          </label>
+        ) : null}
+
         <div className="formRow" style={{ marginTop: 12 }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
@@ -223,14 +248,30 @@ export default function MarketingProviderSecurity() {
           <button
             type="button"
             className="btn btnPrimary"
-            disabled={!pw1 || !pw2 || busy}
-            style={{ opacity: !pw1 || !pw2 || busy ? 0.6 : 1 }}
+            disabled={
+              !pw1 ||
+              !pw2 ||
+              busy ||
+              (canManageOthers && effectiveTarget !== signedInAs) ||
+              (needServerCurrentPassword && !curPw.trim())
+            }
+            style={{
+              opacity:
+                !pw1 ||
+                !pw2 ||
+                busy ||
+                (canManageOthers && effectiveTarget !== signedInAs) ||
+                (needServerCurrentPassword && !curPw.trim())
+                  ? 0.6
+                  : 1,
+            }}
             onClick={() => {
               setSaved(false)
               setError(null)
               setBusy(true)
               ;(async () => {
                 try {
+                  if (canManageOthers && effectiveTarget !== signedInAs) return
                   if (pw1.length < 6) {
                     setError('Password must be at least 6 characters.')
                     return
@@ -239,10 +280,22 @@ export default function MarketingProviderSecurity() {
                     setError('Passwords do not match.')
                     return
                   }
-                  await setMarketingProviderPassword(effectiveTarget, pw1)
+                  if (getToken() && effectiveTarget === signedInAs) {
+                    await apiPost(
+                      '/v1/provider/password',
+                      { currentPassword: curPw, newPassword: pw1 },
+                      getToken(),
+                    )
+                    await setMarketingProviderPassword(effectiveTarget, pw1)
+                    setCurPw('')
+                  } else {
+                    await setMarketingProviderPassword(effectiveTarget, pw1)
+                  }
                   setPw1('')
                   setPw2('')
                   setSaved(true)
+                } catch (e: any) {
+                  setError(String(e?.message || e) || 'Could not save password.')
                 } finally {
                   setBusy(false)
                 }

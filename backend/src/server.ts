@@ -32,6 +32,11 @@ const MEDPLUM_CLIENT_SECRET = process.env.MEDPLUM_CLIENT_SECRET || ''
 
 const DEFAULT_PROVIDER_USERNAME = (process.env.DEFAULT_PROVIDER_USERNAME || 'brett').trim().toLowerCase()
 const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
+/** Public marketing site sign-in: brett / bridgette / admin — created if missing. */
+const TEAM_BRETT_PASSWORD = process.env.TEAM_BRETT_PASSWORD || process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
+const TEAM_BRIDGETTE_PASSWORD = process.env.TEAM_BRIDGETTE_PASSWORD || 'wheatfill'
+const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'demonstration'
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '8h').trim() || '8h'
 const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
 const DEFAULT_PATIENT_PASSWORD = process.env.DEFAULT_PATIENT_PASSWORD || 'wheatfill'
 
@@ -100,12 +105,40 @@ function verifyCloverSignature(rawBody: string, header: string) {
 }
 
 let providerSeeded = false
+
+/** Idempotent: ensures brett / bridgette / admin exist for marketing site sign-in and JWT inbox. */
+async function ensureMarketingTeamLogins() {
+  const entries: Array<{
+    username: string
+    role: 'provider' | 'admin'
+    password: string
+    displayName: string
+  }> = [
+    { username: 'brett', role: 'provider', password: TEAM_BRETT_PASSWORD, displayName: 'Brett' },
+    { username: 'bridgette', role: 'provider', password: TEAM_BRIDGETTE_PASSWORD, displayName: 'Bridgette' },
+    { username: 'admin', role: 'admin', password: TEAM_ADMIN_PASSWORD, displayName: 'Site admin' },
+  ]
+  for (const e of entries) {
+    const ex = await prisma.user.findUnique({ where: { username: e.username } })
+    if (ex) continue
+    await prisma.user.create({
+      data: {
+        role: e.role,
+        username: e.username,
+        passwordHash: await hashPassword(e.password),
+        displayName: e.displayName,
+      },
+    })
+  }
+}
+
 async function ensureProviderSeed() {
   if (providerSeeded) return
   const existing = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
   if (existing) {
     providerSeeded = true
     await ensureDemoPatientSeed()
+    await ensureMarketingTeamLogins()
     return
   }
   const passwordHash = await hashPassword(DEFAULT_PROVIDER_PASSWORD)
@@ -137,6 +170,7 @@ async function ensureProviderSeed() {
   })
   providerSeeded = true
   await ensureDemoPatientSeed()
+  await ensureMarketingTeamLogins()
 }
 
 async function ensureDemoPatientSeed() {
@@ -180,11 +214,14 @@ await app.register(cors, {
     return cb(null, allow.includes(origin))
   },
   credentials: true,
+  // Ensure browser preflight for DELETE / PATCH to team inbox, provider routes, etc.
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+  allowedHeaders: ['content-type', 'authorization', 'x-requested-with'],
 })
 await app.register(sensible)
 await app.register(jwt, {
   secret: JWT_SECRET,
-  sign: { iss: JWT_ISSUER, aud: JWT_AUDIENCE, expiresIn: '15m' },
+  sign: { iss: JWT_ISSUER, aud: JWT_AUDIENCE, expiresIn: JWT_EXPIRES_IN },
   verify: { allowedIss: [JWT_ISSUER], allowedAud: [JWT_AUDIENCE] },
 })
 
@@ -292,36 +329,88 @@ const PublicContactBody = z.object({
   message: z.string().min(2).max(5000),
 })
 
-// Public contact form -> creates a Medplum Communication for the provider (so only provider sees it).
+const TEAM_INBOX_KEY = (process.env.TEAM_INBOX_KEY || '').trim()
+
+// Public contact form -> stored in DB for team workspace (no Medplum).
 app.post('/v1/public/contact', async (req, reply) => {
   const body = PublicContactBody.parse(req.body)
-  const mp = await getMedplumAdmin()
-  if (!mp) return reply.internalServerError('Medplum is not configured on the server.')
+  const created = await prisma.teamInboxItem.create({
+    data: {
+      kind: 'contact',
+      status: 'new',
+      fromName: body.name.trim().slice(0, 200),
+      fromEmail: body.email.trim().slice(0, 200),
+      body: body.message.trim(),
+      meta: JSON.stringify({ source: 'contact_form' }),
+    },
+  })
+  return { ok: true, id: created.id }
+})
 
-  let practitionerRef = PROVIDER_PRACTITIONER_ID ? `Practitioner/${PROVIDER_PRACTITIONER_ID}` : ''
-  if (!practitionerRef) {
-    try {
-      const list = (await mp.searchResources('Practitioner', '')) as any[]
-      const first = list?.[0]
-      if (first?.id) practitionerRef = `Practitioner/${first.id}`
-    } catch {
-      // ignore
+const PublicTeamInboxBody = z.object({
+  kind: z.enum(['contact', 'online_booking']),
+  fromName: z.string().min(1).max(200),
+  fromEmail: z.string().max(200).optional().default(''),
+  body: z.string().min(1).max(8000),
+  meta: z.record(z.string(), z.unknown()).optional(),
+})
+
+// Public: contact + online booking requests (same table as /v1/public/contact).
+app.post('/v1/public/team-inbox', async (req) => {
+  const body = PublicTeamInboxBody.parse(req.body)
+  const created = await prisma.teamInboxItem.create({
+    data: {
+      kind: body.kind,
+      status: 'new',
+      fromName: body.fromName.trim().slice(0, 200),
+      fromEmail: (body.fromEmail || '').toString().trim().slice(0, 200),
+      body: body.body.trim(),
+      meta: JSON.stringify(body.meta || {}),
+    },
+  })
+  return { ok: true, id: created.id }
+})
+
+/** Optional shared secret for machine-to-machine read of the same inbox (treat as sensitive). */
+function requireTeamInboxKey() {
+  return async (req: any, reply: any) => {
+    if (!TEAM_INBOX_KEY) {
+      return reply
+        .status(501)
+        .send('Team inbox read is not configured. Set TEAM_INBOX_KEY in the server environment.')
+    }
+    const h = (req.headers?.authorization || '').toString()
+    const m = /^Bearer\s+(.+)$/i.exec(h)
+    const key = m?.[1] || ''
+    if (!key || key !== TEAM_INBOX_KEY) {
+      return reply.unauthorized('Invalid or missing team inbox key.')
     }
   }
-  if (!practitionerRef) return reply.internalServerError('No provider practitioner configured.')
+}
 
-  const created = await mp.createResource({
-    resourceType: 'Communication',
-    status: 'in-progress',
-    category: [{ text: 'Contact form' }],
-    subject: { display: `${body.name.trim()} <${body.email.trim()}>` },
-    recipient: [{ reference: practitionerRef }],
-    payload: [{ contentString: body.message.trim() }],
-    sent: new Date().toISOString(),
-  } as any)
-
-  return { ok: true, id: (created as any).id }
+app.get('/v1/team/inbox', { preHandler: requireTeamInboxKey() }, async () => {
+  const items = await prisma.teamInboxItem.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 300,
+  })
+  return { items }
 })
+
+app.patch(
+  '/v1/team/inbox/:id',
+  { preHandler: requireTeamInboxKey() },
+  async (req) => {
+    const id = (req.params as any).id as string
+    const body = z
+      .object({ status: z.enum(['new', 'handled']) })
+      .parse((req as any).body)
+    const row = await prisma.teamInboxItem.update({
+      where: { id },
+      data: { status: body.status },
+    })
+    return { item: row }
+  },
+)
 
 // Stripe webhook (unauthenticated)
 app.post('/v1/billing/stripe/webhook', async (req, reply) => {
@@ -1053,6 +1142,55 @@ await app.register(async (protectedScope) => {
         select: { id: true, displayName: true, firstName: true, lastName: true, birthdate: true, createdAt: true },
       })
       return { patients }
+    },
+  )
+
+  // Team workspace inbox (public contact + book-online) — same data as /v1/team/inbox but uses JWT, no shared key.
+  protectedScope.get(
+    '/v1/provider/team-inbox',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async () => {
+      const items = await prisma.teamInboxItem.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 300,
+      })
+      return { items }
+    },
+  )
+
+  protectedScope.patch(
+    '/v1/provider/team-inbox/:id',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req) => {
+      const id = (req.params as any).id as string
+      const body = z
+        .object({ status: z.enum(['new', 'handled']) })
+        .parse((req as any).body)
+      const row = await prisma.teamInboxItem.update({
+        where: { id },
+        data: { status: body.status },
+      })
+      return { item: row }
+    },
+  )
+
+  protectedScope.delete(
+    '/v1/provider/team-inbox/:id',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const id = (req.params as any).id as string
+      const before = await prisma.teamInboxItem.findUnique({ where: { id } })
+      if (!before) return reply.notFound('Inbox item not found.')
+      await prisma.teamInboxItem.delete({ where: { id } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'team_inbox_item',
+        entityId: id,
+        action: 'team_inbox_item_deleted',
+        before,
+        ip: reqIp(req),
+      })
+      return { ok: true }
     },
   )
 
