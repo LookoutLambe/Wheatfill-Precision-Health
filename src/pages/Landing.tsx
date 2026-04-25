@@ -302,8 +302,8 @@ export default function Landing() {
             <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
               Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
               coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
-              medication is prescribed. Payment for now is via <b>Venmo</b> or <b>PayPal</b> (see details below) after
-              the practice confirms your order (amount and pay-to from your care team). If something goes
+              medication is prescribed. Payment for now is via <b>PayPal</b> (see details below) after the practice
+              confirms your order (amount and pay-to from your care team). If something goes
               wrong with your order, your care team handles it from our side.
             </p>
             <div className="landingCatalogStartingRows">

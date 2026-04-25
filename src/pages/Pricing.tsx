@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { BookVisitCta } from '../components/CharmMarketingCtas'
-import { CATALOG_PAYPAL, CATALOG_VENMO, CATALOG_ZELLE_EMAIL, STRIPE_CHECKOUT_URL } from '../config/provider'
-import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
+import { CATALOG_PAYPAL, CATALOG_ZELLE_EMAIL, STRIPE_CHECKOUT_URL } from '../config/provider'
 
 export default function Pricing() {
   return (
@@ -173,11 +172,7 @@ export default function Pricing() {
               <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
                 Check out
               </a>{' '}
-              (PayPal, {CATALOG_PAYPAL.email}). You can also use <strong>Venmo</strong> (
-              <a href={resolvedCatalogVenmoPayUrl()} target="_blank" rel="noopener noreferrer">
-                {CATALOG_VENMO.handle}
-              </a>
-              ) or <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
+              (PayPal, {CATALOG_PAYPAL.email}). You can also use <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
               {STRIPE_CHECKOUT_URL ? (
                 <>
                   , and <strong>cards</strong> (

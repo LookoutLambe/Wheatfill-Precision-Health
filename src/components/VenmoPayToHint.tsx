@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react'
 
-import { CATALOG_PAYPAL, CATALOG_VENMO, CATALOG_ZELLE_EMAIL, STRIPE_CHECKOUT_URL } from '../config/provider'
-import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
+import { CATALOG_PAYPAL, CATALOG_ZELLE_EMAIL, STRIPE_CHECKOUT_URL } from '../config/provider'
 
 type Props = {
   style?: CSSProperties
@@ -10,18 +9,12 @@ type Props = {
 }
 
 export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
-  const venmoUrl = resolvedCatalogVenmoPayUrl()
   const paypalUrl = CATALOG_PAYPAL.payUrl
 
   const secondaryLinks = (
     <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, marginTop: 8, marginBottom: 0 }}>
-      <a href={venmoUrl} target="_blank" rel="noopener noreferrer">
-        Venmo ({CATALOG_VENMO.handle})
-      </a>
       {STRIPE_CHECKOUT_URL ? (
         <>
-          {' '}
-          ·{' '}
           <a href={STRIPE_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
             Card (Stripe)
           </a>
@@ -70,7 +63,7 @@ export default function VenmoPayToHint({ style, variant = 'inline' }: Props) {
             , or <strong>card (Stripe)</strong>
           </>
         ) : null}{' '}
-        — only when the team confirms the amount. Venmo link is below.
+        — only when the team confirms the amount.
       </p>
       {btnRow}
     </div>

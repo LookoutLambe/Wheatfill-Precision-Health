@@ -77,7 +77,7 @@ export default function MountainViewPharmacy() {
         </div>
         <p className="muted" style={{ fontSize: 14, marginTop: 10, marginBottom: 0, maxWidth: 720 }}>
           Use the <strong>bag in the site header</strong> to open your cart—same list as the full catalog. Prices mirror
-          a typical posted menu. Your care team confirms the amount before you pay (Venmo, PayPal, Zelle, or Stripe) as
+          a typical posted menu. Your care team confirms the amount before you pay (PayPal, Zelle, or Stripe) as
           instructed.
         </p>
         {cartCount > 0 ? (
@@ -175,7 +175,7 @@ export default function MountainViewPharmacy() {
           Next steps
         </h2>
         <p className="muted" style={{ marginTop: 10, marginBottom: 0, maxWidth: 720 }}>
-          Review acknowledgments, contact details, and Venmo or PayPal payment on the order summary. Questions—use{' '}
+          Review acknowledgments, contact details, and PayPal payment on the order summary. Questions—use{' '}
           <Link to="/contact">Contact</Link> or the paths on the <Link to="/patient">For patients</Link> page.
         </p>
         <div className="btnRow" style={{ marginTop: 16, flexWrap: 'wrap' }}>

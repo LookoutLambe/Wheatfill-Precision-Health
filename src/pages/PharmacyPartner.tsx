@@ -109,14 +109,14 @@ export default function PharmacyPartner() {
                   Add vials to your cart, then open <b>View cart</b> for a full summary. You are ordering through
                   our practice—we coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
                   medication is prescribed, and your care team can resolve order issues on our side. For now, payment
-                  is <b>Venmo</b> (or <b>PayPal</b> as directed) after you submit from the summary page—the practice
-                  follows up with amount and pay-to details.
+                  is <b>PayPal</b> (as directed) after you submit from the summary page—the practice follows up with
+                  amount and pay-to details.
                 </>
               ) : (
                 <>
                   This is the product list—add vials to your bag, then open <b>View cart</b> for a full summary.
-                  Payment is <b>Venmo</b> or <b>PayPal</b> (as the practice instructs) after you submit from the summary
-                  page; the team sends pay-to details.
+                  Payment is <b>PayPal</b> (as the practice instructs) after you submit from the summary page; the team
+                  sends pay-to details.
                 </>
               )}
             </p>

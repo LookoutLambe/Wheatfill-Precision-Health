@@ -15,7 +15,7 @@ export default function PatientPortalInfo() {
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>For patients</h1>
           <p className="muted pageSubtitle" style={{ marginTop: 8 }}>
             Shop the catalog, book a time, and message the team—right here, like a modern consumer brand. Payment is
-            Venmo, PayPal, Zelle, or card (Stripe) when the team tells you the amount and how to pay.
+            PayPal, Zelle, or card (Stripe) when the team tells you the amount and how to pay.
           </p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>

@@ -144,7 +144,7 @@ export default function ProviderVbmsWorkspace() {
   const [p2pLoading, setP2pLoading] = useState(false)
   const [p2pError, setP2pError] = useState<string | null>(null)
   const [p2pDollars, setP2pDollars] = useState('')
-  const [p2pMethod, setP2pMethod] = useState<'venmo' | 'paypal'>('paypal')
+  const [p2pMethod, setP2pMethod] = useState<'paypal'>('paypal')
   const [p2pMemo, setP2pMemo] = useState('')
   const [p2pRecording, setP2pRecording] = useState(false)
   const [blackouts, setBlackouts] = useState<string[]>(() => getPortalState().blackoutDates || [])
@@ -1056,13 +1056,13 @@ export default function ProviderVbmsWorkspace() {
           <div className="divider" />
           <p className="muted">
             <strong>Check out</strong> opens PayPal to the practice email after you confirm the amount with the patient.
-            Venmo and Zelle are still available from the links below. When you see the payment in your app, record it here
+            Zelle is still available from the link below. When you see the payment in your app, record it here
             so it is stored on the <strong>API</strong> for this team (same session as the inbox).
           </p>
           <VenmoPayToHint style={{ marginTop: 10 }} />
           <div className="divider" />
           <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
-            <strong>Record a payment you already received</strong> (after the fact; not automatic from PayPal or Venmo).
+            <strong>Record a payment you already received</strong> (after the fact; not automatic from PayPal or Zelle).
           </p>
           <div className="formRow" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <label>
@@ -1082,9 +1082,8 @@ export default function ProviderVbmsWorkspace() {
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 How they paid
               </div>
-              <select className="select" value={p2pMethod} onChange={(e) => setP2pMethod(e.target.value as 'venmo' | 'paypal')}>
+              <select className="select" value={p2pMethod} onChange={(e) => setP2pMethod(e.target.value as 'paypal')}>
                 <option value="paypal">PayPal</option>
-                <option value="venmo">Venmo</option>
               </select>
             </label>
             <label style={{ flex: '1 1 200px' }}>
@@ -1157,7 +1156,7 @@ export default function ProviderVbmsWorkspace() {
           </div>
           {p2pItems.length === 0 && !p2pLoading ? (
             <p className="muted" style={{ margin: 0 }}>
-              No P2P payments recorded yet. After someone uses Check out or Venmo, log the amount here.
+              No P2P payments recorded yet. After someone uses Check out, log the amount here.
             </p>
           ) : null}
           {p2pItems.length > 0 ? (
@@ -1177,7 +1176,7 @@ export default function ProviderVbmsWorkspace() {
                     <tr key={row.id}>
                       <td className="muted">{new Date(row.createdAt).toLocaleString()}</td>
                       <td className="muted">
-                        {row.method === 'manual_paypal' ? 'PayPal' : row.method === 'manual_venmo' ? 'Venmo' : row.method}
+                        {row.method === 'manual_paypal' ? 'PayPal' : row.method}
                       </td>
                       <td>
                         {((row.amountCents || 0) / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
