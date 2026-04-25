@@ -18,5 +18,5 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 
 EXPOSE 8080
-CMD ["node", "dist/server.js"]
+CMD ["npm", "start"]
 

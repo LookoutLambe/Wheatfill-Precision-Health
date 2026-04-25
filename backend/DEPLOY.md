@@ -50,30 +50,12 @@ In GitHub repo settings:
 - Add Actions secret `VITE_API_URL` = `https://api.wheatfillprecisionhealth.com`
 - GitHub Pages will rebuild and the provider login will request the token from that API.
 
-### Migrations (Render / production)
+### Database schema (Render / production)
 
-- Run migrations against the **same** `DATABASE_URL` / `DIRECT_URL` you use in production (e.g. build or release step: `cd backend && npm ci && npx prisma migrate deploy`).
-- Initial migration name in this repo: `20260425_postgres_init`.
+The default **`npm start`** in this backend runs **`prisma db push`** and then starts the server. The schema in `prisma/schema.prisma` is applied directly to the database, so deploys do **not** depend on a clean `_prisma_migrations` table. That avoids **P3009** / stuck failed migration records from blocking your service when a past `prisma migrate deploy` half-failed.
 
-#### Error P3009 (failed migrations in the target database)
-
-Prisma refuses to run new migrations while a previous run is still marked as **failed** in the `_prisma_migrations` table. Fix the database state once, then deploy again.
-
-1. From `backend/`, with production `DATABASE_URL` and `DIRECT_URL` in `.env` (or the environment), run:
-   - `npx prisma migrate status`
-2. Use **one** of the following, depending on what really happened to the database:
-
-- **A — Migration never finished, schema is empty or hopelessly half-applied (typical for a new Supabase DB with no data you need)**  
-  - `npx prisma migrate resolve --rolled-back 20260425_postgres_init`
-  - `npx prisma migrate deploy`  
-  - If deploy fails with “already exists” (partial run left objects behind) and you can **wipe** the project: use Supabase’s full database or project reset, then `npx prisma migrate deploy` again.
-
-- **B — Migration actually completed** (all tables and enums exist; Prisma only lost track after a timeout or network blip)  
-  - `npx prisma migrate resolve --applied 20260425_postgres_init`  
-  - `npx prisma migrate deploy` (should report nothing to do)
-
-- **C — You only need to clear the “failed” flag and will fix objects manually**  
-  - Prefer the official commands above. Avoid hand-editing `_prisma_migrations` unless you know the exact state.
-
-After P3009 is resolved, a normal `prisma migrate deploy` in your Render build (or your chosen release step) should proceed without that error.
+- **Render (Docker or native)**: set **Build** to compile only (e.g. `npm install` + `npm run build`), **not** `prisma migrate deploy`. The container applies the schema at boot via `prisma db push` from `package.json` `start`.
+- **If you add `prisma migrate deploy` to a CI/build step** yourself, you are opting into the migration table; then you can still see **P3009** and must [resolve failed migrations](https://www.prisma.io/docs/orm/prisma-migrate/workflows/patching-and-hotfixing#failed-migration) manually, or stop running `migrate deploy` in the build and rely on `npm start` only.
+- **Local** development still uses `npx prisma migrate dev` to evolve versioned history under `prisma/migrations/`; production sync uses the schema file.
+- **Skip the push (escape hatch)**: if you need to start the process without running `db push`, use `npm run start:server` (assumes the DB is already in sync).
 

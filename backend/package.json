@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "prisma db push && node dist/server.js",
+    "start:server": "node dist/server.js",
     "migrate:medplum": "tsx src/scripts/migrate-to-medplum.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -25,12 +26,12 @@
     "dotenv": "^17.2.2",
     "fastify": "^5.5.0",
     "stripe": "^18.5.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "prisma": "^6.19.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^24.12.2",
-    "prisma": "^6.19.3",
     "tsx": "^4.20.5",
     "typescript": "~6.0.2"
   }
