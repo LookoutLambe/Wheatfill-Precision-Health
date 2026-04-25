@@ -356,11 +356,6 @@ export default function Shell() {
             </div>
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
-            <div className="footerFineprint">
-              <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>
-                Third-party licenses, disclosures, and legal pages
-              </NavLink>
-            </div>
             <div className="footerFineprint footerStaffGate" aria-label="Staff access">
               {!USE_MEDPLUM_PROVIDER_PORTAL && marketingProviderAuthed ? (
                 <span className="footerStaffSession">
