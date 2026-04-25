@@ -185,6 +185,7 @@ export default function Landing() {
   const catalogPartnerPath = `/order-now/${DEFAULT_CATALOG_PARTNER_SLUG}`
   const [openId, setOpenId] = useState<AccordionId | null>(null)
   const baseId = useId()
+  const faqBaseId = `${baseId}-faq`
 
   const toggle = useCallback((id: AccordionId) => {
     setOpenId((prev) => (prev === id ? null : id))
@@ -214,6 +215,52 @@ export default function Landing() {
           </div>
 
           <div className="divider" />
+
+          <section className="card cardAccentSoft" aria-labelledby="landing-how-it-works-heading">
+            <div className="cardTitle">
+              <h2 id="landing-how-it-works-heading" style={{ margin: 0 }}>
+                How it works
+              </h2>
+              <span className="pill">Simple steps</span>
+            </div>
+            <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+              A clear path from your first request to follow-up. If you are unsure where to start, book a visit.
+            </p>
+            <div className="divider" />
+            <ol className="landingStepsList">
+              <li className="landingStep">
+                <div className="landingStepTitle">Request care</div>
+                <div className="muted landingStepBody">
+                  Book online (or reach out on the contact page). We’ll confirm next steps and what to expect.
+                </div>
+              </li>
+              <li className="landingStep">
+                <div className="landingStepTitle">Clinical visit</div>
+                <div className="muted landingStepBody">
+                  We review your history, goals, labs (if needed), and create a plan that fits your life.
+                </div>
+              </li>
+              <li className="landingStep">
+                <div className="landingStepTitle">Plan + options</div>
+                <div className="muted landingStepBody">
+                  Nutrition, movement, medications when appropriate, and a follow-up cadence you can stick to.
+                </div>
+              </li>
+              <li className="landingStep">
+                <div className="landingStepTitle">Ongoing support</div>
+                <div className="muted landingStepBody">
+                  Check-ins and adjustments over time—so results are safe, measurable, and sustainable.
+                </div>
+              </li>
+            </ol>
+            <div className="divider" />
+            <div className="btnRow">
+              <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
+              <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+                Ask a question
+              </Link>
+            </div>
+          </section>
 
           <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
             <div className="cardTitle">
@@ -353,6 +400,53 @@ export default function Landing() {
               )
             })}
           </div>
+
+          <div className="divider" />
+
+          <section className="card cardAccentSoft" aria-labelledby={`${faqBaseId}-heading`}>
+            <div className="cardTitle">
+              <h2 id={`${faqBaseId}-heading`} style={{ margin: 0 }}>
+                FAQ
+              </h2>
+              <span className="pill">Common questions</span>
+            </div>
+            <div className="divider" />
+
+            <details className="landingFaqItem">
+              <summary className="landingFaqSummary">Do I need a patient account or sign-in?</summary>
+              <div className="landingFaqBody muted">
+                No. Most visitors can book and contact the practice without creating a patient login. If you ever receive a separate portal link, the team will provide it directly.
+              </div>
+            </details>
+
+            <details className="landingFaqItem">
+              <summary className="landingFaqSummary">How soon will I hear back after I submit a request?</summary>
+              <div className="landingFaqBody muted">
+                Typically within 1 business day. If your message is time-sensitive, include the best way to reach you and your preferred times.
+              </div>
+            </details>
+
+            <details className="landingFaqItem">
+              <summary className="landingFaqSummary">Can you prescribe GLP-1 medications?</summary>
+              <div className="landingFaqBody muted">
+                We discuss evidence-based medication options when clinically appropriate. Prescribing depends on your history, risk factors, and applicable state rules.
+              </div>
+            </details>
+
+            <details className="landingFaqItem">
+              <summary className="landingFaqSummary">What do medications cost?</summary>
+              <div className="landingFaqBody muted">
+                Costs can vary by dose and supplier. Our <Link to="/order-now">catalog</Link> shows representative pricing for common vials, and your care team confirms details before you pay.
+              </div>
+            </details>
+
+            <details className="landingFaqItem">
+              <summary className="landingFaqSummary">What if I need to reschedule?</summary>
+              <div className="landingFaqBody muted">
+                Use the contact form or reply to the confirmation you receive and we’ll help you find a new time.
+              </div>
+            </details>
+          </section>
         </section>
       </div>
     </div>

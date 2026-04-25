@@ -49,6 +49,20 @@
   flex-shrink: 0;
 }
 
+.topNavCta {
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .topNavCta {
+    display: none;
+  }
+}
+
 .navMenuToggle {
   display: none;
   flex-shrink: 0;
@@ -839,6 +853,12 @@ html.pharmacyCartOpen body {
   color: var(--red);
   background: rgba(122, 15, 28, 0.08);
   border-color: rgba(122, 15, 28, 0.16);
+}
+
+.pillGreen {
+  color: #14532d;
+  background: rgba(20, 83, 45, 0.10);
+  border-color: rgba(20, 83, 45, 0.18);
 }
 
 .divider {
@@ -1964,6 +1984,64 @@ html.pharmacyCartOpen body {
   padding: 18px 16px;
   background: linear-gradient(180deg, rgba(10, 30, 63, 0.04), rgba(255, 255, 255, 0.94));
   box-shadow: rgba(10, 30, 63, 0.08) 0 18px 32px -24px;
+}
+
+.landingStepsList {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  line-height: 1.5;
+}
+
+.landingStepTitle {
+  font-weight: 850;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+
+.landingStepBody {
+  font-size: 14px;
+}
+
+.landingFaqItem {
+  border: 1px solid rgba(10, 30, 63, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.landingFaqItem + .landingFaqItem {
+  margin-top: 10px;
+}
+
+.landingFaqSummary {
+  cursor: pointer;
+  font-weight: 850;
+  color: var(--text-h);
+  list-style: none;
+}
+
+.landingFaqSummary::-webkit-details-marker {
+  display: none;
+}
+
+.landingFaqSummary::after {
+  content: '+';
+  float: right;
+  font-weight: 900;
+  opacity: 0.8;
+}
+
+.landingFaqItem[open] .landingFaqSummary::after {
+  content: '–';
+}
+
+.landingFaqBody {
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .landingCatalogSection .cardTitle {

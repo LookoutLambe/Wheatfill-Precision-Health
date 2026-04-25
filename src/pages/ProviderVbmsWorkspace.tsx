@@ -88,6 +88,18 @@ type P2pPaymentRow = {
   createdAt: string
 }
 
+function norm(s: unknown) {
+  return String(s ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function includesAll(haystack: string, tokens: string[]) {
+  const h = norm(haystack)
+  return tokens.every((t) => h.includes(t))
+}
+
 function seedWorkspacePatients(): DemoPatient[] {
   return [
     { id: 'p1', label: 'Demo patient A' },
@@ -136,6 +148,13 @@ export default function ProviderVbmsWorkspace() {
   const [p2pMemo, setP2pMemo] = useState('')
   const [p2pRecording, setP2pRecording] = useState(false)
   const [blackouts, setBlackouts] = useState<string[]>(() => getPortalState().blackoutDates || [])
+
+  const [inboxQuery, setInboxQuery] = useState('')
+  const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>('new')
+  const [orderQuery, setOrderQuery] = useState('')
+  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed'>('new')
+  const [apptQuery, setApptQuery] = useState('')
+  const [apptFilter, setApptFilter] = useState<'all' | 'Scheduled' | 'Completed' | 'Cancelled'>('Scheduled')
 
   const [qsPatient, setQsPatient] = useState(initialWs.qsPatient)
   const [qsCustomName, setQsCustomName] = useState(initialWs.qsCustomName)
@@ -338,7 +357,12 @@ export default function ProviderVbmsWorkspace() {
   }, [loadOrders])
 
   const newCount = msgs.filter((m) => m.status === 'new').length
+  const handledCount = msgs.filter((m) => m.status === 'handled').length
   const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
+  const completedCount = appts.filter((a) => a.status === 'Completed').length
+  const cancelledCount = appts.filter((a) => a.status === 'Cancelled').length
+  const ordersNewCount = orders.filter((o) => o.status === 'new').length
+  const ordersInReviewCount = orders.filter((o) => o.status === 'in_review').length
 
   /**
    * Inbox rows plus cached names for messages that were deleted on the server but are still
@@ -433,6 +457,47 @@ export default function ProviderVbmsWorkspace() {
 
   const staffCalendarUrl = getMarketingIntegrations().bookingUrl.trim()
 
+  const inboxTokens = useMemo(() => norm(inboxQuery).split(' ').filter(Boolean), [inboxQuery])
+  const filteredMsgs = useMemo(() => {
+    const base =
+      inboxFilter === 'all' ? msgs : msgs.filter((m) => (inboxFilter === 'new' ? m.status === 'new' : m.status === 'handled'))
+    if (inboxTokens.length === 0) return base
+    return base.filter((m) =>
+      includesAll([m.from, m.category, m.when, m.body].filter(Boolean).join(' | '), inboxTokens),
+    )
+  }, [inboxFilter, inboxTokens, msgs])
+
+  const orderTokens = useMemo(() => norm(orderQuery).split(' ').filter(Boolean), [orderQuery])
+  const filteredOrders = useMemo(() => {
+    const base = orderFilter === 'all' ? orders : orders.filter((o) => o.status === orderFilter)
+    if (orderTokens.length === 0) return base
+    return base.filter((o) =>
+      includesAll(
+        [
+          orderLineItemsSummary(o),
+          formatOrderPatient(o),
+          o.patient?.email || '',
+          formatShipTo(o),
+          o.status,
+          o.pharmacyPartner?.name || '',
+          o.createdAt,
+        ]
+          .filter(Boolean)
+          .join(' | '),
+        orderTokens,
+      ),
+    )
+  }, [orderFilter, orderTokens, orders])
+
+  const apptTokens = useMemo(() => norm(apptQuery).split(' ').filter(Boolean), [apptQuery])
+  const filteredAppts = useMemo(() => {
+    const base = apptFilter === 'all' ? appts : appts.filter((a) => a.status === apptFilter)
+    if (apptTokens.length === 0) return base
+    return base.filter((a) =>
+      includesAll([rowPatientLabel(a), a.type, a.when, a.status].filter(Boolean).join(' | '), apptTokens),
+    )
+  }, [apptFilter, apptTokens, appts])
+
   return (
     <div className="page teamWorkspacePage">
       <header className="teamWorkspaceHeader" aria-label="Team Workspace">
@@ -454,6 +519,17 @@ export default function ProviderVbmsWorkspace() {
             and the other preview tables on this page are stored in <strong>this browser</strong>; they stay after
             sign-out (same device), unless you clear site data.
           </p>
+        </div>
+        <div className="teamWorkspaceToolbar" style={{ paddingTop: 0 }}>
+          <span className="pill" title="Inbox messages from the public site">
+            Inbox: <b>{newCount}</b> new · <span className="muted">{handledCount} handled</span>
+          </span>
+          <span className="pill" title="Preview schedule rows (this browser)">
+            Visits: <b>{scheduledCount}</b> scheduled · <span className="muted">{completedCount} completed</span>
+          </span>
+          <span className="pill" title="Order Now checkouts (API)">
+            Orders: <b>{ordersNewCount}</b> new · <span className="muted">{ordersInReviewCount} in review</span>
+          </span>
         </div>
         <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
@@ -491,7 +567,30 @@ export default function ProviderVbmsWorkspace() {
             {newCount > 0 ? <span className="pill pillRed">{newCount} new</span> : <span className="pill">Inbox</span>}
           </div>
           <div className="divider" />
-          <div className="btnRow" style={{ marginBottom: 10, flexWrap: 'wrap' }}>
+          <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Search
+              </div>
+              <input
+                className="input"
+                value={inboxQuery}
+                onChange={(e) => setInboxQuery(e.target.value)}
+                placeholder="Name, email, keyword…"
+              />
+            </label>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Filter
+              </div>
+              <select className="select" value={inboxFilter} onChange={(e) => setInboxFilter(e.target.value as any)}>
+                <option value="new">New</option>
+                <option value="handled">Handled</option>
+                <option value="all">All</option>
+              </select>
+            </label>
+          </div>
+          <div className="btnRow" style={{ marginBottom: 10, marginTop: 12, flexWrap: 'wrap' }}>
             <button
               type="button"
               className="btn"
@@ -500,6 +599,9 @@ export default function ProviderVbmsWorkspace() {
             >
               {inboxLoading ? 'Loading…' : 'Refresh'}
             </button>
+            <span className="pill" title="Rows shown after filters/search">
+              Showing: <b>{filteredMsgs.length}</b>
+            </span>
           </div>
 
           {inboxError ? (
@@ -507,10 +609,13 @@ export default function ProviderVbmsWorkspace() {
               {inboxError}
             </p>
           ) : null}
-          {getToken() && msgs.length === 0 && !inboxError ? (
+          {getToken() && filteredMsgs.length === 0 && msgs.length === 0 && !inboxError ? (
             <p className="muted">No messages yet. New contact and time-request form alerts will list here.</p>
           ) : null}
-          {getToken() && msgs.length > 0 ? (
+          {getToken() && filteredMsgs.length === 0 && msgs.length > 0 ? (
+            <p className="muted">No messages match your search/filter.</p>
+          ) : null}
+          {getToken() && filteredMsgs.length > 0 ? (
             <div className="tableWrap">
               <table className="table" aria-label="Inbox">
                 <thead>
@@ -523,7 +628,7 @@ export default function ProviderVbmsWorkspace() {
                   </tr>
                 </thead>
                 <tbody>
-                  {msgs.map((m) => (
+                  {filteredMsgs.map((m) => (
                     <tr key={m.id}>
                       <td className="muted">{m.when}</td>
                       <td className="muted">{m.from}</td>
@@ -623,10 +728,41 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
-            Scheduled: <b>{scheduledCount}</b> · Total: <b>{appts.length}</b>
+            Scheduled: <b>{scheduledCount}</b> · Completed: <b>{completedCount}</b> · Cancelled: <b>{cancelledCount}</b> · Total:{' '}
+            <b>{appts.length}</b>
           </div>
           <div className="divider" />
-          {appts.length === 0 ? (
+          <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Search
+              </div>
+              <input
+                className="input"
+                value={apptQuery}
+                onChange={(e) => setApptQuery(e.target.value)}
+                placeholder="Name, type, date/time…"
+              />
+            </label>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Filter
+              </div>
+              <select className="select" value={apptFilter} onChange={(e) => setApptFilter(e.target.value as any)}>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+                <option value="all">All</option>
+              </select>
+            </label>
+          </div>
+          <div className="btnRow" style={{ marginTop: 12 }}>
+            <span className="pill">
+              Showing: <b>{filteredAppts.length}</b>
+            </span>
+          </div>
+          <div className="divider" />
+          {filteredAppts.length === 0 ? (
             <p className="muted">No scheduled visits yet.</p>
           ) : (
             <div className="tableWrap">
@@ -641,7 +777,7 @@ export default function ProviderVbmsWorkspace() {
                   </tr>
                 </thead>
                 <tbody>
-                  {appts.map((a) => (
+                  {filteredAppts.map((a) => (
                     <tr key={a.id}>
                       <td className="muted">{rowPatientLabel(a)}</td>
                       <td>{a.type}</td>
@@ -1042,7 +1178,7 @@ export default function ProviderVbmsWorkspace() {
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <div className="btnRow" style={{ margin: 0 }}>
-              <span className="pill pillRed">Order Now</span>
+              {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} new</span> : <span className="pill pillRed">Order Now</span>}
               <button type="button" className="btn" disabled={ordersLoading || !getToken()} onClick={() => void loadOrders()}>
                 {ordersLoading ? 'Loading…' : 'Refresh'}
               </button>
@@ -1067,11 +1203,46 @@ export default function ProviderVbmsWorkspace() {
             </p>
           ) : null}
           {orders.length > 0 ? (
+            <>
+              <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Search
+                  </div>
+                  <input
+                    className="input"
+                    value={orderQuery}
+                    onChange={(e) => setOrderQuery(e.target.value)}
+                    placeholder="Patient, address, SKU, keyword…"
+                  />
+                </label>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Filter
+                  </div>
+                  <select className="select" value={orderFilter} onChange={(e) => setOrderFilter(e.target.value as any)}>
+                    <option value="new">new</option>
+                    <option value="in_review">in review</option>
+                    <option value="ordered">ordered</option>
+                    <option value="closed">closed</option>
+                    <option value="all">all</option>
+                  </select>
+                </label>
+              </div>
+              <div className="btnRow" style={{ marginTop: 12 }}>
+                <span className="pill">
+                  Showing: <b>{filteredOrders.length}</b>
+                </span>
+              </div>
+              <div className="divider" />
+            </>
+          ) : null}
+          {filteredOrders.length > 0 ? (
             <div
               className="vbmsOrderList"
               style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}
             >
-              {orders.map((o) => (
+              {filteredOrders.map((o) => (
                 <div
                   key={o.id}
                   className="card cardAccentSoft"

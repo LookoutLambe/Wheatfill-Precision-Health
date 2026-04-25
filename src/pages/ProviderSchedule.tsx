@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   getPortalState,
@@ -7,6 +7,7 @@ import {
   isSlotBooked,
   removeAppointment,
   removeBlackoutDate,
+  setScheduleConfig,
   slotsForDate,
   subscribePortalState,
   updateAppointmentStatus,
@@ -44,6 +45,16 @@ function timeLabel(hhmm: string) {
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
+const DOW_LABEL: Record<number, string> = {
+  0: 'Sun',
+  1: 'Mon',
+  2: 'Tue',
+  3: 'Wed',
+  4: 'Thu',
+  5: 'Fri',
+  6: 'Sat',
+}
+
 export default function ProviderSchedule() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [, setTick] = useState(0)
@@ -77,7 +88,8 @@ export default function ProviderSchedule() {
   }, [appointments])
 
   // Build rows: union of slot times across the visible days.
-  const slotMinutes = getScheduleConfig().slotMinutes
+  const cfg = getScheduleConfig()
+  const slotMinutes = cfg.slotMinutes
   const times = useMemo(() => {
     const set = new Set<string>()
     for (const k of dayKeys) {
@@ -85,6 +97,16 @@ export default function ProviderSchedule() {
     }
     return [...set].sort((a, b) => a.localeCompare(b))
   }, [dayKeys])
+
+  const [draftCfg, setDraftCfg] = useState(() => getScheduleConfig())
+  useEffect(() => {
+    // Keep the editor synced if schedule settings change elsewhere.
+    setDraftCfg(getScheduleConfig())
+  }, [slotMinutes])
+
+  const saveCfg = useCallback(() => {
+    setScheduleConfig(draftCfg)
+  }, [draftCfg])
 
   const weekLabel = useMemo(() => {
     const a = days[0]
@@ -127,6 +149,136 @@ export default function ProviderSchedule() {
           <div style={{ fontWeight: 900, color: 'var(--text-h)' }}>{weekLabel}</div>
           <button type="button" className="btn" onClick={() => setWeekOffset((n) => n + 1)}>
             Next week ›
+          </button>
+        </div>
+      </section>
+
+      <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Schedule settings</h2>
+          <span className="pill">Hours + slot size</span>
+        </div>
+        <p className="muted" style={{ marginTop: 6 }}>
+          These settings control the slots patients can request on the booking page and the times shown below.
+        </p>
+        <div className="divider" />
+
+        <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          <label>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Slot size (minutes)
+            </div>
+            <select
+              className="select"
+              value={String(draftCfg.slotMinutes)}
+              onChange={(e) => setDraftCfg((p) => ({ ...p, slotMinutes: Number(e.target.value) || 30 }))}
+            >
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+              <option value="30">30</option>
+              <option value="45">45</option>
+              <option value="60">60</option>
+            </select>
+          </label>
+          <div>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Color key
+            </div>
+            <div className="btnRow" style={{ gap: 8 }}>
+              <span className="pill pillGreen">Open</span>
+              <span className="pill">Booked</span>
+              <span className="pill pillRed">Closed</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="divider" />
+        <div className="tableWrap">
+          <table className="table" aria-label="Schedule settings by day">
+            <thead>
+              <tr>
+                <th style={{ width: 120 }}>Day</th>
+                <th style={{ width: 120 }}>Enabled</th>
+                <th>Start</th>
+                <th>End</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.keys(draftCfg.hoursByDow)
+                .map((k) => Number(k))
+                .sort((a, b) => a - b)
+                .map((dow) => {
+                  const row = draftCfg.hoursByDow[dow]
+                  return (
+                    <tr key={dow}>
+                      <td style={{ fontWeight: 850 }}>{DOW_LABEL[dow] || `Day ${dow}`}</td>
+                      <td>
+                        <label className="muted" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(row.enabled)}
+                            onChange={(e) =>
+                              setDraftCfg((p) => ({
+                                ...p,
+                                hoursByDow: {
+                                  ...p.hoursByDow,
+                                  [dow]: { ...p.hoursByDow[dow], enabled: e.target.checked },
+                                },
+                              }))
+                            }
+                          />
+                          On
+                        </label>
+                      </td>
+                      <td>
+                        <input
+                          className="input"
+                          type="time"
+                          value={row.start}
+                          disabled={!row.enabled}
+                          onChange={(e) =>
+                            setDraftCfg((p) => ({
+                              ...p,
+                              hoursByDow: {
+                                ...p.hoursByDow,
+                                [dow]: { ...p.hoursByDow[dow], start: e.target.value },
+                              },
+                            }))
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="input"
+                          type="time"
+                          value={row.end}
+                          disabled={!row.enabled}
+                          onChange={(e) =>
+                            setDraftCfg((p) => ({
+                              ...p,
+                              hoursByDow: {
+                                ...p.hoursByDow,
+                                [dow]: { ...p.hoursByDow[dow], end: e.target.value },
+                              },
+                            }))
+                          }
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="divider" />
+        <div className="btnRow">
+          <button type="button" className="btn btnPrimary" onClick={saveCfg}>
+            Save schedule settings
+          </button>
+          <button type="button" className="btn" onClick={() => setDraftCfg(getScheduleConfig())}>
+            Reset changes
           </button>
         </div>
       </section>
@@ -184,8 +336,8 @@ export default function ProviderSchedule() {
                                 textAlign: 'left',
                                 padding: 10,
                                 borderRadius: 10,
-                                border: '1px solid rgba(10, 30, 63, 0.16)',
-                                background: 'rgba(255,255,255,0.85)',
+                                border: '1px solid rgba(10, 30, 63, 0.18)',
+                                background: 'rgba(10, 30, 63, 0.06)',
                               }}
                               onClick={() =>
                                 setSelected({
@@ -210,9 +362,7 @@ export default function ProviderSchedule() {
                           ) : booked ? (
                             <span className="pill">Booked</span>
                           ) : (
-                            <span className="muted" style={{ fontSize: 12 }}>
-                              Open
-                            </span>
+                            <span className="pill pillGreen">Open</span>
                           )}
                         </td>
                       )

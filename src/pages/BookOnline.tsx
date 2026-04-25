@@ -156,8 +156,6 @@ export default function BookOnline() {
     for (let i = 1; i <= 365; i++) {
       const d = new Date(start.getTime() + i * 24 * 60 * 60 * 1000)
       const key = ymdLocal(d)
-      const dow = d.getDay()
-      if (dow === 0 || dow === 6) continue
       if (blackoutSet.has(key)) continue
       const slots = slotsByDate.get(key) || []
       const open = slots.some((s) => !bookedSet.has(`${s.date}T${s.time}`))
@@ -463,8 +461,6 @@ export default function BookOnline() {
                     const inMonth = c.inMonth && sameMonth(c.date, calendarMonth)
                     const isToday = key === ymdLocal(new Date())
                     const isSelected = key === selectedDate
-                    const dow = c.date.getDay()
-                    const isWeekend = dow === 0 || dow === 6
                     const todayStart = new Date()
                     todayStart.setHours(0, 0, 0, 0)
                     const cellStart = new Date(c.date.getFullYear(), c.date.getMonth(), c.date.getDate())
@@ -472,7 +468,9 @@ export default function BookOnline() {
                     const dayClosed = blackoutSet.has(key)
                     const hasTemplate = (slotsByDate.get(key) || []).length > 0
                     const hasOpen = (slotsByDate.get(key) || []).some((s) => !bookedSet.has(`${s.date}T${s.time}`) && !dayClosed)
-                    const disabled = !inMonth || isPast || isWeekend || !hasTemplate || dayClosed || !hasOpen
+                    const fullyBooked = hasTemplate && !dayClosed && !hasOpen
+                    const disabled = !inMonth || isPast || !hasTemplate || dayClosed || !hasOpen
+                    const state: 'open' | 'closed' | 'booked' | 'none' = dayClosed ? 'closed' : fullyBooked ? 'booked' : hasOpen ? 'open' : 'none'
 
                     return (
                       <button
@@ -489,13 +487,21 @@ export default function BookOnline() {
                           borderRadius: 12,
                           opacity: disabled ? 0.35 : 1,
                           borderColor: isSelected ? 'rgba(122, 15, 28, 0.55)' : undefined,
-                          background: isSelected ? 'rgba(122, 15, 28, 0.10)' : inMonth ? 'white' : 'transparent',
+                          background: isSelected
+                            ? 'rgba(122, 15, 28, 0.10)'
+                            : state === 'open'
+                              ? 'rgba(20, 83, 45, 0.10)'
+                              : state === 'booked'
+                                ? 'rgba(10, 30, 63, 0.06)'
+                                : inMonth
+                                  ? 'white'
+                                  : 'transparent',
                           color: inMonth ? 'var(--text-h)' : 'rgba(31, 41, 55, 0.45)',
                           fontWeight: isSelected ? 900 : 700,
                           boxShadow: isToday ? 'rgba(10, 30, 63, 0.18) 0 10px 18px -14px' : undefined,
                         }}
                         title={
-                          dayClosed ? 'Closed' : isWeekend ? 'Weekend' : !hasTemplate ? 'No schedule template' : !hasOpen ? 'Fully booked' : 'Available'
+                          dayClosed ? 'Closed' : !hasTemplate ? 'No hours set' : !hasOpen ? 'Fully booked' : 'Available'
                         }
                       >
                         {c.date.getDate()}
@@ -576,7 +582,7 @@ export default function BookOnline() {
 
                 <div className="divider" />
                 <p className="muted" style={{ margin: 0 }}>
-                  Booked times disappear from the dropdown. Blackout days are disabled on the calendar.
+                  Green days have openings. Gray days are fully booked. Red “Closed” days are blocked out.
                 </p>
               </div>
             </div>

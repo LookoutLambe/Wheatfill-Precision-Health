@@ -44,6 +44,7 @@ function headerCatalogSlugForPath(pathname: string): string {
 export default function Shell() {
   const navigate = useNavigate()
   const location = useLocation()
+  const isProviderArea = location.pathname.startsWith('/provider')
   const headerCartSlug = useMemo(() => headerCatalogSlugForPath(location.pathname), [location.pathname])
   const [headerCartProducts, setHeaderCartProducts] = useState<CartLineProduct[]>([])
 
@@ -127,6 +128,8 @@ export default function Shell() {
   const extBookFull = !MARKETING_ONLY ? publicSchedulingUrlForFullApp() : ''
   const states = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
 
+  const bookHref = MARKETING_ONLY ? extBookMarketing : extBookFull
+
   return (
     <div className="appShell">
       <div
@@ -154,6 +157,24 @@ export default function Shell() {
             </NavLink>
 
             <div className="topNavRight">
+              {!isProviderArea ? (
+                bookHref ? (
+                  <a
+                    href={bookHref}
+                    className="btn btnPrimary topNavCta"
+                    style={{ textDecoration: 'none' }}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={closeMenu}
+                  >
+                    Book online
+                  </a>
+                ) : (
+                  <NavLink to="/book" className="btn btnPrimary topNavCta" style={{ textDecoration: 'none' }} onClick={closeMenu}>
+                    Book online
+                  </NavLink>
+                )
+              ) : null}
               <CatalogCartDrawer
                 key={headerCartSlug}
                 slug={headerCartSlug}
