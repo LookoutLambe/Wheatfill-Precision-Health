@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getApiUrl, getToken } from '../api/client'
+import { MARKETING_ONLY } from '../config/mode'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   getMarketingIntegrations,
@@ -156,6 +157,8 @@ export default function ProviderVbmsWorkspace() {
       navigate('/provider/login', { replace: true })
       return
     }
+    // Full app: need a real API session. Static marketing build signs in in-browser only.
+    if (MARKETING_ONLY) return
     if (!getToken()) {
       setMarketingProviderAuthed(false)
       navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
@@ -383,20 +386,28 @@ export default function ProviderVbmsWorkspace() {
   const staffCalendarUrl = getMarketingIntegrations().bookingUrl.trim()
 
   return (
-    <div className="page">
-      <div className="pageHeaderRow">
-        <div>
-          <h1 style={{ margin: 0 }}>Team workspace</h1>
-          <p className="muted" style={{ marginTop: 8 }}>
-            {PROVIDER_TEAM_LABEL} — consumer marketing site (like a DTC brand ad page). This is not your separate
-            clinical or ops app; Brett or Bridget can open this inbox to see who reached out from the public pages.
-            Inbox items are stored on the <strong>API</strong> (database). The Quick schedule and preview tables below
-            are saved in <strong>this browser</strong> and stay after you <strong>sign out and sign back in</strong> (same
-            device and browser; clearing site data will remove them).
-          </p>
-          {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
+    <div className="page teamWorkspacePage">
+      <header className="teamWorkspaceHeader" aria-label="Team workspace">
+        <div className="teamWorkspaceHeaderRow">
+          <h1>Team workspace</h1>
+          {who ? (
+            <div className="pill" style={{ width: 'fit-content' }}>
+              Signed in as: {who}
+            </div>
+          ) : null}
         </div>
-        <div className="pageActions">
+        <div className="teamWorkspaceIntro">
+          <p>
+            {PROVIDER_TEAM_LABEL} — tools for the public marketing site, not a full clinical or ops app. Open the
+            inbox below to see who reached out from the contact and booking pages.
+          </p>
+          <p>
+            <strong>Inbox</strong> messages live on the <strong>API</strong> (database). <strong>Quick schedule</strong>{' '}
+            and the other preview tables on this page are stored in <strong>this browser</strong>; they stay after
+            sign-out (same device), unless you clear site data.
+          </p>
+        </div>
+        <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
@@ -423,7 +434,7 @@ export default function ProviderVbmsWorkspace() {
           </Link>
           <span className="pill pillRed">Provider</span>
         </div>
-      </div>
+      </header>
 
       <div className="cardGrid">
         <section className="card cardAccentSoft">

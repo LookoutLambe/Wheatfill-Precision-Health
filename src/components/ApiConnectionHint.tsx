@@ -15,11 +15,24 @@ export default function ApiConnectionHint() {
     /* ignore */
   }
 
+  const onWheatfill =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'wheatfillprecisionhealth.com' ||
+      window.location.hostname === 'www.wheatfillprecisionhealth.com')
+  const defaultLiveApi = api === 'https://api.wheatfillprecisionhealth.com'
+
   return (
     <div className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.5 }}>
       <div>
         <strong>API base URL</strong> (where sign-in and forms post): <code style={{ fontSize: 11 }}>{api}</code>
       </div>
+      {onWheatfill && defaultLiveApi && !pointsToLocalFromPublic ? (
+        <p style={{ margin: '8px 0 0' }}>
+          That host must run the <code>backend</code> app (public HTTPS) for sign-in and contact forms. If the API lives
+          elsewhere, set the repository secret <code>VITE_API_URL</code> to that base URL, redeploy GitHub Pages, or one-time:{' '}
+          <code style={{ fontSize: 11 }}>?api=https://your-api.example.com</code> (saved in this browser).
+        </p>
+      ) : null}
       {pointsToLocalFromPublic ? (
         <p style={{ color: '#7a0f1c', fontWeight: 700, margin: '8px 0 0' }}>
           This page is on the public web but the app is still pointed at <code>localhost</code>—browsers will not reach your

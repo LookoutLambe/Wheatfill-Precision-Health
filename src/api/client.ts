@@ -30,13 +30,25 @@ export function getApiUrl(): string {
   return resolveApiUrl()
 }
 
+function unreachableApiMessage(): string {
+  const base = getApiUrl()
+  if (typeof window === 'undefined') {
+    return `Cannot reach the API at ${base}. If you are testing locally, run: cd backend && npm run dev. Set VITE_API_URL, or add ?api=<base URL> once, if the API is not at ${base}.`
+  }
+  const h = window.location.hostname
+  if (h === 'wheatfillprecisionhealth.com' || h === 'www.wheatfillprecisionhealth.com') {
+    return (
+      `Cannot reach the API at ${base}. The live site is static: sign-in needs the API server at that address (HTTPS), CORS (FRONTEND_ORIGIN) allowing this site, ` +
+      `or a different public API URL (GitHub secret VITE_API_URL, redeploy Pages) or a one-time ?api= base URL. Local: cd backend && npm run dev.`
+    )
+  }
+  return `Cannot reach the API at ${base}. If you are testing locally, run: cd backend && npm run dev (port 8080) while the front end is on a dev server. Set VITE_API_URL, or add ?api=<your API base URL> once, if the API is not at ${base}.`
+}
+
 function rethrowIfUnreachable(e: unknown): never {
   const m = String((e as Error)?.message || e)
   if (e instanceof TypeError || /failed to fetch|load failed|networkerror/i.test(m)) {
-    const base = getApiUrl()
-    throw new Error(
-      `Cannot reach the API at ${base}. If you are testing locally, run the backend in a second terminal: cd backend, then npm run dev (port 8080 by default) while the site is on a dev server, not a raw file. Set VITE_API_URL, or add ?api=<your API base URL> once, if the API is not at ${base}.`,
-    )
+    throw new Error(unreachableApiMessage())
   }
   throw e as Error
 }

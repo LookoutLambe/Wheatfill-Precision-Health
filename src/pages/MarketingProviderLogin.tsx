@@ -1,14 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { apiPost } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import {
   ensureDefaultMarketingProviderUsers,
   isAllowedMarketingProviderUser,
   resolveMarketingProviderSlot,
   setMarketingProviderAuthed,
-  setMarketingProviderPassword,
-  teamApiUsernameForSlot,
+  verifyMarketingProviderPassword,
 } from '../marketing/providerStore'
 
 export default function MarketingProviderLogin() {
@@ -39,22 +37,17 @@ export default function MarketingProviderLogin() {
           setError('Invalid username or password.')
           return
         }
-        const apiName = teamApiUsernameForSlot(slot)
-        const res = await apiPost<{ token: string }>(
-          '/auth/login',
-          { username: apiName, password },
-          '', // do not send an existing session token
-        )
-        if (!res?.token) {
-          setError('Sign-in failed. Try again.')
+        const ok = await verifyMarketingProviderPassword(u, password)
+        if (!ok) {
+          setError('Invalid username or password.')
           return
         }
-        localStorage.setItem('wph_token_v1', res.token)
-        await setMarketingProviderPassword(slot, password)
+        // Static marketing site: session is in this browser only; no server JWT.
+        localStorage.removeItem('wph_token_v1')
         setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })
       } catch (e: unknown) {
-        setError(String((e as Error)?.message || e || 'Sign-in failed. Is the API running and VITE_API_URL correct?'))
+        setError(String((e as Error)?.message || e || 'Sign-in failed. Try again.'))
       } finally {
         setBusy(false)
       }
@@ -127,9 +120,15 @@ export default function MarketingProviderLogin() {
         </form>
 
         <div className="divider" />
+        <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, margin: 0 }}>
+          Sign-in is checked in this browser (password hash in local storage). It does not call a server. Default
+          passwords are created on first load; change them in <Link to="/provider/security">Security</Link>.
+        </p>
+        <div className="divider" style={{ margin: '12px 0' }} />
         <ApiConnectionHint />
-        <p className="muted" style={{ margin: '16px 0 0' }}>
-          This is a <b>demo</b> provider area. It does not access patient data.
+        <p className="muted" style={{ margin: '12px 0 0' }}>
+          This is a <b>demo</b> provider area. The public API above is only for contact and similar features, not
+          for this sign-in. It does not access patient data.
         </p>
       </section>
     </div>
