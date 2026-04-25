@@ -2096,9 +2096,31 @@ html.pharmacyCartOpen body {
   margin: 0;
   padding: 12px 14px;
   border-radius: 14px;
-  border: 1px solid rgba(10, 30, 63, 0.1);
   background: rgba(255, 255, 255, 0.75);
   box-sizing: border-box;
+  overflow: hidden;
+  /* Default frame; left accent set per stripe class */
+  border: 1px solid rgba(10, 30, 63, 0.1);
+  border-left-width: 4px;
+  border-left-color: rgba(10, 30, 63, 0.2);
+}
+
+.landingWhyUsItem--stripeRed {
+  border-left-color: var(--red);
+}
+
+.landingWhyUsItem--stripeWhite {
+  /* Light “white” band that reads in the R-W-B row (pure #fff would disappear on a white card) */
+  border-left-color: #e8ecf2;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.landingWhyUsItem--stripeBlue {
+  border-left-color: var(--navy);
+}
+
+.landingWhyUsItem--stripeGray {
+  border-left-color: #6b7280;
 }
 
 .landingWhyUsItemTitle {

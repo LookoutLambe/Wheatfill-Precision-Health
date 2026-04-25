@@ -309,28 +309,28 @@ export default function Landing() {
             </p>
             <div className="divider" />
             <div className="landingWhyUsGrid">
-              <div className="landingWhyUsItem">
+              <div className="landingWhyUsItem landingWhyUsItem--stripeRed">
                 <div className="landingWhyUsItemTitle">Precision, not a template</div>
                 <p className="landingWhyUsItemText">
                   Plans are individualized to your history, risk, and goals—so recommendations match your physiology, not
                   a one-size protocol.
                 </p>
               </div>
-              <div className="landingWhyUsItem">
+              <div className="landingWhyUsItem landingWhyUsItem--stripeWhite">
                 <div className="landingWhyUsItemTitle">Everything in one place</div>
                 <p className="landingWhyUsItemText">
                   Book, medication education, order requests, and the storefront catalog are on this site—so you
                   are not shuffled between disconnected logins to get things done.
                 </p>
               </div>
-              <div className="landingWhyUsItem">
+              <div className="landingWhyUsItem landingWhyUsItem--stripeBlue">
                 <div className="landingWhyUsItemTitle">Clarity and safety</div>
                 <p className="landingWhyUsItemText">
                   We are upfront about options, monitoring, and what “success” can look like—so you can make informed
                   decisions with a team that stays in touch.
                 </p>
               </div>
-              <div className="landingWhyUsItem">
+              <div className="landingWhyUsItem landingWhyUsItem--stripeGray">
                 <div className="landingWhyUsItemTitle">Long-term in mind</div>
                 <p className="landingWhyUsItemText">
                   Visits, check-ins, and adjustments are built for sustainability—so changes are more likely to stick
