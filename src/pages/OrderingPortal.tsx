@@ -25,7 +25,7 @@ export default function OrderingPortal() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Order requests</h1>
+          <h1 style={{ margin: 0 }}>Order Requests</h1>
           <p className="muted pageSubtitle">
             Request refills, labs, or follow-up questions and track status from the practice (signed-in area on this
             site).
@@ -39,7 +39,7 @@ export default function OrderingPortal() {
       <div className="cardGrid">
         <section className="card cardAccentNavy">
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Submit an order request</h2>
+            <h2 style={{ margin: 0 }}>Submit an Order Request</h2>
             <span className="pill">Patient</span>
           </div>
           <div className="divider" />

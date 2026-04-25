@@ -561,7 +561,40 @@ export default function ProviderVbmsWorkspace() {
       </header>
 
       <div className="cardGrid">
-        <section className="card cardAccentSoft">
+        <section className="card cardAccentNavy cardSpan12">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Requests</h2>
+            {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} new</span> : <span className="pill">Queue</span>}
+          </div>
+          <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+            Quick links for day-to-day requests from patients: booking/time requests, order requests, and the full weekly schedule.
+          </p>
+          <div className="divider" />
+          <div className="btnRow">
+            <button
+              type="button"
+              className="btn btnPrimary"
+              onClick={() => document.getElementById('wph-orders')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              View order requests
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => document.getElementById('wph-inbox')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              View inbox
+            </button>
+            <Link to="/provider/schedule" className="btn" style={{ textDecoration: 'none' }}>
+              Weekly schedule
+            </Link>
+            <Link to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
+              Patient order page
+            </Link>
+          </div>
+        </section>
+
+        <section className="card cardAccentSoft" id="wph-inbox">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Inbox</h2>
             {newCount > 0 ? <span className="pill pillRed">{newCount} new</span> : <span className="pill">Inbox</span>}
@@ -1174,7 +1207,7 @@ export default function ProviderVbmsWorkspace() {
           </p>
         </section>
 
-        <section className="card cardAccentRed">
+        <section className="card cardAccentRed" id="wph-orders">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <div className="btnRow" style={{ margin: 0 }}>
