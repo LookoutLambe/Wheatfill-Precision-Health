@@ -100,6 +100,9 @@ export default function ProviderShell() {
               <NavLink to="/provider/security" onClick={closeMenu}>
                 Security
               </NavLink>
+              <NavLink to="/provider/staff" onClick={closeMenu}>
+                Staff users
+              </NavLink>
             </>
           )}
           <AuthStatus onMenuClose={closeMenu} />

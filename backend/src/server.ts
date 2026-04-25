@@ -691,6 +691,83 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  // Admin: manage staff logins (create + reset passwords).
+  protectedScope.get(
+    '/v1/admin/users',
+    { preHandler: requireRole(['admin']) },
+    async () => {
+      const users = await prisma.user.findMany({
+        where: { deletedAt: null, role: { in: ['provider', 'admin'] } },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, role: true, username: true, displayName: true, createdAt: true },
+        take: 200,
+      })
+      return { users }
+    },
+  )
+
+  const AdminCreateUserBody = z.object({
+    username: z.string().min(2).max(50).transform((s) => s.trim().toLowerCase()),
+    displayName: z.string().min(2).max(120).transform((s) => s.trim()),
+    role: z.enum(['provider', 'admin']).default('provider'),
+    password: z.string().min(8).max(200),
+  })
+
+  protectedScope.post(
+    '/v1/admin/users',
+    { preHandler: requireRole(['admin']) },
+    async (req, reply) => {
+      const body = AdminCreateUserBody.parse(req.body)
+      const exists = await prisma.user.findUnique({ where: { username: body.username } })
+      if (exists) return reply.conflict('That username already exists.')
+      const user = await prisma.user.create({
+        data: {
+          role: body.role,
+          username: body.username,
+          passwordHash: await hashPassword(body.password),
+          displayName: body.displayName,
+        },
+        select: { id: true, role: true, username: true, displayName: true, createdAt: true },
+      })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'user',
+        entityId: user.id,
+        action: 'admin_user_created',
+        after: user,
+        ip: reqIp(req),
+      })
+      return { user }
+    },
+  )
+
+  const AdminResetPasswordBody = z.object({
+    password: z.string().min(8).max(200),
+  })
+
+  protectedScope.patch(
+    '/v1/admin/users/:id/password',
+    { preHandler: requireRole(['admin']) },
+    async (req, reply) => {
+      const id = (req.params as any).id as string
+      const body = AdminResetPasswordBody.parse(req.body)
+      const before = await prisma.user.findUnique({ where: { id } })
+      if (!before) return reply.notFound('User not found.')
+      if (before.deletedAt) return reply.badRequest('User is deleted.')
+      if (before.role !== 'provider' && before.role !== 'admin') return reply.badRequest('Not a staff user.')
+      await prisma.user.update({ where: { id }, data: { passwordHash: await hashPassword(body.password) } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'user',
+        entityId: id,
+        action: 'admin_user_password_reset',
+        before: { id: before.id, username: before.username, role: before.role },
+        ip: reqIp(req),
+      })
+      return { ok: true }
+    },
+  )
+
   // Provider: payment integrations (Stripe + Clover)
   protectedScope.get(
     '/v1/provider/payments',
