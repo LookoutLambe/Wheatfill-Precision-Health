@@ -5,21 +5,13 @@ import './index.css'
 import App from './App.tsx'
 import { MedplumAppProvider } from './medplum/provider'
 
-const MARKETING_ONLY = (import.meta.env.VITE_MARKETING_ONLY?.toString().trim() || '') === '1'
-
-// Marketing static site: never use a service worker (stale index/asset paths → white screen after domain/base changes).
-// Full app production: register after load.
+// Production: register the app shell SW so Chrome on Android can treat the site as an installable PWA
+// (manifest + SW + HTTPS). Bump CACHE in public/sw.js after hosting or asset-path changes to avoid stale shells.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  if (MARKETING_ONLY) {
-    navigator.serviceWorker.getRegistrations().then((regs) => {
-      void Promise.all(regs.map((r) => r.unregister()))
-    })
-  } else {
-    window.addEventListener('load', () => {
-      const swUrl = `${import.meta.env.BASE_URL}sw.js`
-      navigator.serviceWorker.register(swUrl).catch(() => {})
-    })
-  }
+  window.addEventListener('load', () => {
+    const swUrl = `${import.meta.env.BASE_URL}sw.js`.replace(/\/{2,}/g, '/')
+    navigator.serviceWorker.register(swUrl).catch(() => {})
+  })
 }
 
 createRoot(document.getElementById('root')!).render(

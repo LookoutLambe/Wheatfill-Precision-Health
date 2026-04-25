@@ -4,7 +4,7 @@
 // Cache static assets for offline use; use network-first for navigations.
 
 // Bump when asset paths or hosting root change (e.g. GitHub Pages repo URL → custom domain).
-const CACHE = 'wph-cache-v3-root';
+const CACHE = 'wph-cache-v4-pwa';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -15,6 +15,7 @@ self.addEventListener('install', (event) => {
         './',
         './index.html',
         './manifest.webmanifest',
+        './app-icon.png',
         './favicon.svg',
         './404.html',
       ]),
