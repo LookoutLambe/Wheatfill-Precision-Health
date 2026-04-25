@@ -358,6 +358,8 @@ export default function ProviderVbmsWorkspace() {
 
   const newCount = msgs.filter((m) => m.status === 'new').length
   const handledCount = msgs.filter((m) => m.status === 'handled').length
+  const bookingNewCount = msgs.filter((m) => m.category === 'online_booking' && m.status === 'new').length
+  const bookingHandledCount = msgs.filter((m) => m.category === 'online_booking' && m.status === 'handled').length
   const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
   const completedCount = appts.filter((a) => a.status === 'Completed').length
   const cancelledCount = appts.filter((a) => a.status === 'Cancelled').length
@@ -533,6 +535,9 @@ export default function ProviderVbmsWorkspace() {
         <div className="teamWorkspaceToolbar" style={{ paddingTop: 0 }}>
           <span className="pill" title="Inbox messages from the public site">
             Inbox: <b>{newCount}</b> new · <span className="muted">{handledCount} handled</span>
+          </span>
+          <span className="pill" title="Booking requests (from Book Online)">
+            Booking requests: <b>{bookingNewCount}</b> new · <span className="muted">{bookingHandledCount} handled</span>
           </span>
           <span className="pill" title="Preview schedule rows (this browser)">
             Visits: <b>{scheduledCount}</b> scheduled · <span className="muted">{completedCount} completed</span>

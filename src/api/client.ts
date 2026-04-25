@@ -1,4 +1,4 @@
-import { isWheatfillLiveProviderRoute, WHEATFILL_LIVE_DEFAULT_API } from '../config/mode'
+import { isWheatfillLiveSite, WHEATFILL_LIVE_DEFAULT_API } from '../config/mode'
 
 function resolveApiUrl() {
   const fromEnv = import.meta.env.VITE_API_URL?.toString().trim()
@@ -17,7 +17,7 @@ function resolveApiUrl() {
     }
   }
 
-  if (isWheatfillLiveProviderRoute()) {
+  if (isWheatfillLiveSite()) {
     return WHEATFILL_LIVE_DEFAULT_API
   }
 
@@ -25,7 +25,7 @@ function resolveApiUrl() {
   return 'http://localhost:8080'
 }
 
-/** Resolves on each call so SPA navigation (e.g. to /provider) can pick the provider-only live default. */
+/** Resolves on each call so SPA navigation can pick runtime overrides. */
 export function getApiUrl(): string {
   return resolveApiUrl()
 }
