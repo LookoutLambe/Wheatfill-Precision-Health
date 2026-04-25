@@ -15,7 +15,10 @@ import { registerAuth, requireRole } from './auth/authz.js'
 import { decryptSecret, encryptSecret } from './crypto/secrets.js'
 
 const PORT = Number(process.env.PORT || 8080)
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5176'
+// Comma-separated. Include both apex + www for the public site, or the browser will block credentialed API calls.
+const FRONTEND_ORIGIN =
+  process.env.FRONTEND_ORIGIN ||
+  'http://localhost:5176,https://wheatfillprecisionhealth.com,https://www.wheatfillprecisionhealth.com'
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_change_me'
 const JWT_ISSUER = process.env.JWT_ISSUER || 'wph-backend'
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
@@ -236,7 +239,10 @@ await app.register(cors, {
     // If not configured, allow all origins (dev).
     if (allow.length === 0) return cb(null, true)
     if (!origin) return cb(null, true)
-    return cb(null, allow.includes(origin))
+    if (allow.includes(origin)) return cb(null, true)
+    // If FRONTEND_ORIGIN lists only one of apex vs www, browsers on the other hostname still need CORS.
+    if (/^https:\/\/(www\.)?wheatfillprecisionhealth\.com$/i.test(origin)) return cb(null, true)
+    return cb(null, false)
   },
   credentials: true,
   // Ensure browser preflight for DELETE / PATCH to team inbox, provider routes, etc.
@@ -373,7 +379,7 @@ app.post('/v1/public/contact', async (req, reply) => {
 })
 
 const PublicTeamInboxBody = z.object({
-  kind: z.enum(['contact', 'online_booking']),
+  kind: z.enum(['contact', 'online_booking', 'order_request']),
   fromName: z.string().min(1).max(200),
   fromEmail: z.string().max(200).optional().default(''),
   body: z.string().min(1).max(8000),

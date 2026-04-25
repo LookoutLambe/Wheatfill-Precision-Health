@@ -144,7 +144,8 @@ export async function setMarketingProviderPassword(username: MarketingProviderUs
 
 const LOGIN_NAME_RE = /^[a-z0-9][a-z0-9._-]{1,31}$/
 
-const MARKETING_PROVIDER_AUTH_EVENT = 'wph_marketing_provider_auth'
+/** Fired on sign-in, sign-out, and login-alias changes. Provider workspace listens to refresh inbox, etc. */
+export const MARKETING_PROVIDER_AUTH_EVENT = 'wph_marketing_provider_auth'
 
 /**
  * Brett and Bridgette may change their sign-in username (alias). Session stays on internal slot.

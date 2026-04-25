@@ -16,6 +16,7 @@ import {
   getMarketingIntegrations,
   getMarketingProviderLoginDisplay,
   isMarketingProviderAuthed,
+  MARKETING_PROVIDER_AUTH_EVENT,
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { loadMarketingWorkspaceState, saveMarketingWorkspaceState } from '../marketing/workspaceStore'
@@ -282,8 +283,30 @@ export default function ProviderVbmsWorkspace() {
     }
   }, [navigate])
 
+  // Load after sign-in, when returning to the tab, or when the API session changes in another tab.
   useEffect(() => {
-    if (isMarketingProviderAuthed()) void loadTeamInbox()
+    if (!isMarketingProviderAuthed()) return
+    void loadTeamInbox()
+  }, [loadTeamInbox])
+
+  useEffect(() => {
+    const sync = () => {
+      if (getToken()) void loadTeamInbox()
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'wph_token_v1') sync()
+    }
+    const onVis = () => {
+      if (document.visibilityState === 'visible') sync()
+    }
+    window.addEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
+    window.addEventListener('storage', onStorage)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
+      window.removeEventListener('storage', onStorage)
+      document.removeEventListener('visibilitychange', onVis)
+    }
   }, [loadTeamInbox])
 
   const loadP2pPayments = useCallback(async () => {
