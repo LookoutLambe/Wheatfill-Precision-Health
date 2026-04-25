@@ -347,11 +347,6 @@ export default function Shell() {
               <NavLink to="/privacy">Privacy Policy</NavLink>
               <NavLink to="/npp">Notice of Privacy Practices</NavLink>
               <NavLink to="/terms">Terms of Service</NavLink>
-            </div>
-
-            <div className="footerLinks">
-              <NavLink to="/telehealth-consent">Telehealth Consent</NavLink>
-              <NavLink to="/accessibility">Accessibility</NavLink>
               <NavLink to="/contact">Contact</NavLink>
             </div>
 
