@@ -4,6 +4,7 @@ import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getApiUrl, getToken } from '../api/client'
 import { MARKETING_ONLY } from '../config/mode'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
+import { scheduleAppointment } from '../data/portalStore'
 import {
   getMarketingIntegrations,
   getMarketingProviderLoginDisplay,
@@ -119,6 +120,8 @@ export default function ProviderVbmsWorkspace() {
   const [qsCustomName, setQsCustomName] = useState(initialWs.qsCustomName)
   const [qsType, setQsType] = useState<'New Patient Consultation' | 'Follow-Up Consultation'>(initialWs.qsType)
   const [qsWhen, setQsWhen] = useState(initialWs.qsWhen)
+  const [qsDate, setQsDate] = useState(() => (initialWs.qsWhen || '').slice(0, 10) || new Date().toISOString().slice(0, 10))
+  const [qsTime, setQsTime] = useState('09:00')
 
   const workspacePersistRef = useRef({ appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache })
   workspacePersistRef.current = { appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache }
@@ -575,7 +578,9 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
-            <span className="pill pillRed">Manage</span>
+            <Link to="/provider/schedule" className="pill pillRed" style={{ textDecoration: 'none' }}>
+              Manage
+            </Link>
           </div>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
@@ -638,7 +643,7 @@ export default function ProviderVbmsWorkspace() {
           )}
         </section>
 
-        <section className="card cardAccentNavy" id="wph-quick-schedule">
+        <section className="card cardAccentNavy cardSpan12" id="wph-quick-schedule">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Quick schedule</h2>
             <span className="pill">Add</span>
@@ -708,48 +713,54 @@ export default function ProviderVbmsWorkspace() {
               When this field has text, it is used for the name on the list instead of the patient dropdown.
             </p>
           </label>
-          <label style={{ display: 'block', marginTop: 12 }}>
-            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              When
-            </div>
-            <input className="input" value={qsWhen} onChange={(e) => setQsWhen(e.target.value)} placeholder="May 02, 2026 10:00 AM" />
-          </label>
+          <div className="formRow" style={{ marginTop: 12 }}>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Date
+              </div>
+              <input className="input" type="date" value={qsDate} onChange={(e) => setQsDate(e.target.value)} />
+            </label>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Time
+              </div>
+              <input className="input" type="time" value={qsTime} onChange={(e) => setQsTime(e.target.value)} step={900} />
+            </label>
+          </div>
           <div className="btnRow" style={{ marginTop: 12 }}>
             <button
               type="button"
               className="btn btnPrimary"
               style={{ width: '100%' }}
               onClick={() => {
-                const id = `a_${Math.random().toString(16).slice(2)}`
                 const custom = qsCustomName.trim()
+                const date = qsDate.trim()
+                const time = (qsTime || '').slice(0, 5)
+                const whenText = date && time ? `${date} ${time}` : qsWhen.trim() || '—'
                 if (custom) {
-                  setAppts((prev) => [
-                    {
-                      id,
-                      patientId: `custom:${id}`,
-                      patientName: custom,
-                      type: qsType,
-                      when: qsWhen.trim() || '—',
-                      status: 'Scheduled',
-                    },
-                    ...prev,
-                  ])
+                  setAppts((prev) => [{ id: `a_${Math.random().toString(16).slice(2)}`, patientId: 'custom:local', patientName: custom, type: qsType, when: whenText, status: 'Scheduled' }, ...prev])
                   setQsCustomName('')
+                  if (date && time) {
+                    scheduleAppointment({ patientName: custom, type: qsType, date, time })
+                  }
                   return
                 }
                 const pl = allPatientOptions.find((p) => p.id === qsPatient)
                 const nameSnap = (pl?.label || labelForPatientId(qsPatient)).trim() || '—'
                 setAppts((prev) => [
                   {
-                    id,
+                    id: `a_${Math.random().toString(16).slice(2)}`,
                     patientId: qsPatient,
                     patientName: nameSnap,
                     type: qsType,
-                    when: qsWhen.trim() || '—',
+                    when: whenText,
                     status: 'Scheduled',
                   },
                   ...prev,
                 ])
+                if (date && time) {
+                  scheduleAppointment({ patientName: nameSnap, type: qsType, date, time })
+                }
               }}
             >
               Schedule

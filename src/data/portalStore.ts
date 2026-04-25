@@ -33,10 +33,86 @@ type PortalState = {
   orders: OrderRequest[]
   bookedSlots: string[]
   blackoutDates: string[]
+  scheduleConfig?: ScheduleConfigV1
 }
 
 const STORAGE_KEY = 'wph_portal_state_v1'
 const EVENT_NAME = 'wph_portal_state_changed'
+
+export type ScheduleConfigV1 = {
+  slotMinutes: number
+  /** 0=Sun..6=Sat. Times are local HH:MM (24h). */
+  hoursByDow: Record<number, { start: string; end: string; enabled: boolean }>
+}
+
+export function getScheduleConfig(): ScheduleConfigV1 {
+  const s = readState()
+  const cfg = s.scheduleConfig
+  const base: ScheduleConfigV1 = {
+    slotMinutes: 30,
+    hoursByDow: {
+      0: { enabled: false, start: '09:00', end: '13:00' },
+      1: { enabled: true, start: '08:30', end: '15:00' },
+      2: { enabled: true, start: '08:30', end: '15:00' },
+      3: { enabled: true, start: '08:30', end: '15:00' },
+      4: { enabled: true, start: '08:30', end: '15:00' },
+      5: { enabled: true, start: '08:30', end: '13:00' },
+      6: { enabled: false, start: '09:00', end: '13:00' },
+    },
+  }
+  if (!cfg || typeof cfg !== 'object') return base
+  const slotMinutes = Number((cfg as any).slotMinutes)
+  const hoursByDow = (cfg as any).hoursByDow as any
+  const next: ScheduleConfigV1 = {
+    slotMinutes: Number.isFinite(slotMinutes) && slotMinutes >= 10 && slotMinutes <= 120 ? slotMinutes : base.slotMinutes,
+    hoursByDow: { ...base.hoursByDow },
+  }
+  if (hoursByDow && typeof hoursByDow === 'object') {
+    for (const dow of Object.keys(base.hoursByDow)) {
+      const n = Number(dow)
+      const src = hoursByDow[n]
+      if (!src || typeof src !== 'object') continue
+      const enabled = Boolean((src as any).enabled)
+      const start = String((src as any).start || '').trim()
+      const end = String((src as any).end || '').trim()
+      if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) continue
+      next.hoursByDow[n] = { enabled, start, end }
+    }
+  }
+  return next
+}
+
+export function setScheduleConfig(next: ScheduleConfigV1) {
+  const state = readState()
+  writeState({ ...state, scheduleConfig: next })
+}
+
+function minutesSinceMidnight(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map((x) => Number(x))
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return 0
+  return Math.max(0, Math.min(24 * 60, h * 60 + m))
+}
+
+/** Generate slots for a local YYYY-MM-DD date string, based on scheduleConfig. */
+export function slotsForDate(dateYmd: string): Array<{ date: string; time: string }> {
+  const [y, m, d] = dateYmd.split('-').map((x) => Number(x))
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return []
+  const dt = new Date(y, (m || 1) - 1, d || 1)
+  const dow = dt.getDay()
+  const cfg = getScheduleConfig()
+  const hours = cfg.hoursByDow[dow]
+  if (!hours?.enabled) return []
+  const startMin = minutesSinceMidnight(hours.start)
+  const endMin = minutesSinceMidnight(hours.end)
+  const slot = Math.max(10, Math.min(120, cfg.slotMinutes | 0))
+  const out: Array<{ date: string; time: string }> = []
+  for (let t = startMin; t + slot <= endMin; t += slot) {
+    const hh = String(Math.floor(t / 60)).padStart(2, '0')
+    const mm = String(t % 60).padStart(2, '0')
+    out.push({ date: dateYmd, time: `${hh}:${mm}` })
+  }
+  return out
+}
 
 function nowIso() {
   return new Date().toISOString()
@@ -54,16 +130,17 @@ function uid(prefix: string) {
 function readState(): PortalState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [] }
+    if (!raw) return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [], scheduleConfig: undefined }
     const parsed = JSON.parse(raw) as PortalState
     return {
       appointments: Array.isArray(parsed.appointments) ? parsed.appointments : [],
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
       bookedSlots: Array.isArray(parsed.bookedSlots) ? parsed.bookedSlots : [],
       blackoutDates: Array.isArray(parsed.blackoutDates) ? parsed.blackoutDates : [],
+      scheduleConfig: (parsed as any).scheduleConfig,
     }
   } catch {
-    return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [] }
+    return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [], scheduleConfig: undefined }
   }
 }
 

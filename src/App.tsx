@@ -34,6 +34,7 @@ import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
 import MarketingProviderDemoDashboard from './pages/MarketingProviderDemoDashboard'
 import MarketingProviderSecurity from './pages/MarketingProviderSecurity'
 import ProviderVbmsWorkspace from './pages/ProviderVbmsWorkspace'
+import ProviderSchedule from './pages/ProviderSchedule'
 
 /** React Router `Navigate` must not receive a full `https://…` string — it breaks routing (white screen). */
 function MarketingLeaveToFullApp({ path }: { path: string }) {
@@ -94,6 +95,7 @@ export default function App() {
 
         <Route path="/provider/login" element={<MarketingProviderLogin />} />
         <Route path="/provider" element={<ProviderVbmsWorkspace />} />
+        <Route path="/provider/schedule" element={<ProviderSchedule />} />
         <Route path="/provider/demo" element={<MarketingProviderDemoDashboard />} />
         <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
         <Route path="/provider/security" element={<MarketingProviderSecurity />} />
@@ -155,6 +157,7 @@ export default function App() {
         ) : (
           <>
             <Route path="/provider" element={<ProviderVbmsWorkspace />} />
+            <Route path="/provider/schedule" element={<ProviderSchedule />} />
             <Route path="/provider/demo" element={<MarketingProviderDemoDashboard />} />
             <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
             <Route path="/provider/security" element={<MarketingProviderSecurity />} />

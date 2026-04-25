@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { MARKETING_ONLY } from '../config/mode'
 import { getMarketingIntegrations } from '../marketing/providerStore'
-import { bookAppointment, getPortalState, subscribePortalState } from '../data/portalStore'
+import { bookAppointment, getPortalState, slotsForDate, subscribePortalState } from '../data/portalStore'
 import { apiPost } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import type { UiApptType } from '../medplum/scheduling'
@@ -19,15 +19,12 @@ function ymdLocal(d: Date) {
 
 function nextBusinessDaySlots(days: number, startFrom = new Date()): Slot[] {
   const slots: Slot[] = []
-  const times = ['08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '13:00', '13:30', '14:00']
   const now = new Date(startFrom)
   for (let i = 0; i < days; i++) {
     const d = new Date(now)
     d.setDate(now.getDate() + i)
-    const day = d.getDay()
-    if (day === 0 || day === 6) continue
     const date = ymdLocal(d)
-    for (const time of times) slots.push({ date, time })
+    for (const s of slotsForDate(date)) slots.push(s)
   }
   return slots
 }
