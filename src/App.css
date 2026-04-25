@@ -887,6 +887,11 @@ html.pharmacyCartOpen body {
   min-width: 0;
 }
 
+.aboutBioMain .aboutBioProse {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
 .aboutProfileAside--compact {
   align-items: flex-end;
 }
@@ -894,6 +899,16 @@ html.pharmacyCartOpen body {
 .aboutProfileAside--compact .portrait {
   max-width: min(240px, 100%);
   width: 100%;
+}
+
+@media (max-width: 860px) {
+  .aboutBioRow {
+    grid-template-columns: 1fr;
+  }
+
+  .aboutProfileAside--compact {
+    align-items: stretch;
+  }
 }
 
 .aboutProfileAside {
