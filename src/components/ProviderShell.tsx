@@ -88,9 +88,6 @@ export default function ProviderShell() {
               <NavLink to="/provider" onClick={closeMenu}>
                 Workspace
               </NavLink>
-              <NavLink to="/provider/demo" onClick={closeMenu}>
-                Demo
-              </NavLink>
               <NavLink to="/provider/integrations" onClick={closeMenu}>
                 Integrations
               </NavLink>

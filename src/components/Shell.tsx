@@ -14,14 +14,7 @@ import {
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
-import {
-  CATALOG_PAYPAL,
-  CATALOG_VENMO,
-  CONTRACTED_PHARMACY_NAME,
-  PROVIDER_DISPLAY_NAME,
-  PROVIDER_LICENSED_STATES,
-} from '../config/provider'
-import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
+import { CONTRACTED_PHARMACY_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
 function mapCatalogHighlightToCart(): CartLineProduct[] {
@@ -132,7 +125,6 @@ export default function Shell() {
     : phrFull || (APP_URL ? `${APP_URL}/patient` : internal('/patient'))
   const extBookMarketing = integ?.publicBookingUrl?.trim() || ''
   const extBookFull = !MARKETING_ONLY ? publicSchedulingUrlForFullApp() : ''
-  const catalogVenmoPayUrl = resolvedCatalogVenmoPayUrl()
   const states = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
 
   return (
@@ -291,18 +283,6 @@ export default function Shell() {
             </div>
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
-            <div className="footerFineprint">
-              Catalog (only as instructed):{' '}
-              <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700 }}>
-                Check out
-              </a>
-              {` (PayPal · ${CATALOG_PAYPAL.email})`} · <strong>Venmo</strong>{' '}
-              <a href={catalogVenmoPayUrl} target="_blank" rel="noopener noreferrer">
-                {CATALOG_VENMO.handle}
-              </a>
-              <span className="muted"> ({catalogVenmoPayUrl})</span>. This site is the practice storefront—booking,
-              catalog, and how to reach the team.
-            </div>
             <div className="footerFineprint">
               <NavLink to="/disclosures" style={{ textDecoration: 'none' }}>
                 Third-party licenses, disclosures, and legal pages

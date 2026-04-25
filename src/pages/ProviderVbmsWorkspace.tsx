@@ -477,9 +477,6 @@ export default function ProviderVbmsWorkspace() {
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
           </Link>
-          <Link to="/provider/demo" className="btn btnAccent" style={{ textDecoration: 'none' }}>
-            Demo sandbox
-          </Link>
           <button type="button" className="btn" onClick={signOut} title="Sign out of the team workspace">
             Sign out
           </button>
@@ -739,7 +736,7 @@ export default function ProviderVbmsWorkspace() {
                     ))}
                   </optgroup>
                 ) : null}
-                <optgroup label="Sample (demo)">
+                <optgroup label="Sample">
                   {demoPatients.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.label}
@@ -1160,20 +1157,7 @@ export default function ProviderVbmsWorkspace() {
           ) : null}
         </section>
 
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Demo sandbox</h2>
-            <span className="pill">Training</span>
-          </div>
-          <div className="divider" />
-          <p className="muted" style={{ marginTop: 0 }}>
-            Want sample inbox/schedule/orders for UI review? That lives in a separate demo area (not your live provider workspace).
-          </p>
-          <div className="divider" />
-          <Link to="/provider/demo" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}>
-            Open demo sandbox
-          </Link>
-        </section>
+        {/* Training/demo sandbox removed for production */}
       </div>
     </div>
   )

@@ -69,7 +69,7 @@ export default function ProviderLogin() {
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Provider Login</h1>
-          <p className="muted pageSubtitle">Sign in to configure integrations and preview workflow (no patient data stored on this site).</p>
+          <p className="muted pageSubtitle">Staff sign-in for the practice website.</p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
           Home
@@ -124,8 +124,7 @@ export default function ProviderLogin() {
         <div className="divider" />
         <ApiConnectionHint />
         <p className="muted" style={{ margin: '16px 0 0' }}>
-          This is a <b>configuration</b> team area. Customer-facing actions use your public links, Venmo, PayPal, Zelle, and
-          Stripe (when enabled).
+          Use this to access the staff workspace and manage practice operations.
         </p>
       </section>
     </div>

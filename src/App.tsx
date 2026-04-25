@@ -31,7 +31,6 @@ import { PATIENT_USES_MEDPLUM } from './config/patientFeatures'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from './config/providerAuth'
 import MarketingProviderLogin from './pages/MarketingProviderLogin'
 import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
-import MarketingProviderDemoDashboard from './pages/MarketingProviderDemoDashboard'
 import MarketingProviderSecurity from './pages/MarketingProviderSecurity'
 import ProviderVbmsWorkspace from './pages/ProviderVbmsWorkspace'
 import ProviderSchedule from './pages/ProviderSchedule'
@@ -104,7 +103,6 @@ export default function App() {
         >
           <Route path="/provider" element={<ProviderVbmsWorkspace />} />
           <Route path="/provider/schedule" element={<ProviderSchedule />} />
-          <Route path="/provider/demo" element={<MarketingProviderDemoDashboard />} />
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
           <Route path="/provider/staff" element={<ProviderStaffUsers />} />
@@ -168,7 +166,6 @@ export default function App() {
           <>
             <Route path="/provider" element={<ProviderVbmsWorkspace />} />
             <Route path="/provider/schedule" element={<ProviderSchedule />} />
-            <Route path="/provider/demo" element={<MarketingProviderDemoDashboard />} />
             <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
             <Route path="/provider/security" element={<MarketingProviderSecurity />} />
             <Route path="/provider/payments" element={<ProviderVbmsWorkspace />} />

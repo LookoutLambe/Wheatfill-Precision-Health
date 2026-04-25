@@ -146,8 +146,8 @@ export default function MarketingProviderLogin() {
         <div className="divider" style={{ margin: '12px 0' }} />
         <ApiConnectionHint />
         <p className="muted" style={{ margin: '12px 0 0' }}>
-          This is a <b>demo</b> provider area. The public API above is only for contact and similar features, not
-          for this sign-in. It does not access patient data.
+          This is the staff sign-in for the practice website. It is used for contact/time-request follow-up and practice
+          operations features on this site.
         </p>
       </section>
     </div>
