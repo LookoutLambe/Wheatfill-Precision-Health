@@ -36,6 +36,9 @@ const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'whea
 const TEAM_BRETT_PASSWORD = process.env.TEAM_BRETT_PASSWORD || process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
 const TEAM_BRIDGETTE_PASSWORD = process.env.TEAM_BRIDGETTE_PASSWORD || 'wheatfill'
 const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'demonstration'
+const SYNC_TEAM_PASSWORDS =
+  (process.env.SYNC_TEAM_PASSWORDS || '1').trim() === '1' ||
+  (process.env.SYNC_TEAM_PASSWORDS || '').trim().toLowerCase() === 'true'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '8h').trim() || '8h'
 const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
 const DEFAULT_PATIENT_PASSWORD = process.env.DEFAULT_PATIENT_PASSWORD || 'wheatfill'
@@ -120,13 +123,31 @@ async function ensureMarketingTeamLogins() {
   ]
   for (const e of entries) {
     const ex = await prisma.user.findUnique({ where: { username: e.username } })
-    if (ex) continue
-    await prisma.user.create({
+    const nextHash = await hashPassword(e.password)
+    if (!ex) {
+      await prisma.user.create({
+        data: {
+          role: e.role,
+          username: e.username,
+          passwordHash: nextHash,
+          displayName: e.displayName,
+        },
+      })
+      continue
+    }
+
+    // Keep the role/display name correct and (optionally) sync the password from env vars so staff can sign in immediately.
+    const shouldSyncPassword = SYNC_TEAM_PASSWORDS && Boolean(e.password && e.password.trim())
+    const needsRole = ex.role !== e.role
+    const needsName = ex.displayName !== e.displayName
+    if (!shouldSyncPassword && !needsRole && !needsName) continue
+
+    await prisma.user.update({
+      where: { username: e.username },
       data: {
         role: e.role,
-        username: e.username,
-        passwordHash: await hashPassword(e.password),
         displayName: e.displayName,
+        ...(shouldSyncPassword ? { passwordHash: nextHash } : {}),
       },
     })
   }

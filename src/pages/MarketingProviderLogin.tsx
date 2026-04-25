@@ -38,7 +38,15 @@ export default function MarketingProviderLogin() {
         setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })
       } catch (e: unknown) {
-        setError(String((e as Error)?.message || e || 'Sign-in failed. Try again.'))
+        const raw = String((e as Error)?.message || e || '')
+        if (/401|unauthorized|invalid username|invalid password/i.test(raw)) {
+          setError('Invalid username or password.')
+        } else if (raw.trim().startsWith('{') && raw.includes('"statusCode"')) {
+          // Fastify JSON error string from res.text()
+          setError('Invalid username or password.')
+        } else {
+          setError(raw || 'Sign-in failed. Try again.')
+        }
       } finally {
         setBusy(false)
       }
