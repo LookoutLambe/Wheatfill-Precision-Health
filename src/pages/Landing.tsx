@@ -1,6 +1,7 @@
 import { useCallback, useId, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import VenmoPayToHint from '../components/VenmoPayToHint'
 import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
@@ -259,9 +260,9 @@ export default function Landing() {
           </section>
         </section>
 
-        <aside className="landingGridProfileColumn" aria-label="About the provider">
+        <aside className="landingGridProfileColumn" aria-label="About the care team">
           <div className="portrait">
-            <img src={brettPortrait} alt="Provider portrait" />
+            <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
           </div>
           <div className="card cardAccentNavy landingBioCard">
             <div className="cardTitle">
@@ -277,6 +278,34 @@ export default function Landing() {
               {'\n\n'}
               His mission is to help patients feel better, move better, and live at a higher
               level—now and for years to come.
+            </p>
+          </div>
+
+          <div className="portrait" style={{ marginTop: 8 }}>
+            <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
+          </div>
+          <div className="card cardAccentNavy landingBioCard">
+            <div className="cardTitle">
+              <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
+              <span className="pill">Clinician</span>
+            </div>
+            <p className="aboutBioTagline" style={{ margin: '0 0 8px' }}>
+              Fix the root. Transform the outcome.
+            </p>
+            <p className="muted" style={{ whiteSpace: 'pre-line' }}>
+              Bridgette is a registered nurse with over 14 years of experience in metabolic health,
+              nutrition, and weight optimization. Her own journey with PCOS and insulin resistance
+              informs how she helps patients address root causes and build sustainable, long-term
+              results—not quick fixes.
+              {'\n\n'}
+              At Wheatfill Precision Health, she pairs clear, individualized guidance with medical
+              therapy, nutrition, and practical lifestyle strategies so you can take back control of
+              your health.
+            </p>
+            <p className="muted" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
+              <Link to="/about#bridgette-bio" style={{ fontWeight: 600 }}>
+                Full bio
+              </Link>
             </p>
           </div>
         </aside>

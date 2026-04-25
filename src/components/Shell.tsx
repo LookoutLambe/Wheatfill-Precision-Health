@@ -20,7 +20,6 @@ import {
   CONTRACTED_PHARMACY_NAME,
   PROVIDER_DISPLAY_NAME,
   PROVIDER_LICENSED_STATES,
-  PROVIDER_NPI,
 } from '../config/provider'
 import { resolvedCatalogVenmoPayUrl } from '../lib/practiceIntegrationDisplay'
 import brandMarkImg from '../assets/wheatfill-mark.png'
@@ -138,7 +137,9 @@ export default function Shell() {
 
   return (
     <div className="appShell">
-      <div className={`topNavShell ${menuOpen ? 'isMenuOpen' : ''}`}>
+      <div
+        className={`topNavShell topNavShell--alwaysDrawer ${menuOpen ? 'isMenuOpen' : ''}`}
+      >
         <header className="topNav">
           <div className="topNavInner">
             <NavLink
@@ -175,7 +176,7 @@ export default function Shell() {
                 aria-label={menuOpen ? 'Close menu' : 'Open menu'}
                 onClick={() => setMenuOpen((o) => !o)}
               >
-                {menuOpen ? '×' : '☰'}
+                ☰
               </button>
             </div>
           </div>
@@ -186,15 +187,11 @@ export default function Shell() {
         ) : null}
 
         <nav className="navLinks" id="primary-navigation" aria-label="Primary navigation">
-          <div className="navDrawerTop">
-            <span className="navDrawerTitle">Menu</span>
-            <button type="button" className="navDrawerClose" onClick={closeMenu} aria-label="Close menu">
-              ×
-            </button>
-          </div>
-
           <NavLink to="/" onClick={closeMenu}>
               Home
+            </NavLink>
+            <NavLink to="/about" onClick={closeMenu}>
+              About
             </NavLink>
             <NavLink to="/pricing" onClick={closeMenu}>
               Pricing
@@ -236,6 +233,17 @@ export default function Shell() {
                 Order Now
               </NavLink>
             )}
+            <NavLink to="/ordering" onClick={closeMenu}>
+              Ordering
+            </NavLink>
+            <NavLink
+              to="/pharmacy/mountain-view"
+              onClick={closeMenu}
+              style={{ textDecoration: 'none' }}
+              title="Accessible price list"
+            >
+              {CONTRACTED_PHARMACY_NAME}
+            </NavLink>
             {MARKETING_ONLY ? (
               <a href={appPatient} style={{ textDecoration: 'none' }} onClick={closeMenu}>
                 For patients
@@ -267,56 +275,10 @@ export default function Shell() {
         <div className="footerInner">
           <div className="footerContent">
             <div className="footerLine">© {new Date().getFullYear()} Wheatfill Precision Health. All rights reserved.</div>
-            <div className="footerLine">
-              {PROVIDER_DISPLAY_NAME} | NPI: {PROVIDER_NPI}
-            </div>
-            <div className="footerLine">Licensed in: {states || '[state list]'}</div>
+            <div className="footerLine">{PROVIDER_DISPLAY_NAME}</div>
+            <div className="footerLine">Licensed in: {states}</div>
 
-            <div className="footerLinks" aria-label="Footer navigation">
-              <NavLink to="/about">About</NavLink>
-              <NavLink to="/pricing">Pricing</NavLink>
-              <NavLink to="/peptides">Peptides</NavLink>
-              {MARKETING_ONLY && extBookMarketing ? (
-                <a href={extBookMarketing} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                  Book Online
-                </a>
-              ) : !MARKETING_ONLY && extBookFull ? (
-                <a
-                  href={extBookFull}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none' }}
-                >
-                  Book Online
-                </a>
-              ) : (
-                <NavLink to="/book">Book Online</NavLink>
-              )}
-              <NavLink to="/ordering">Ordering</NavLink>
-              {MARKETING_ONLY ? (
-                <a href={appOrderCatalog} style={{ textDecoration: 'none' }}>
-                  Order Now
-                </a>
-              ) : (
-                <NavLink to="/order-now">Order Now</NavLink>
-              )}
-              <NavLink to="/pharmacy/mountain-view" style={{ textDecoration: 'none' }} title="Accessible price list">
-                {CONTRACTED_PHARMACY_NAME}
-              </NavLink>
-              {MARKETING_ONLY ? (
-                <a href={appPatient} style={{ textDecoration: 'none' }}>
-                  For patients
-                </a>
-              ) : phrFull ? (
-                <a href={phrFull} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                  For patients
-                </a>
-              ) : (
-                <NavLink to="/patient">For patients</NavLink>
-              )}
-            </div>
-
-            <div className="footerLinks">
+            <div className="footerLinks" aria-label="Legal and policies">
               <NavLink to="/privacy">Privacy Policy</NavLink>
               <NavLink to="/npp">Notice of Privacy Practices</NavLink>
               <NavLink to="/terms">Terms of Service</NavLink>

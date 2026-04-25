@@ -1,3 +1,4 @@
+import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
@@ -44,24 +45,77 @@ export default function About() {
           </p>
         </section>
 
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <aside className="aboutProfileAside">
           <div className="portrait">
-            <img src={brettPortrait} alt="Provider portrait" />
+            <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
           </div>
+        </aside>
+      </div>
 
-          <div className="card cardAccentRed">
-            <div className="cardTitle">
-              <h2 style={{ margin: 0 }}>Mission</h2>
-              <span className="pill pillRed">Elevated living</span>
-            </div>
-            <p className="muted">
-              Personalized, evidence-based care designed to optimize your health, performance, and
-              longevity—built around sustainable habits and measurable outcomes.
-            </p>
+      <section className="card cardAccentRed aboutMissionBlock">
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Mission</h2>
+          <span className="pill pillRed">Elevated living</span>
+        </div>
+        <p className="muted">
+          Personalized, evidence-based care designed to optimize your health, performance, and
+          longevity—built around sustainable habits and measurable outcomes.
+        </p>
+      </section>
+
+      <div className="twoCol aboutAfterMission" id="bridgette-bio">
+        <section className="card cardAccentNavy" style={{ minWidth: 0 }}>
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
+            <span className="pill">Clinician</span>
+          </div>
+          <p className="aboutBioTagline" style={{ margin: '0 0 4px' }}>
+            Fix the root. Transform the outcome.
+          </p>
+          <div className="divider" />
+          <p className="muted aboutBioProse" style={{ marginTop: 0 }}>
+            Bridgette is a registered nurse with over 14 years of clinical experience and a focused
+            expertise in metabolic health, nutrition, and weight optimization. As a former
+            competitive athlete, she has always valued performance and discipline—but her true
+            clinical insight was shaped through her own experience.
+          </p>
+          <p className="muted aboutBioProse">
+            After years of struggling with PCOS and insulin resistance, Bridgette understands
+            firsthand how deeply metabolic dysfunction can impact weight, energy, hormones, and
+            overall quality of life. Like many patients, she was told her symptoms were
+            “normal”—despite knowing something wasn’t right. That turning point led her to take
+            ownership of her health and pursue a deeper understanding of insulin resistance,
+            nutrition, and hormone balance.
+          </p>
+          <p className="muted aboutBioProse">
+            Through a targeted, evidence-based approach—combining nutrition, lifestyle strategy, and
+            medical support—she was able to correct her insulin resistance, regain metabolic
+            control, and achieve a level of health she had never previously experienced.
+          </p>
+          <p className="muted aboutBioProse">That experience now drives her work with patients.</p>
+          <p className="muted aboutBioProse">
+            Bridgette specializes in identifying and addressing the root causes of weight gain and
+            metabolic dysfunction, with a primary focus on improving insulin sensitivity and building
+            sustainable, long-term results. She recognizes that insulin resistance does not just
+            affect weight—it impacts nearly every system in the body.
+          </p>
+          <p className="muted aboutBioProse">
+            At Wheatfill Precision Health, she provides clear, individualized guidance that
+            integrates medical therapy, nutrition, and practical lifestyle strategies. Her approach
+            is structured, results-driven, and designed for real life.
+          </p>
+          <p className="muted aboutBioProse" style={{ marginBottom: 0 }}>
+            Her mission is simple: help patients feel better, function better, and take back
+            control of their health—with a plan that actually works.
+          </p>
+        </section>
+
+        <aside className="aboutProfileAside">
+          <div className="portrait">
+            <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
           </div>
         </aside>
       </div>
     </div>
   )
 }
-

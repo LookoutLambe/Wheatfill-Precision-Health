@@ -58,7 +58,7 @@ export default function ProviderShell() {
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               onClick={() => setMenuOpen((o) => !o)}
             >
-              {menuOpen ? '×' : '☰'}
+              ☰
             </button>
           </div>
         </header>
@@ -68,13 +68,6 @@ export default function ProviderShell() {
         ) : null}
 
         <nav className="navLinks" id="provider-primary-navigation" aria-label="Provider navigation">
-          <div className="navDrawerTop">
-            <span className="navDrawerTitle">Menu</span>
-            <button type="button" className="navDrawerClose" onClick={closeMenu} aria-label="Close menu">
-              ×
-            </button>
-          </div>
-
           <NavLink to="/" onClick={closeMenu}>
             Home
           </NavLink>

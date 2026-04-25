@@ -6,9 +6,7 @@ export const PRACTICE_PUBLIC_NAME = 'Wheatfill Precision Health'
 /** Compounding pharmacy Brett is contracted with for catalog / fulfillment. */
 export const CONTRACTED_PHARMACY_NAME = 'Mountain View Pharmacy'
 
-// TODO: replace placeholders before launch
-export const PROVIDER_NPI = '[number]'
-export const PROVIDER_LICENSED_STATES = ['[state list]']
+export const PROVIDER_LICENSED_STATES = ['Utah']
 
 /** If set, peptide waitlist can open a prefilled mailto link. Leave empty to show Contact fallback on static builds. */
 export const PUBLIC_INQUIRY_EMAIL = ''
