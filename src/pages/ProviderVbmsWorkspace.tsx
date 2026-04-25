@@ -113,6 +113,10 @@ function parseInboxBodyForQuickSchedule(body: string) {
 export default function ProviderVbmsWorkspace() {
   const navigate = useNavigate()
   const who = getMarketingProviderLoginDisplay()
+  const signOut = useCallback(() => {
+    setMarketingProviderAuthed(false)
+    navigate('/', { replace: true })
+  }, [navigate])
 
   const demoPatients = useMemo(() => seedWorkspacePatients(), [])
   const initialWs = useMemo(() => loadMarketingWorkspaceState(), [])
@@ -476,6 +480,9 @@ export default function ProviderVbmsWorkspace() {
           <Link to="/provider/demo" className="btn btnAccent" style={{ textDecoration: 'none' }}>
             Demo sandbox
           </Link>
+          <button type="button" className="btn" onClick={signOut} title="Sign out of the team workspace">
+            Sign out
+          </button>
           <span className="pill pillRed">Provider</span>
         </div>
       </header>
