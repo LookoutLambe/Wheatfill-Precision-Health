@@ -25,7 +25,8 @@ html {
   --header-bar-border: #aea0a0;
   --header-bar-shadow: rgba(0, 0, 0, 0.07);
 
-  --brand-wordmark-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Use the same site font everywhere (including brand lockups). */
+  --brand-wordmark-sans: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
   --brand-wordmark-rose: #5a3c46;
 
   --accent: var(--navy);

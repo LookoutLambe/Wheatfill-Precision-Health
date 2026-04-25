@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { apiDelete, apiGet, apiPatch, apiPost, getApiUrl, getToken } from '../api/client'
+import { apiDelete, apiGet, apiPatch, apiPost, getToken } from '../api/client'
 import { MARKETING_ONLY } from '../config/mode'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
@@ -435,9 +435,9 @@ export default function ProviderVbmsWorkspace() {
 
   return (
     <div className="page teamWorkspacePage">
-      <header className="teamWorkspaceHeader" aria-label="Team workspace">
+      <header className="teamWorkspaceHeader" aria-label="Team Workspace">
         <div className="teamWorkspaceHeaderRow">
-          <h1>Team workspace</h1>
+          <h1>Team Workspace</h1>
           {who ? (
             <div className="pill" style={{ width: 'fit-content' }}>
               Signed in as: {who}
@@ -490,12 +490,6 @@ export default function ProviderVbmsWorkspace() {
             <h2 style={{ margin: 0 }}>Inbox</h2>
             {newCount > 0 ? <span className="pill pillRed">{newCount} new</span> : <span className="pill">Inbox</span>}
           </div>
-          <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-            <strong>Who can see this:</strong> anyone who signed in on this site (Brett, Bridgette, or
-            <code> admin</code>) — same list. No separate inbox API key: your password creates the session. Contact and
-            book-time forms are stored on this build&rsquo;s API (
-            <code style={{ fontSize: 12 }}>{getApiUrl()}</code>).
-          </p>
           <div className="divider" />
           <div className="btnRow" style={{ marginBottom: 10, flexWrap: 'wrap' }}>
             <button

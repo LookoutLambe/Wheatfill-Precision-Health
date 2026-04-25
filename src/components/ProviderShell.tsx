@@ -46,7 +46,7 @@ export default function ProviderShell() {
               <span className="brandDivider" aria-hidden="true" />
               <span className="brandLockup">
                 <span className="brandPrimary">Wheatfill</span>
-                <span className="brandProviderLine">Team workspace</span>
+                <span className="brandProviderLine">Team Workspace</span>
               </span>
             </div>
 
