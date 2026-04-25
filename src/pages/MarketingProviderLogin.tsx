@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { apiPost, getApiUrl } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import {
   ensureDefaultMarketingProviderUsers,
@@ -20,6 +21,7 @@ export default function MarketingProviderLogin() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [warning, setWarning] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   const canSubmit = !!username.trim() && !!password && !busy
@@ -27,6 +29,7 @@ export default function MarketingProviderLogin() {
   const submit = () => {
     if (!canSubmit) return
     setError(null)
+    setWarning(null)
     setBusy(true)
     ;(async () => {
       try {
@@ -42,8 +45,19 @@ export default function MarketingProviderLogin() {
           setError('Invalid username or password.')
           return
         }
-        // Static marketing site: session is in this browser only; no server JWT.
-        localStorage.removeItem('wph_token_v1')
+        // Try to obtain a real API token if the backend is reachable; otherwise remain browser-only.
+        try {
+          const res = await apiPost<{ token: string }>('/auth/login', { username: u, password }, '')
+          if (res?.token) {
+            localStorage.setItem('wph_token_v1', res.token)
+          } else {
+            localStorage.removeItem('wph_token_v1')
+            setWarning(`Signed in locally. API token not returned from ${getApiUrl()}; inbox sync will be unavailable.`)
+          }
+        } catch {
+          localStorage.removeItem('wph_token_v1')
+          setWarning(`Signed in locally. Cannot reach API at ${getApiUrl()}; inbox sync will be unavailable.`)
+        }
         setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })
       } catch (e: unknown) {
@@ -106,6 +120,11 @@ export default function MarketingProviderLogin() {
           {error ? (
             <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800, textAlign: 'left' }}>{error}</div>
           ) : null}
+          {warning ? (
+            <div style={{ marginTop: 10, color: 'rgba(10, 30, 63, 0.82)', fontSize: 12, fontWeight: 750, textAlign: 'left' }}>
+              {warning}
+            </div>
+          ) : null}
 
           <div className="btnRow" style={{ marginTop: 12 }}>
             <button
@@ -121,8 +140,8 @@ export default function MarketingProviderLogin() {
 
         <div className="divider" />
         <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, margin: 0 }}>
-          Sign-in is checked in this browser (password hash in local storage). It does not call a server. Default
-          passwords are created on first load; change them in <Link to="/provider/security">Security</Link>.
+          Sign-in is checked in this browser (password hash in local storage). If the API is running, we also create an
+          API token so the inbox can sync. Change passwords in <Link to="/provider/security">Security</Link>.
         </p>
         <div className="divider" style={{ margin: '12px 0' }} />
         <ApiConnectionHint />

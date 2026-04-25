@@ -4,7 +4,7 @@ import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getApiUrl, getToken } from '../api/client'
 import { MARKETING_ONLY } from '../config/mode'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
-import { scheduleAppointment } from '../data/portalStore'
+import { addBlackoutDate, getPortalState, removeBlackoutDate, scheduleAppointment, subscribePortalState } from '../data/portalStore'
 import {
   getMarketingIntegrations,
   getMarketingProviderLoginDisplay,
@@ -114,7 +114,7 @@ export default function ProviderVbmsWorkspace() {
   const [p2pMethod, setP2pMethod] = useState<'venmo' | 'paypal'>('paypal')
   const [p2pMemo, setP2pMemo] = useState('')
   const [p2pRecording, setP2pRecording] = useState(false)
-  const [blackouts, setBlackouts] = useState<string[]>(initialWs.blackouts)
+  const [blackouts, setBlackouts] = useState<string[]>(() => getPortalState().blackoutDates || [])
 
   const [qsPatient, setQsPatient] = useState(initialWs.qsPatient)
   const [qsCustomName, setQsCustomName] = useState(initialWs.qsCustomName)
@@ -130,6 +130,7 @@ export default function ProviderVbmsWorkspace() {
     saveMarketingWorkspaceState({
       v: 1,
       appts,
+      // Keep writing blackouts for backwards compatibility with older builds, but source of truth is portalStore.
       blackouts,
       qsPatient,
       qsCustomName,
@@ -155,6 +156,24 @@ export default function ProviderVbmsWorkspace() {
     }
   }, [])
 
+  // One-time migration: move any older "preview blackouts" into the shared portal store so patients + schedule see them.
+  useEffect(() => {
+    const existing = new Set((getPortalState().blackoutDates || []).map((d) => String(d)))
+    for (const d of initialWs.blackouts || []) {
+      const iso = String(d || '').trim()
+      if (!iso) continue
+      if (existing.has(iso)) continue
+      addBlackoutDate(iso)
+    }
+  }, [initialWs.blackouts])
+
+  // Keep this page in sync with the shared blackout list.
+  useEffect(() => {
+    const sync = () => setBlackouts(getPortalState().blackoutDates || [])
+    sync()
+    return subscribePortalState(sync)
+  }, [])
+
   useEffect(() => {
     if (!isMarketingProviderAuthed()) {
       navigate('/provider/login', { replace: true })
@@ -171,7 +190,11 @@ export default function ProviderVbmsWorkspace() {
   const loadTeamInbox = useCallback(async () => {
     const tok = getToken()
     if (!tok) {
-      setInboxError('Sign in again to load the inbox. Your team password gives you a session on this site—no separate API key.')
+      setInboxError(
+        MARKETING_ONLY
+          ? 'Inbox sync is not available on the static marketing site. (It needs the backend API.) Quick schedule and the weekly schedule page work without it.'
+          : 'Sign in again to load the inbox. Your team password gives you a session on this site—no separate API key.',
+      )
       setMsgs([])
       return
     }
@@ -224,6 +247,7 @@ export default function ProviderVbmsWorkspace() {
   }, [navigate])
 
   useEffect(() => {
+    if (MARKETING_ONLY) return
     if (isMarketingProviderAuthed()) void loadTeamInbox()
   }, [loadTeamInbox])
 
@@ -785,7 +809,7 @@ export default function ProviderVbmsWorkspace() {
               onClick={() => {
                 const d = new Date()
                 const iso = new Date(d.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-                setBlackouts((prev) => (prev.includes(iso) ? prev : [iso, ...prev]))
+                addBlackoutDate(iso)
               }}
             >
               Add blackout (preview)
@@ -808,7 +832,7 @@ export default function ProviderVbmsWorkspace() {
                     <tr key={d}>
                       <td className="muted">{d}</td>
                       <td>
-                        <button type="button" className="btn" onClick={() => setBlackouts((prev) => prev.filter((x) => x !== d))}>
+                        <button type="button" className="btn" onClick={() => removeBlackoutDate(d)}>
                           Re-open
                         </button>
                       </td>
