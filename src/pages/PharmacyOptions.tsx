@@ -7,6 +7,7 @@ import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
+import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 
 type Partner = { slug: string; name: string }
 
@@ -122,6 +123,7 @@ export default function PharmacyOptions() {
               <div className="orderNowProductBody">
                 <div className="orderNowProductName">{p.name}</div>
                 <div className="muted orderNowProductSub">{p.subtitle}</div>
+                <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} />
               </div>
               <div className="orderNowProductMeta">
                 <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>

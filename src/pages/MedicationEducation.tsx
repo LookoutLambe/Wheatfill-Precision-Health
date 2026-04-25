@@ -25,8 +25,81 @@ export default function MedicationEducation() {
           <Link to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
             Order Requests
           </Link>
+          <a className="btn catalogOutlineBtn" href="#dosing-guide" style={{ textDecoration: 'none' }}>
+            Dosing guide
+          </a>
         </div>
       </div>
+
+      <section id="dosing-guide" className="card cardAccentNavy" style={{ scrollMarginTop: 88 }}>
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Dosing overview (education)</h2>
+          <span className="pill pillRed">Titration</span>
+        </div>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
+          <strong>Not a prescription.</strong> Doses, concentrations (mg/mL), and escalation schedules are chosen by your clinician
+          for your product, goals, and tolerance. Compounded preparations are not the same as brand-name FDA labeling below.
+        </p>
+        <div className="divider" />
+        <p className="muted" style={{ marginTop: 0, marginBottom: 10, lineHeight: 1.55, fontSize: 14 }}>
+          The tables are simplified summaries of <strong>typical FDA-labeled titration for weekly subcutaneous brand products</strong>{' '}
+          (examples: Wegovy<sup>®</sup> for semaglutide; Zepbound<sup>®</sup> for tirzepatide). Always follow the label and instructions
+          on <em>your</em> medication and what your clinician tells you.
+        </p>
+        <div className="cardGrid" style={{ alignItems: 'start' }}>
+          <div className="card cardAccentSoft" style={{ margin: 0, gridColumn: 'span 6' }}>
+            <div className="cardTitle">
+              <h3 style={{ margin: 0 }}>Semaglutide (example: Wegovy)</h3>
+              <span className="pill">Weekly</span>
+            </div>
+            <p className="muted" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.5 }}>
+              Labeled escalation often increases about every <strong>4 weeks</strong> if tolerated, through steps such as{' '}
+              <strong>0.25 → 0.5 → 1.0 → 1.7 → 2.4 mg</strong> once weekly. Some people remain on an intermediate dose if that is the
+              right balance of benefit and side effects.
+            </p>
+            <p className="muted" style={{ marginTop: 8, marginBottom: 0, fontSize: 13 }}>
+              Official prescribing information:{' '}
+              <a href="https://dailymed.nlm.nih.gov/dailymed/search.cfm?labelname=wegovy" target="_blank" rel="noopener noreferrer">
+                DailyMed (search Wegovy)
+              </a>
+              {' · '}
+              {ext('https://medlineplus.gov/druginfo/meds/a619057.html')}
+            </p>
+          </div>
+          <div className="card cardAccentSoft" style={{ margin: 0, gridColumn: 'span 6' }}>
+            <div className="cardTitle">
+              <h3 style={{ margin: 0 }}>Tirzepatide (example: Zepbound)</h3>
+              <span className="pill">Weekly</span>
+            </div>
+            <p className="muted" style={{ marginTop: 6, fontSize: 13, lineHeight: 1.5 }}>
+              Labeled escalation often increases about every <strong>4 weeks</strong> if tolerated, through steps such as{' '}
+              <strong>2.5 → 5 → 7.5 → 10 → 12.5 → 15 mg</strong> once weekly (maximum depends on indication and product labeling).
+            </p>
+            <p className="muted" style={{ marginTop: 8, marginBottom: 0, fontSize: 13 }}>
+              Official prescribing information:{' '}
+              <a href="https://dailymed.nlm.nih.gov/dailymed/search.cfm?labelname=zepbound" target="_blank" rel="noopener noreferrer">
+                DailyMed (search Zepbound)
+              </a>
+              {' · '}
+              {ext('https://medlineplus.gov/druginfo/meds/a622044.html')}
+            </p>
+          </div>
+        </div>
+        <div className="divider" />
+        <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6, fontSize: 14 }}>
+          <li>
+            <strong>Why titration matters</strong> — slower increases can reduce nausea, fullness, and other GI side effects while your
+            body adjusts.
+          </li>
+          <li>
+            <strong>If you miss a dose</strong> — follow the product label or ask your clinician; do not double up unless you were told to.
+          </li>
+          <li>
+            <strong>When to call urgently</strong> — severe or persistent abdominal pain, repeated vomiting, signs of allergic reaction,
+            or other symptoms your clinician warned you about.
+          </li>
+        </ul>
+      </section>
 
       <section className="card cardAccentSoft">
         <div className="cardTitle">

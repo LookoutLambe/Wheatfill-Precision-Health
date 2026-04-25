@@ -4,6 +4,7 @@ import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
+import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 
 const SLUG = DEFAULT_CATALOG_PARTNER_SLUG
 const PARTNER = resolvedFulfillmentPharmacyName()
@@ -125,13 +126,16 @@ export default function MountainViewPharmacy() {
               <div className="mountainViewTableWrap" role="region" aria-label={`${section.label} price list`} tabIndex={0}>
                 <table className="mountainViewTable">
                   <caption className="mountainViewCaption">
-                    {section.label} — compounding with B6 and glycine as listed. List prices; clinical decisions are
-                    separate.
+                    {section.label} — compounding with B6 and glycine as listed. The <strong>Per vial</strong> column
+                    shows total mg of drug in the vial (mg/mL × mL) and approximate list price per mg for comparison
+                    only. For titration education, use the <Link to="/medications#dosing-guide">dosing guide</Link>.
+                    Clinical decisions are separate from list prices.
                   </caption>
                   <thead>
                     <tr>
                       <th scope="col">Product</th>
                       <th scope="col">Description</th>
+                      <th scope="col">Per vial</th>
                       <th scope="col">List price</th>
                       <th scope="col">
                         <span className="mountainViewActionHead">Add</span>
@@ -146,6 +150,9 @@ export default function MountainViewPharmacy() {
                             {p.name}
                           </th>
                           <td className="muted mountainViewSub">{p.subtitle}</td>
+                          <td className="mountainViewDosingCell">
+                            <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} />
+                          </td>
                           <td className="mountainViewPrice" aria-label={`List price ${moneyWhole(p.priceCents)}`}>
                             {moneyWhole(p.priceCents)}
                           </td>

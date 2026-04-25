@@ -2244,6 +2244,22 @@ html.pharmacyCartOpen body {
   font-size: 14px;
 }
 
+.catalogProductDosing {
+  margin-top: 4px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.catalogProductDosing a {
+  font-weight: 800;
+  color: var(--navy-2);
+}
+
+.catalogProductDosingFine {
+  font-weight: 500;
+  opacity: 0.92;
+}
+
 .pharmacyProductPriceRow {
   margin-top: auto;
   display: flex;
@@ -3460,6 +3476,14 @@ html.pharmacyCartOpen body {
   line-height: 1.4;
   max-width: 280px;
 }
+
+.mountainViewDosingCell {
+  vertical-align: top;
+  max-width: min(280px, 34vw);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
 .mountainViewPrice {
   font-size: 1.15rem;
   font-weight: 800;

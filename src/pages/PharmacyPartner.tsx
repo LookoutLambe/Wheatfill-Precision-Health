@@ -9,6 +9,7 @@ import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../dat
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { bumpCartSku, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet } from '../api/client'
+import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
@@ -166,6 +167,7 @@ export default function PharmacyPartner() {
                   <div className="pharmacyProductBody">
                     <div className="pharmacyProductTitle">{p.name}</div>
                     <div className="muted pharmacyProductSubtitle">{p.subtitle}</div>
+                    <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} />
                     <div className="pharmacyProductPriceRow">
                       <span className="pharmacyProductPrice">{moneyWhole(p.priceCents)}</span>
                       <button
