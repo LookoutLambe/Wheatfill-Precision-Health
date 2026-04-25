@@ -158,6 +158,7 @@ model User {
   threadsAsProvider MessageThread[] @relation("ThreadAsProvider")
   sentMessages MessageEvent[] @relation("SentMessages")
   auditEvents AuditLog[]
+  staffSignupDecisions StaffSignupRequest[] @relation("StaffSignupDecisions")
 
   paymentsAsPatient Payment[] @relation("PaymentsAsPatient")
   paymentsAsProvider Payment[] @relation("PaymentsAsProvider")
@@ -165,6 +166,21 @@ model User {
 
   @@index([role])
   @@index([email])
+}
+
+model StaffSignupRequest {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName  String
+  passwordHash String
+  note         String   @default("")
+  status       String   @default("pending") // pending | approved | denied
+  createdAt    DateTime @default(now())
+  decidedAt    DateTime?
+  decidedById  String?
+  decidedBy    User?    @relation("StaffSignupDecisions", fields: [decidedById], references: [id])
+
+  @@index([status, createdAt])
 }
 
 model Appointment {

@@ -11,11 +11,20 @@ type StaffUser = {
   createdAt: string
 }
 
+type StaffRequest = {
+  id: string
+  username: string
+  displayName: string
+  note: string
+  createdAt: string
+}
+
 export default function ProviderStaffUsers() {
   const navigate = useNavigate()
   const who = getMarketingProviderLoginDisplay()
   const [meRole, setMeRole] = useState<'provider' | 'admin' | ''>('')
   const [users, setUsers] = useState<StaffUser[]>([])
+  const [requests, setRequests] = useState<StaffRequest[]>([])
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -46,6 +55,8 @@ export default function ProviderStaffUsers() {
       setMeRole(me.user.role)
       const r = await apiGet<{ users: StaffUser[] }>('/v1/admin/users', tok)
       setUsers(r.users || [])
+      const q = await apiGet<{ requests: StaffRequest[] }>('/v1/admin/staff-requests', tok)
+      setRequests(q.requests || [])
     } catch (e: any) {
       const m = String(e?.message || e)
       if (/403|forbidden/i.test(m)) {
@@ -93,6 +104,40 @@ export default function ProviderStaffUsers() {
       setErr(String(e?.message || e))
     }
   }, [load, newUser])
+
+  const approve = useCallback(
+    async (id: string) => {
+      setNotice(null)
+      setErr(null)
+      const tok = getToken()
+      if (!tok) return
+      try {
+        await apiPost(`/v1/admin/staff-requests/${encodeURIComponent(id)}/approve`, {}, tok)
+        setNotice('Approved request and created user.')
+        await load()
+      } catch (e: any) {
+        setErr(String(e?.message || e))
+      }
+    },
+    [load],
+  )
+
+  const deny = useCallback(
+    async (id: string) => {
+      setNotice(null)
+      setErr(null)
+      const tok = getToken()
+      if (!tok) return
+      try {
+        await apiPost(`/v1/admin/staff-requests/${encodeURIComponent(id)}/deny`, {}, tok)
+        setNotice('Denied request.')
+        await load()
+      } catch (e: any) {
+        setErr(String(e?.message || e))
+      }
+    },
+    [load],
+  )
 
   const resetPassword = useCallback(async () => {
     setNotice(null)
@@ -221,6 +266,60 @@ export default function ProviderStaffUsers() {
             Refresh list
           </button>
         </div>
+      </section>
+
+      <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Pending requests</h2>
+          <span className="pill">{requests.length}</span>
+        </div>
+        <div className="divider" />
+        {requests.length === 0 ? <p className="muted">No pending requests.</p> : null}
+        {requests.length > 0 ? (
+          <div className="tableWrap">
+            <table className="table" aria-label="Pending staff requests">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Display</th>
+                  <th>Note</th>
+                  <th>Requested</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {requests.map((r) => (
+                  <tr key={r.id}>
+                    <td style={{ fontWeight: 850 }}>{r.username}</td>
+                    <td>{r.displayName}</td>
+                    <td className="muted" style={{ maxWidth: 360 }}>
+                      {r.note || '—'}
+                    </td>
+                    <td className="muted">{new Date(r.createdAt).toLocaleString()}</td>
+                    <td>
+                      <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                        <button type="button" className="btn btnPrimary" disabled={!canManage} onClick={() => void approve(r.id)}>
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btnDanger"
+                          disabled={!canManage}
+                          onClick={() => {
+                            if (!confirm(`Deny request for ${r.username}?`)) return
+                            void deny(r.id)
+                          }}
+                        >
+                          Deny
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </section>
 
       <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>

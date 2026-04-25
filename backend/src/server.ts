@@ -590,6 +590,47 @@ const SignupBody = z.object({
   }
 })
 
+const StaffRequestBody = z.object({
+  username: z.string().min(2).max(50).transform((s) => s.trim().toLowerCase()),
+  displayName: z.string().min(2).max(120).transform((s) => s.trim()),
+  password: z.string().min(8).max(200),
+  note: z.string().max(1000).optional(),
+})
+
+// Public: staff account request (pending approval by admin)
+app.post('/auth/staff-request', async (req, reply) => {
+  const body = StaffRequestBody.parse(req.body)
+  const exists = await prisma.user.findUnique({ where: { username: body.username } })
+  if (exists) return reply.conflict('That username is already in use.')
+
+  const existingReq = await prisma.staffSignupRequest.findUnique({ where: { username: body.username } })
+  if (existingReq && existingReq.status === 'pending') {
+    return reply.conflict('A request for that username is already pending approval.')
+  }
+
+  const passwordHash = await hashPassword(body.password)
+  await prisma.staffSignupRequest.upsert({
+    where: { username: body.username },
+    update: {
+      displayName: body.displayName,
+      passwordHash,
+      note: (body.note ?? '').trim(),
+      status: 'pending',
+      decidedAt: null,
+      decidedById: null,
+    },
+    create: {
+      username: body.username,
+      displayName: body.displayName,
+      passwordHash,
+      note: (body.note ?? '').trim(),
+      status: 'pending',
+    },
+    select: { id: true },
+  })
+  return { ok: true }
+})
+
 app.post('/auth/signup', async (req, reply) => {
   const body = SignupBody.parse(req.body)
   const exists = await prisma.user.findUnique({ where: { username: body.username } })
@@ -688,6 +729,88 @@ await app.register(async (protectedScope) => {
         },
       })
       return { user: me }
+    },
+  )
+
+  // Admin: approve/deny staff signup requests.
+  protectedScope.get(
+    '/v1/admin/staff-requests',
+    { preHandler: requireRole(['admin']) },
+    async () => {
+      const items = await prisma.staffSignupRequest.findMany({
+        where: { status: 'pending' },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        select: { id: true, username: true, displayName: true, note: true, createdAt: true },
+      })
+      return { requests: items }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/admin/staff-requests/:id/approve',
+    { preHandler: requireRole(['admin']) },
+    async (req, reply) => {
+      const id = (req.params as any).id as string
+      const r = await prisma.staffSignupRequest.findUnique({ where: { id } })
+      if (!r) return reply.notFound('Request not found.')
+      if (r.status !== 'pending') return reply.badRequest('Request is not pending.')
+
+      const exists = await prisma.user.findUnique({ where: { username: r.username } })
+      if (exists) return reply.conflict('A user with that username already exists.')
+
+      const user = await prisma.user.create({
+        data: {
+          role: 'provider',
+          username: r.username,
+          passwordHash: r.passwordHash,
+          displayName: r.displayName,
+        },
+        select: { id: true, role: true, username: true, displayName: true, createdAt: true },
+      })
+
+      await prisma.staffSignupRequest.update({
+        where: { id },
+        data: { status: 'approved', decidedAt: new Date(), decidedById: req.user.sub },
+      })
+
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'staff_signup_request',
+        entityId: id,
+        action: 'staff_request_approved',
+        after: { request: { id, username: r.username }, user },
+        ip: reqIp(req),
+      })
+
+      return { user }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/admin/staff-requests/:id/deny',
+    { preHandler: requireRole(['admin']) },
+    async (req, reply) => {
+      const id = (req.params as any).id as string
+      const r = await prisma.staffSignupRequest.findUnique({ where: { id } })
+      if (!r) return reply.notFound('Request not found.')
+      if (r.status !== 'pending') return reply.badRequest('Request is not pending.')
+
+      await prisma.staffSignupRequest.update({
+        where: { id },
+        data: { status: 'denied', decidedAt: new Date(), decidedById: req.user.sub },
+      })
+
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'staff_signup_request',
+        entityId: id,
+        action: 'staff_request_denied',
+        after: { id, username: r.username },
+        ip: reqIp(req),
+      })
+
+      return { ok: true }
     },
   )
 
