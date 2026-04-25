@@ -857,6 +857,44 @@ html.pharmacyCartOpen body {
   gap: 18px;
 }
 
+/* About: two bios side-by-side on desktop, stack on mobile. */
+.aboutTeamGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 901px) {
+  .aboutTeamGrid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.aboutBioCard {
+  min-width: 0;
+}
+
+.aboutBioRow {
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 260px);
+  gap: 16px;
+  align-items: start;
+}
+
+.aboutBioMain {
+  min-width: 0;
+}
+
+.aboutProfileAside--compact {
+  align-items: flex-end;
+}
+
+.aboutProfileAside--compact .portrait {
+  max-width: min(240px, 100%);
+  width: 100%;
+}
+
 .aboutProfileAside {
   display: flex;
   flex-direction: column;
