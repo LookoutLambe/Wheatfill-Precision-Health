@@ -13,6 +13,17 @@ export default function About() {
         </p>
       </div>
 
+      <section className="card cardAccentRed aboutMissionBlock">
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Mission</h2>
+          <span className="pill pillRed">Elevated living</span>
+        </div>
+        <p className="muted">
+          Personalized, evidence-based care designed to optimize your health, performance, and
+          longevity—built around sustainable habits and measurable outcomes.
+        </p>
+      </section>
+
       <div className="aboutTeamGrid" aria-label="Care team bios">
         <section className="card cardAccentNavy aboutBioCard">
           <div className="cardTitle">
@@ -109,17 +120,6 @@ export default function About() {
           </div>
         </section>
       </div>
-
-      <section className="card cardAccentRed aboutMissionBlock">
-        <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Mission</h2>
-          <span className="pill pillRed">Elevated living</span>
-        </div>
-        <p className="muted">
-          Personalized, evidence-based care designed to optimize your health, performance, and
-          longevity—built around sustainable habits and measurable outcomes.
-        </p>
-      </section>
     </div>
   )
 }
