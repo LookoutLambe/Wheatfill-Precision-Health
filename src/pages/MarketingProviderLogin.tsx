@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { apiPost, getApiUrl } from '../api/client'
-import ApiConnectionHint from '../components/ApiConnectionHint'
 import {
   ensureDefaultMarketingProviderUsers,
   isAllowedMarketingProviderUser,
@@ -69,23 +68,10 @@ export default function MarketingProviderLogin() {
   }
 
   return (
-    <div className="page">
-      <div className="pageHeaderRow">
-        <div>
-          <h1 style={{ margin: 0 }}>Provider Login</h1>
-            <p className="muted pageSubtitle">
-              Team sign-in for this ad site. Brett and Bridget share the same inbox for contact and time-request forms—
-              alerts for follow-up, not a medical chart.
-            </p>
-        </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-          Home
-        </Link>
-      </div>
-
+    <div className="page" style={{ paddingTop: 18 }}>
       <section className="card cardAccentNavy" style={{ maxWidth: 760, margin: '0 auto', width: '100%' }}>
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Sign in</h2>
+          <h2 style={{ margin: 0 }}>Staff sign-in</h2>
           <span className="pill pillRed">Provider</span>
         </div>
         <div className="divider" />
@@ -139,16 +125,14 @@ export default function MarketingProviderLogin() {
         </form>
 
         <div className="divider" />
-        <p className="muted" style={{ fontSize: 12, lineHeight: 1.5, margin: 0 }}>
-          Sign-in is checked in this browser (password hash in local storage). If the API is running, we also create an
-          API token so the inbox can sync. Change passwords in <Link to="/provider/security">Security</Link>.
-        </p>
-        <div className="divider" style={{ margin: '12px 0' }} />
-        <ApiConnectionHint />
-        <p className="muted" style={{ margin: '12px 0 0' }}>
-          This is the staff sign-in for the practice website. It is used for contact/time-request follow-up and practice
-          operations features on this site.
-        </p>
+        <div className="btnRow">
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Home
+          </Link>
+          <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
+            Change password
+          </Link>
+        </div>
       </section>
     </div>
   )
