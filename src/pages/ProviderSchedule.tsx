@@ -67,7 +67,7 @@ export default function ProviderSchedule() {
     return subscribePortalState(() => setTick((n) => (n + 1) % 1_000_000))
   }, [])
 
-  const days = useMemo(() => Array.from({ length: 5 }, (_, i) => addDays(weekStart, i)), [weekStart])
+  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart])
   const dayKeys = useMemo(() => days.map((d) => ymdLocal(d)), [days])
 
   const { appointments } = getPortalState()
@@ -110,7 +110,7 @@ export default function ProviderSchedule() {
 
   const weekLabel = useMemo(() => {
     const a = days[0]
-    const b = days[4]
+    const b = days[6]
     const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     const year =
       a.getFullYear() === b.getFullYear() ? ` ${a.getFullYear()}` : ` ${a.getFullYear()}–${b.getFullYear()}`
@@ -300,7 +300,7 @@ export default function ProviderSchedule() {
             <tbody>
               {times.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="muted">
+                  <td colSpan={8} className="muted">
                     No hours set for this week. (We generate slots from your schedule settings.)
                   </td>
                 </tr>
