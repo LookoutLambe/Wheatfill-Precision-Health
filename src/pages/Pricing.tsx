@@ -108,7 +108,7 @@ export default function Pricing() {
 
       <section className="card">
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>What’s included</h2>
+          <h2 style={{ margin: 0 }}>What’s Included</h2>
           <span className="pill">Telehealth</span>
         </div>
         <div className="divider" />

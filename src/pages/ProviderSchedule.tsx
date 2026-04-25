@@ -144,7 +144,7 @@ export default function ProviderSchedule() {
     <div className="page">
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Weekly schedule</h1>
+          <h1 style={{ margin: 0 }}>Weekly Schedule</h1>
           <p className="muted pageSubtitle">Slots are generated from your hours (slot size: {slotMinutes} min).</p>
         </div>
         <div className="pageActions">
@@ -173,7 +173,7 @@ export default function ProviderSchedule() {
       <div className="providerScheduleGrid">
       <section className="card cardAccentSoft providerScheduleSettings">
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Schedule settings</h2>
+          <h2 style={{ margin: 0 }}>Schedule Settings</h2>
           <span className="pill">Hours + slot size</span>
         </div>
         <p className="muted" style={{ marginTop: 6 }}>
@@ -399,7 +399,7 @@ export default function ProviderSchedule() {
           {selected.kind === 'closed' ? (
             <>
               <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Blackout day</h2>
+                <h2 style={{ margin: 0 }}>Blackout Day</h2>
                 <span className="pill pillRed">Closed</span>
               </div>
               <div className="divider" />

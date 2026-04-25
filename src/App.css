@@ -516,14 +516,16 @@ html.pharmacyCartOpen body {
 .pageHeaderRow {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: center;
   gap: 14px;
   flex-wrap: wrap;
+  text-align: center;
 }
 
 .pageSubtitle {
   margin-top: 8px;
   font-size: 18px;
+  text-align: center;
 }
 
 .pageActions {
@@ -531,6 +533,13 @@ html.pharmacyCartOpen body {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Ensure the title/subtitle block spans full width for centering */
+.pageHeaderRow > div:first-child {
+  width: 100%;
 }
 
 .stack {

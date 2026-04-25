@@ -224,7 +224,7 @@ export default function BookOnline() {
   if (publicBookingFull) {
     return (
       <div className="page" style={{ padding: 32, maxWidth: 560 }}>
-        <h1 style={{ margin: 0 }}>Book online</h1>
+        <h1 style={{ margin: 0 }}>Book Online</h1>
         <p className="muted" style={{ marginTop: 12 }}>
           Opening your scheduling link…
         </p>
