@@ -2,7 +2,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getToken } from '../api/client'
-import { MARKETING_ONLY } from '../config/mode'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   addBlackoutDate,
@@ -219,8 +218,7 @@ export default function ProviderVbmsWorkspace() {
       navigate('/provider/login', { replace: true })
       return
     }
-    // Full app: need a real API session. Static marketing build signs in in-browser only.
-    if (MARKETING_ONLY) return
+    // Staff login stores a JWT for the API; inbox/orders need it on every deploy (including static marketing).
     if (!getToken()) {
       setMarketingProviderAuthed(false)
       navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
@@ -231,9 +229,7 @@ export default function ProviderVbmsWorkspace() {
     const tok = getToken()
     if (!tok) {
       setInboxError(
-        MARKETING_ONLY
-          ? 'Inbox sync is not available on the static marketing site. (It needs the backend API.) Quick schedule and the weekly schedule page work without it.'
-          : 'Sign in again to load the inbox. Your team password gives you a session on this site—no separate API key.',
+        'Sign in again to load the inbox. Your team password gives you a session on this site—no separate API key.',
       )
       setMsgs([])
       return
@@ -287,7 +283,6 @@ export default function ProviderVbmsWorkspace() {
   }, [navigate])
 
   useEffect(() => {
-    if (MARKETING_ONLY) return
     if (isMarketingProviderAuthed()) void loadTeamInbox()
   }, [loadTeamInbox])
 
