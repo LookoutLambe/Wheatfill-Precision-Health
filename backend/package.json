@@ -10,6 +10,8 @@
     "migrate:medplum": "tsx src/scripts/migrate-to-medplum.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:status": "prisma migrate status",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
