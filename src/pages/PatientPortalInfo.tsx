@@ -1,5 +1,10 @@
 import { Link } from 'react-router-dom'
-import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
+import {
+  COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE,
+  TYPICAL_INBOX_REPLY_LINE,
+  optionalCustomerAccountUrl,
+  publicSchedulingUrlForFullApp,
+} from '../config/patientFeatures'
 
 /**
  * Customer hub (DTC / consumer site—not a hospital portal). Everything important is on this site.
@@ -9,7 +14,7 @@ export default function PatientPortalInfo() {
   const bookUrl = publicSchedulingUrlForFullApp() || null
 
   return (
-    <div className="page" style={{ gap: 22, maxWidth: 720, margin: '0 auto' }}>
+    <div className="page orderNowHubPage">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>For patients</h1>
@@ -32,13 +37,28 @@ export default function PatientPortalInfo() {
           <p className="muted" style={{ marginTop: 6 }}>
             Use the on-site calendar, or your scheduling link if we’ve published one in settings.
           </p>
+          {bookUrl ? (
+            <p className="muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 14, lineHeight: 1.5 }}>
+              {COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE} (Opens in a new tab.)
+            </p>
+          ) : null}
           <div className="divider" />
           {bookUrl ? (
-            <a className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }} href={bookUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              className="btn btnPrimary"
+              style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+              href={bookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Open scheduling
             </a>
           ) : (
-            <Link to="/book" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}>
+            <Link
+              to="/book"
+              className="btn btnPrimary"
+              style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
+            >
               Book online
             </Link>
           )}
@@ -63,7 +83,8 @@ export default function PatientPortalInfo() {
           <span className="pill">Reach us</span>
         </div>
         <p className="muted" style={{ marginTop: 0 }}>
-          Questions and non-urgent messages go through the Contact page. For emergencies, call 911.
+          Questions and non-urgent messages go through the Contact page. {TYPICAL_INBOX_REPLY_LINE} For emergencies,
+          call 911.
         </p>
         <div className="divider" />
         <div className="btnRow">

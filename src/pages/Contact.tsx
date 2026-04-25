@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiPost } from '../api/client'
+import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
 
 const CONTACT_DRAFT_KEY = 'wph_contact_draft_v1'
@@ -92,7 +93,7 @@ export default function Contact() {
           <h1 style={{ margin: 0 }}>Contact</h1>
           <p className="muted pageSubtitle">
             For privacy, don’t send medical details in this form. Urgent or clinical questions—use the paths on the For
-            patients page or the contact options your practice provides.
+            patients page or the contact options your practice provides. {TYPICAL_INBOX_REPLY_LINE}
           </p>
         </div>
 
@@ -129,7 +130,7 @@ export default function Contact() {
       <div>
         <h1 style={{ margin: 0 }}>Contact</h1>
         <p className="muted pageSubtitle">
-          Send a message or question. Messages go to the provider inbox.
+          Send a message or question. Messages go to the provider inbox. {TYPICAL_INBOX_REPLY_LINE}
         </p>
       </div>
 

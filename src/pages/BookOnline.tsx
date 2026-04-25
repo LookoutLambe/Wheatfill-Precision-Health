@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { publicSchedulingUrlForFullApp } from '../config/patientFeatures'
+import { COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { MARKETING_ONLY } from '../config/mode'
 import { getMarketingIntegrations } from '../marketing/providerStore'
 import { getScheduleConfig, bookAppointment, getPortalState, slotsForDate, subscribePortalState, type ScheduleConfigV1 } from '../data/portalStore'
@@ -225,8 +225,8 @@ export default function BookOnline() {
     return (
       <div className="page" style={{ padding: 32, maxWidth: 560 }}>
         <h1 style={{ margin: 0 }}>Book Online</h1>
-        <p className="muted" style={{ marginTop: 12 }}>
-          Opening your scheduling link…
+        <p className="muted" style={{ marginTop: 12, lineHeight: 1.55 }}>
+          {COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE} We&rsquo;re taking you to that page now&hellip;
         </p>
       </div>
     )
@@ -254,7 +254,8 @@ export default function BookOnline() {
             <a href={publicBookingMarketing} target="_blank" rel="noopener noreferrer">
               separate scheduling page
             </a>
-            . The form on this page still posts your request to the team&rsquo;s workspace inbox.
+            . {COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE} (Opens in a new tab.) The form on this page still posts your
+            request to the team&rsquo;s workspace inbox.
           </p>
         </section>
       ) : null}

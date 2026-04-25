@@ -1,7 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { apiPost } from '../api/client'
+import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
+
+const ORDER_REQUEST_PRESETS: { id: string; label: string; line: string }[] = [
+  { id: 'refill', label: 'Refill', line: 'Refill request' },
+  { id: 'dose', label: 'Dose change', line: 'Dose or strength change' },
+  { id: 'side', label: 'Side effect / symptom', line: 'Question about a side effect or symptom' },
+  { id: 'ship', label: 'Shipping / address', line: 'Shipping or address update' },
+  { id: 'labs', label: 'Labs / results', line: 'Labs question or results' },
+  { id: 'followup', label: 'Follow-up', line: 'Follow-up question' },
+  { id: 'other', label: 'Other', line: 'General request' },
+]
+
+function applyRequestPreset(setRequest: Dispatch<SetStateAction<string>>, line: string) {
+  setRequest((prev) => {
+    const t = prev.trim()
+    if (!t) return line
+    if (t === line || t.startsWith(`${line}\n`)) return prev
+    const first = t.split('\n')[0]?.trim()
+    if (first === line) return prev
+    return `${line}\n${t}`
+  })
+}
 
 const ORDER_REQ_DRAFT_KEY = 'wph_order_request_draft_public_v1'
 
@@ -101,7 +123,8 @@ export default function OrderingPortal() {
         <div>
           <h1 style={{ margin: 0 }}>Order Requests</h1>
           <p className="muted pageSubtitle">
-            Request refills, labs, or follow-up questions. This form sends a note to the provider inbox—no sign-in required.
+            Request refills, labs, or follow-up questions. This form sends a note to the provider inbox—no sign-in
+            required. {TYPICAL_INBOX_REPLY_LINE}
           </p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
@@ -277,6 +300,22 @@ export default function OrderingPortal() {
             </>
           ) : null}
 
+          <div className="orderRequestPresets" style={{ marginTop: 12 }} role="group" aria-label="Common request reasons">
+            <span className="muted" style={{ fontSize: 12, width: '100%', display: 'block' }}>
+              Quick reason (adds a line you can edit):
+            </span>
+            {ORDER_REQUEST_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="orderRequestPreset"
+                onClick={() => applyRequestPreset(setRequest, p.line)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
           <label style={{ display: 'block', marginTop: 12 }}>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
               Request
@@ -385,7 +424,8 @@ export default function OrderingPortal() {
                 <span className="pill">Receipt</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                What happens next: the practice reviews your request and follows up. If something is time-sensitive, use the contact page and note urgency (or call the practice number if you have it).
+                What happens next: the team will review this request. {TYPICAL_INBOX_REPLY_LINE} If this is
+                time-sensitive, use the contact page to say so (or call the practice if you have the number).
               </p>
               <div className="divider" />
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
