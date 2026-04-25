@@ -10,11 +10,32 @@ import type { UiApptType } from '../medplum/scheduling'
 
 type Slot = { date: string; time: string }
 
+type BookingReceipt = {
+  createdAt: string
+  patientName: string
+  apptType: UiApptType
+  dateYmd: string
+  time24: string
+  notes: string
+  calendarOk: boolean
+  calendarNote?: string
+}
+
 function ymdLocal(d: Date) {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+function formatDateLong(ymd: string) {
+  const [yy, mm, dd] = ymd.split('-').map((x) => Number(x))
+  return new Date(yy, (mm || 1) - 1, dd || 1).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: '2-digit',
+    year: 'numeric',
+  })
 }
 
 function nextBusinessDaySlots(days: number, startFrom = new Date()): Slot[] {
@@ -144,6 +165,7 @@ export default function BookOnline() {
   const [selectedDate, setSelectedDate] = useState<string>(() => ymdLocal(new Date()))
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [message, setMessage] = useState<string | null>(null)
+  const [bookingReceipt, setBookingReceipt] = useState<BookingReceipt | null>(null)
   const [busy, setBusy] = useState(false)
   const [guestName, setGuestName] = useState('')
 
@@ -375,6 +397,7 @@ export default function BookOnline() {
                 }}
                 onClick={() => {
                   setMessage(null)
+                  setBookingReceipt(null)
                   if (!selected) return
                   setBusy(true)
                   ;(async () => {
@@ -385,7 +408,7 @@ export default function BookOnline() {
                       const bodyLines = [
                         `Type: ${apptType}`,
                         `Preferred date: ${selected.date}`,
-                        `Preferred time: ${selected.time}`,
+                        `Preferred time: ${selected.time} (${timeLabel24To12(selected.time)})`,
                         notes?.trim() ? `Notes: ${notes.trim()}` : null,
                       ].filter(Boolean) as string[]
 
@@ -409,12 +432,32 @@ export default function BookOnline() {
                         time: selected.time,
                         notes,
                       })
+                      const createdAt = new Date().toLocaleString()
                       if (!res.ok) {
+                        setBookingReceipt({
+                          createdAt,
+                          patientName: who,
+                          apptType,
+                          dateYmd: selected.date,
+                          time24: selected.time,
+                          notes: (notes || '').trim(),
+                          calendarOk: false,
+                          calendarNote: res.reason,
+                        })
                         setMessage(`Saved to team inbox. Calendar: ${res.reason}`)
                         return
                       }
+                      setBookingReceipt({
+                        createdAt,
+                        patientName: who,
+                        apptType,
+                        dateYmd: selected.date,
+                        time24: selected.time,
+                        notes: (notes || '').trim(),
+                        calendarOk: true,
+                      })
                       setMessage(
-                        `Alert sent: ${selected.date} at ${selected.time}. The team will follow up. The team inbox on this site has your request; the slot grid here is only to pick a preference in this browser.`,
+                        `Alert sent: ${formatDateLong(selected.date)} at ${timeLabel24To12(selected.time)}. The team will follow up. The team inbox on this site has your request; the slot grid here is only to pick a preference in this browser.`,
                       )
                       setSelectedTime('')
                       setNotes('')
@@ -442,6 +485,54 @@ export default function BookOnline() {
               <div style={{ marginTop: 10, color: '#0a1e3f', fontSize: 12, fontWeight: 800 }}>
                 {message}
               </div>
+            ) : null}
+
+            {bookingReceipt ? (
+              <section className="card cardAccentSoft bookingReceipt" style={{ marginTop: 12 }}>
+                <div className="cardTitle">
+                  <h2 style={{ margin: 0 }}>Request receipt</h2>
+                  <span className="pill">Summary</span>
+                </div>
+                <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                  Keep this for your records. This is a request—not a confirmed appointment until the team contacts you.
+                </p>
+                <div className="divider" />
+                <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
+                  <div>
+                    <strong>Submitted</strong>: {bookingReceipt.createdAt}
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <strong>Name</strong>: {bookingReceipt.patientName}
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <strong>Visit type</strong>: {bookingReceipt.apptType}
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <strong>Preferred date</strong>: {formatDateLong(bookingReceipt.dateYmd)} ({bookingReceipt.dateYmd})
+                  </div>
+                  <div style={{ marginTop: 8 }}>
+                    <strong>Preferred time</strong>: {timeLabel24To12(bookingReceipt.time24)} ({bookingReceipt.time24})
+                  </div>
+                  {bookingReceipt.notes ? (
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Notes</strong>: {bookingReceipt.notes}
+                    </div>
+                  ) : null}
+                  <div style={{ marginTop: 10 }}>
+                    <strong>Calendar preview</strong>:{' '}
+                    {bookingReceipt.calendarOk ? 'Booked in this browser preview grid.' : `Not booked (${bookingReceipt.calendarNote || 'unknown'}).`}
+                  </div>
+                </div>
+                <div className="divider" />
+                <div className="btnRow noPrint" style={{ flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btnPrimary" onClick={() => window.print()}>
+                    Print / save as PDF
+                  </button>
+                  <button type="button" className="btn" onClick={() => setBookingReceipt(null)}>
+                    Dismiss receipt
+                  </button>
+                </div>
+              </section>
             ) : null}
           </section>
 

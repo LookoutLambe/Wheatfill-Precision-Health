@@ -175,6 +175,21 @@ export default function OrderNowSummary() {
   return (
     <div className="page orderNowSummaryPage orderNowSummaryPage--wide">
       <div className="catalogShopRoot">
+        <nav className="wphBreadcrumbs" aria-label="Breadcrumb">
+          <Link to="/">Home</Link>
+          <span className="wphBreadcrumbsSep" aria-hidden="true">
+            /
+          </span>
+          <Link to="/order-now">Order Now</Link>
+          <span className="wphBreadcrumbsSep" aria-hidden="true">
+            /
+          </span>
+          <Link to={catalogPath}>{partner ? catalogPartnerTitle(partner.name) : 'Catalog'}</Link>
+          <span className="wphBreadcrumbsSep" aria-hidden="true">
+            /
+          </span>
+          <span className="wphBreadcrumbsCurrent">Checkout</span>
+        </nav>
         <header className="orderNowCheckoutHeader">
           <div className="orderNowCheckoutHeaderText">
             <p className="orderNowCheckoutKicker">Secure checkout</p>

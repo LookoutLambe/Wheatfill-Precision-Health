@@ -1,5 +1,5 @@
 import { useCallback, useId, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
@@ -212,6 +212,36 @@ export default function Landing() {
               <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
               <PatientPortalCta className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }} />
             </div>
+
+            <div className="divider" />
+
+            <section className="card cardAccentNavy" aria-labelledby="landing-start-here-heading" style={{ marginTop: 12 }}>
+              <div className="cardTitle">
+                <h2 id="landing-start-here-heading" style={{ margin: 0 }}>
+                  Start here
+                </h2>
+                <span className="pill">Patient paths</span>
+              </div>
+              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                Pick the path that matches what you need—booking, medication education, refill-style requests, or the storefront catalog.
+              </p>
+              <div className="divider" />
+              <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
+                <NavLink to="/medications" className="btn" style={{ textDecoration: 'none' }}>
+                  Medication education
+                </NavLink>
+                <NavLink to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
+                  Order requests
+                </NavLink>
+                <NavLink to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
+                  Order Now catalog
+                </NavLink>
+                <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+                  Contact
+                </Link>
+              </div>
+            </section>
           </div>
 
           <div className="divider" />

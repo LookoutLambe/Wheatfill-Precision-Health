@@ -3355,3 +3355,68 @@ html.pharmacyCartOpen body {
     min-width: 7rem;
   }
 }
+
+/* Patient navigation helpers */
+.wphBreadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 750;
+  color: rgba(31, 41, 55, 0.78);
+  margin: 0 0 10px;
+}
+.wphBreadcrumbs a {
+  color: var(--navy, #0a1e3f);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(10, 30, 63, 0.28);
+}
+.wphBreadcrumbs a:hover,
+.wphBreadcrumbs a:focus-visible {
+  border-bottom-color: rgba(10, 30, 63, 0.55);
+}
+.wphBreadcrumbsSep {
+  color: rgba(31, 41, 55, 0.45);
+  font-weight: 800;
+}
+.wphBreadcrumbsCurrent {
+  color: rgba(31, 41, 55, 0.62);
+  font-weight: 850;
+}
+
+.mobilePatientDock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 120;
+  display: none;
+  gap: 10px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.92);
+  border-top: 1px solid rgba(10, 30, 63, 0.14);
+  box-shadow: rgba(10, 30, 63, 0.18) 0 -10px 22px -16px;
+  backdrop-filter: blur(10px);
+}
+.mobilePatientDockBtn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
+@media (max-width: 720px) {
+  html.hasMobilePatientDock .main {
+    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobilePatientDock {
+    display: flex;
+  }
+}
+
+@media print {
+  .noPrint {
+    display: none !important;
+  }
+}

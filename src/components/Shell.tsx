@@ -47,6 +47,7 @@ export default function Shell() {
   const isProviderArea = location.pathname.startsWith('/provider')
   const headerCartSlug = useMemo(() => headerCatalogSlugForPath(location.pathname), [location.pathname])
   const [headerCartProducts, setHeaderCartProducts] = useState<CartLineProduct[]>([])
+  const [mobileUi, setMobileUi] = useState(false)
 
   useEffect(() => {
     if (headerCartSlug === DEFAULT_CATALOG_PARTNER_SLUG) {
@@ -100,6 +101,14 @@ export default function Shell() {
   }, [])
 
   useEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)')
+    const sync = () => setMobileUi(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  useEffect(() => {
     if (menuOpen) document.documentElement.classList.add('navMenuOpen')
     else document.documentElement.classList.remove('navMenuOpen')
     return () => document.documentElement.classList.remove('navMenuOpen')
@@ -129,6 +138,14 @@ export default function Shell() {
   const states = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
 
   const bookHref = MARKETING_ONLY ? extBookMarketing : extBookFull
+
+  const showMobilePatientDock = mobileUi && !isProviderArea && !menuOpen
+
+  useEffect(() => {
+    if (showMobilePatientDock) document.documentElement.classList.add('hasMobilePatientDock')
+    else document.documentElement.classList.remove('hasMobilePatientDock')
+    return () => document.documentElement.classList.remove('hasMobilePatientDock')
+  }, [showMobilePatientDock])
 
   return (
     <div className="appShell">
@@ -209,6 +226,9 @@ export default function Shell() {
             <NavLink to="/pricing" onClick={closeMenu}>
               Pricing
             </NavLink>
+            <NavLink to="/medications" onClick={closeMenu}>
+              Medications
+            </NavLink>
             <NavLink to="/peptides" onClick={closeMenu}>
               Peptides
             </NavLink>
@@ -247,7 +267,7 @@ export default function Shell() {
               </NavLink>
             )}
             <NavLink to="/ordering" onClick={closeMenu}>
-              Ordering
+              Order requests
             </NavLink>
             <NavLink
               to="/pharmacy/mountain-view"
@@ -280,9 +300,41 @@ export default function Shell() {
         </nav>
       </div>
 
-      <main className="main">
+      <main id="wph-main" className="main" tabIndex={-1}>
         <Outlet />
       </main>
+
+      {showMobilePatientDock ? (
+        <nav className="mobilePatientDock" aria-label="Quick patient actions">
+          {bookHref ? (
+            <a
+              href={bookHref}
+              className="btn btnPrimary mobilePatientDockBtn"
+              style={{ textDecoration: 'none' }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Book
+            </a>
+          ) : (
+            <NavLink to="/book" className="btn btnPrimary mobilePatientDockBtn" style={{ textDecoration: 'none' }} onClick={closeMenu}>
+              Book
+            </NavLink>
+          )}
+          <NavLink to="/contact" className="btn mobilePatientDockBtn" style={{ textDecoration: 'none' }} onClick={closeMenu}>
+            Contact
+          </NavLink>
+          {MARKETING_ONLY ? (
+            <a href={appOrderCatalog} className="btn mobilePatientDockBtn" style={{ textDecoration: 'none' }} onClick={closeMenu}>
+              Catalog
+            </a>
+          ) : (
+            <NavLink to="/order-now" className="btn mobilePatientDockBtn" style={{ textDecoration: 'none' }} onClick={closeMenu}>
+              Catalog
+            </NavLink>
+          )}
+        </nav>
+      ) : null}
 
       <footer className="footer">
         <div className="footerInner">

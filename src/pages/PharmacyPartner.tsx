@@ -83,6 +83,17 @@ export default function PharmacyPartner() {
   return (
     <div className="page pharmacyPartnerPage">
       <div className="catalogShopRoot">
+        <nav className="wphBreadcrumbs" aria-label="Breadcrumb">
+          <Link to="/">Home</Link>
+          <span className="wphBreadcrumbsSep" aria-hidden="true">
+            /
+          </span>
+          <Link to="/order-now">Order Now</Link>
+          <span className="wphBreadcrumbsSep" aria-hidden="true">
+            /
+          </span>
+          <span className="wphBreadcrumbsCurrent">{partner ? catalogPartnerTitle(partner.name) : 'Catalog'}</span>
+        </nav>
         <div className="pharmacyToolbar">
           <div className="pharmacyToolbarMain">
             <h1 className="pharmacyToolbarTitle">
