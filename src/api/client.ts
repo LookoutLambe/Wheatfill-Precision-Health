@@ -68,11 +68,26 @@ export function getToken() {
   return localStorage.getItem('wph_token_v1') || ''
 }
 
+const DEFAULT_TIMEOUT_MS = 15_000
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Response> {
+  if (typeof AbortController === 'undefined') {
+    return fetch(url, init)
+  }
+  const ctrl = new AbortController()
+  const id = setTimeout(() => ctrl.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal })
+  } finally {
+    clearTimeout(id)
+  }
+}
+
 export async function apiGet<T>(path: string, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${getApiUrl()}${path}`, {
+    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
       credentials: 'include',
       headers: {
         ...(t ? { authorization: `Bearer ${t}` } : {}),
@@ -89,7 +104,7 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${getApiUrl()}${path}`, {
+    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -109,7 +124,7 @@ export async function apiPatch<T>(path: string, body: unknown, token?: string): 
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${getApiUrl()}${path}`, {
+    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
       method: 'PATCH',
       headers: {
         'content-type': 'application/json',
@@ -129,7 +144,7 @@ export async function apiDelete<T>(path: string, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${getApiUrl()}${path}`, {
+    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
       method: 'DELETE',
       headers: {
         ...(t ? { authorization: `Bearer ${t}` } : {}),
