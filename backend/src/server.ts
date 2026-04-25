@@ -33,11 +33,15 @@ const MEDPLUM_CLIENT_SECRET = process.env.MEDPLUM_CLIENT_SECRET || ''
 const DEFAULT_PROVIDER_USERNAME = (process.env.DEFAULT_PROVIDER_USERNAME || 'brett').trim().toLowerCase()
 const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
 /** Public marketing site sign-in: brett / bridgette / admin — created if missing. */
-const TEAM_BRETT_PASSWORD = process.env.TEAM_BRETT_PASSWORD || process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
+const TEAM_BRETT_PASSWORD = process.env.TEAM_BRETT_PASSWORD || 'wheatfill'
 const TEAM_BRIDGETTE_PASSWORD = process.env.TEAM_BRIDGETTE_PASSWORD || 'wheatfill'
-const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'demonstration'
+const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'wheatfill'
+/**
+ * If true, keep overwriting the 3 default team accounts' passwords on every boot from env vars.
+ * Leave this OFF in normal operation so Brett can change passwords without them being reset.
+ */
 const SYNC_TEAM_PASSWORDS =
-  (process.env.SYNC_TEAM_PASSWORDS || '1').trim() === '1' ||
+  (process.env.SYNC_TEAM_PASSWORDS || '0').trim() === '1' ||
   (process.env.SYNC_TEAM_PASSWORDS || '').trim().toLowerCase() === 'true'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '8h').trim() || '8h'
 const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
