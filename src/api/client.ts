@@ -1,4 +1,4 @@
-import { isWheatfillLiveMarketingHost, WHEATFILL_LIVE_DEFAULT_API } from '../config/mode'
+import { isWheatfillLiveProviderRoute, WHEATFILL_LIVE_DEFAULT_API } from '../config/mode'
 
 function resolveApiUrl() {
   const fromEnv = import.meta.env.VITE_API_URL?.toString().trim()
@@ -17,7 +17,7 @@ function resolveApiUrl() {
     }
   }
 
-  if (isWheatfillLiveMarketingHost()) {
+  if (isWheatfillLiveProviderRoute()) {
     return WHEATFILL_LIVE_DEFAULT_API
   }
 
@@ -25,13 +25,17 @@ function resolveApiUrl() {
   return 'http://localhost:8080'
 }
 
-export const API_URL = resolveApiUrl()
+/** Resolves on each call so SPA navigation (e.g. to /provider) can pick the provider-only live default. */
+export function getApiUrl(): string {
+  return resolveApiUrl()
+}
 
 function rethrowIfUnreachable(e: unknown): never {
   const m = String((e as Error)?.message || e)
   if (e instanceof TypeError || /failed to fetch|load failed|networkerror/i.test(m)) {
+    const base = getApiUrl()
     throw new Error(
-      `Cannot reach the API at ${API_URL}. If you are testing locally, run the backend in a second terminal: cd backend, then npm run dev (port 8080 by default) while the site is on a dev server, not a raw file. Set VITE_API_URL, or add ?api=<your API base URL> once, if the API is not at ${API_URL}.`,
+      `Cannot reach the API at ${base}. If you are testing locally, run the backend in a second terminal: cd backend, then npm run dev (port 8080 by default) while the site is on a dev server, not a raw file. Set VITE_API_URL, or add ?api=<your API base URL> once, if the API is not at ${base}.`,
     )
   }
   throw e as Error
@@ -56,7 +60,7 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${getApiUrl()}${path}`, {
       credentials: 'include',
       headers: {
         ...(t ? { authorization: `Bearer ${t}` } : {}),
@@ -73,7 +77,7 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${getApiUrl()}${path}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -93,7 +97,7 @@ export async function apiPatch<T>(path: string, body: unknown, token?: string): 
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${getApiUrl()}${path}`, {
       method: 'PATCH',
       headers: {
         'content-type': 'application/json',
@@ -113,7 +117,7 @@ export async function apiDelete<T>(path: string, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(`${getApiUrl()}${path}`, {
       method: 'DELETE',
       headers: {
         ...(t ? { authorization: `Bearer ${t}` } : {}),

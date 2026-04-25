@@ -35,8 +35,9 @@ jobs:
           VITE_MARKETING_ONLY: "1"
           # Public marketing site + deep links; matches custom domain in public/CNAME. Override with repo secret if needed.
           VITE_APP_URL: ${{ secrets.VITE_APP_URL || 'https://wheatfillprecisionhealth.com' }}
-          # Public Node API (https, no trailing slash). Default matches static site behavior for wheatfillprecisionhealth.com; set secret to override (e.g. Railway URL).
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.wheatfillprecisionhealth.com' }}
+          # Public API for /book, /contact, order flows, etc. (https, no trailing slash). Not defaulted here—
+          # only provider area uses a code fallback; set this secret so the whole static site can reach the API.
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
         run: npm run build:marketing
 
       - name: Upload artifact

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { API_URL, apiDelete, apiGet, apiPatch, apiPost, getToken } from '../api/client'
+import { apiDelete, apiGet, apiPatch, apiPost, getApiUrl, getToken } from '../api/client'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   getMarketingIntegrations,
@@ -435,7 +435,7 @@ export default function ProviderVbmsWorkspace() {
             <strong>Who can see this:</strong> anyone who signed in on this site (Brett, Bridgette, or
             <code> admin</code>) — same list. No separate inbox API key: your password creates the session. Contact and
             book-time forms are stored on this build&rsquo;s API (
-            <code style={{ fontSize: 12 }}>{API_URL}</code>).
+            <code style={{ fontSize: 12 }}>{getApiUrl()}</code>).
           </p>
           <div className="divider" />
           <div className="btnRow" style={{ marginBottom: 10, flexWrap: 'wrap' }}>

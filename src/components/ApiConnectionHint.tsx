@@ -1,4 +1,4 @@
-import { API_URL } from '../api/client'
+import { getApiUrl } from '../api/client'
 
 /**
  * Shown on provider login and other API-dependent screens so "Failed to fetch" is debuggable.
@@ -7,8 +7,9 @@ export default function ApiConnectionHint() {
   const onPublic =
     typeof window !== 'undefined' && !['localhost', '127.0.0.1'].includes(window.location.hostname)
   let pointsToLocalFromPublic = false
+  const api = getApiUrl()
   try {
-    const u = new URL(API_URL)
+    const u = new URL(api)
     pointsToLocalFromPublic = onPublic && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')
   } catch {
     /* ignore */
@@ -17,7 +18,7 @@ export default function ApiConnectionHint() {
   return (
     <div className="muted" style={{ fontSize: 12, marginTop: 12, lineHeight: 1.5 }}>
       <div>
-        <strong>API base URL</strong> (where sign-in and forms post): <code style={{ fontSize: 11 }}>{API_URL}</code>
+        <strong>API base URL</strong> (where sign-in and forms post): <code style={{ fontSize: 11 }}>{api}</code>
       </div>
       {pointsToLocalFromPublic ? (
         <p style={{ color: '#7a0f1c', fontWeight: 700, margin: '8px 0 0' }}>

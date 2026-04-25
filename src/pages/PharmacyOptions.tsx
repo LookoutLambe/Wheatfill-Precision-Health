@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
 import VenmoPayToHint from '../components/VenmoPayToHint'
-import { API_URL, apiGet } from '../api/client'
+import { apiGet, getApiUrl } from '../api/client'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
@@ -87,7 +87,7 @@ export default function PharmacyOptions() {
       {apiUnavailable ? (
         <div className="orderNowOffline" role="status">
           <span>
-            Showing catalog and cart offline—the server at <code className="orderNowCode">{API_URL}</code>{' '}
+            Showing catalog and cart offline—the server at <code className="orderNowCode">{getApiUrl()}</code>{' '}
             could not be reached. Set your API URL (see tip below) to load live partners and order workflows.
           </span>
           <span className="orderNowOfflineTip">
