@@ -30,7 +30,10 @@ type DemoAppt = {
   patientName?: string
   type: string
   when: string
-  status: string
+  /** Local preview rows use Scheduled/Completed/Cancelled. Inbox-synthesized rows use Requested until staff Quick-schedules or marks handled in inbox. */
+  status: 'Requested' | 'Scheduled' | 'Completed' | 'Cancelled'
+  /** Team inbox message id when this row is synthesized from an online_booking request. */
+  sourceInboxId?: string
 }
 type DemoMsg = {
   id: string
@@ -108,6 +111,11 @@ function seedWorkspacePatients(): DemoPatient[] {
   ]
 }
 
+function normalizePersistedApptStatus(s: string): DemoAppt['status'] {
+  if (s === 'Requested' || s === 'Scheduled' || s === 'Completed' || s === 'Cancelled') return s
+  return 'Scheduled'
+}
+
 function parseInboxBodyForQuickSchedule(body: string) {
   const typeLine = /Type:\s*(.+)/i.exec(body)?.[1]?.trim() || ''
   const datePart = /Preferred date:\s*(\S+)/i.exec(body)?.[1]?.trim()
@@ -132,7 +140,12 @@ export default function ProviderVbmsWorkspace() {
 
   const demoPatients = useMemo(() => seedWorkspacePatients(), [])
   const initialWs = useMemo(() => loadMarketingWorkspaceState(), [])
-  const [appts, setAppts] = useState<DemoAppt[]>(initialWs.appts)
+  const [appts, setAppts] = useState<DemoAppt[]>(() =>
+    initialWs.appts.map((a) => ({
+      ...a,
+      status: normalizePersistedApptStatus(a.status),
+    })),
+  )
   const [orders, setOrders] = useState<ProviderOrderRow[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState<string | null>(null)
@@ -378,6 +391,34 @@ export default function ProviderVbmsWorkspace() {
   const handledCount = msgs.filter((m) => m.status === 'handled').length
   const bookingNewCount = msgs.filter((m) => m.category === 'online_booking' && m.status === 'new').length
   const bookingHandledCount = msgs.filter((m) => m.category === 'online_booking' && m.status === 'handled').length
+
+  /** New Book Online inbox rows shown in the schedule panel until staff adds them via Quick schedule (same inbox id) or marks handled. */
+  const inboxBookingQueue = useMemo((): DemoAppt[] => {
+    const claimed = new Set(
+      appts
+        .filter((a) => a.status !== 'Cancelled')
+        .map((a) => (a.patientId.startsWith('inbox:') ? a.patientId.slice('inbox:'.length) : ''))
+        .filter(Boolean),
+    )
+    return msgs
+      .filter((m) => m.category === 'online_booking' && m.status === 'new' && !claimed.has(m.id))
+      .map((m) => {
+        const { visitType, whenText } = parseInboxBodyForQuickSchedule(m.body)
+        return {
+          id: `inbox_req:${m.id}`,
+          patientId: `inbox:${m.id}`,
+          patientName: m.fromName.trim(),
+          type: visitType,
+          when: whenText || '—',
+          status: 'Requested' as const,
+          sourceInboxId: m.id,
+        }
+      })
+  }, [appts, msgs])
+
+  const scheduleApptsMerged = useMemo(() => [...inboxBookingQueue, ...appts], [inboxBookingQueue, appts])
+
+  const requestedCount = inboxBookingQueue.length
   const scheduledCount = appts.filter((a) => a.status === 'Scheduled').length
   const completedCount = appts.filter((a) => a.status === 'Completed').length
   const cancelledCount = appts.filter((a) => a.status === 'Cancelled').length
@@ -511,12 +552,17 @@ export default function ProviderVbmsWorkspace() {
 
   const apptTokens = useMemo(() => norm(apptQuery).split(' ').filter(Boolean), [apptQuery])
   const filteredAppts = useMemo(() => {
-    const base = apptFilter === 'all' ? appts : appts.filter((a) => a.status === apptFilter)
+    const base =
+      apptFilter === 'all'
+        ? scheduleApptsMerged
+        : apptFilter === 'Scheduled'
+          ? scheduleApptsMerged.filter((a) => a.status === 'Scheduled' || a.status === 'Requested')
+          : scheduleApptsMerged.filter((a) => a.status === apptFilter)
     if (apptTokens.length === 0) return base
     return base.filter((a) =>
       includesAll([rowPatientLabel(a), a.type, a.when, a.status].filter(Boolean).join(' | '), apptTokens),
     )
-  }, [apptFilter, apptTokens, appts])
+  }, [apptFilter, apptTokens, scheduleApptsMerged])
 
   return (
     <div className="page teamWorkspacePage">
@@ -546,8 +592,9 @@ export default function ProviderVbmsWorkspace() {
           </p>
           <p>
             <strong>Inbox</strong> messages live on the <strong>API</strong> (database). <strong>Quick schedule</strong>{' '}
-            and the other preview tables on this page are stored in <strong>this browser</strong>; they stay after
-            sign-out (same device), unless you clear site data.
+            and the rows you add there are stored in <strong>this browser</strong>. New <strong>Book Online</strong>{' '}
+            requests also appear in <strong>Scheduled &amp; completed</strong> as &ldquo;Request received&rdquo; until you
+            add the same person from the inbox via Quick schedule or mark the inbox row handled.
           </p>
         </div>
         <div className="teamWorkspaceToolbar" style={{ paddingTop: 0 }}>
@@ -790,8 +837,8 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="divider" />
           <div className="muted" style={{ fontSize: 13 }}>
-            Scheduled: <b>{scheduledCount}</b> · Completed: <b>{completedCount}</b> · Cancelled: <b>{cancelledCount}</b> · Total:{' '}
-            <b>{appts.length}</b>
+            Request received (Book Online, new): <b>{requestedCount}</b> · Scheduled (on this list): <b>{scheduledCount}</b> ·
+            Completed: <b>{completedCount}</b> · Cancelled: <b>{cancelledCount}</b> · Total rows: <b>{scheduleApptsMerged.length}</b>
           </div>
           <div className="divider" />
           <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
@@ -811,7 +858,7 @@ export default function ProviderVbmsWorkspace() {
                 Filter
               </div>
               <select className="select" value={apptFilter} onChange={(e) => setApptFilter(e.target.value as any)}>
-                <option value="Scheduled">Scheduled</option>
+                <option value="Scheduled">Scheduled + open requests</option>
                 <option value="Completed">Completed</option>
                 <option value="Cancelled">Cancelled</option>
                 <option value="all">All</option>
@@ -845,44 +892,56 @@ export default function ProviderVbmsWorkspace() {
                       <td>{a.type}</td>
                       <td className="muted">{a.when}</td>
                       <td>
-                        <select
-                          className="select"
-                          value={a.status}
-                          onChange={(e) => {
-                            const next = e.target.value
-                            setAppts((prev) => prev.map((x) => (x.id === a.id ? { ...x, status: next } : x)))
-                            const portalId = (a as any).portalApptId as string | undefined
-                            if (portalId) {
-                              if (next === 'Cancelled') {
-                                removeAppointment(portalId)
-                              } else if (next === 'Completed') {
-                                updateAppointmentStatus(portalId, 'Completed')
-                              } else if (next === 'Scheduled') {
-                                updateAppointmentStatus(portalId, 'Scheduled')
+                        {a.status === 'Requested' ? (
+                          <span className="pill pillRed" title="From team inbox — use Mark handled there or add via Quick schedule">
+                            Request received
+                          </span>
+                        ) : (
+                          <select
+                            className="select"
+                            value={a.status}
+                            onChange={(e) => {
+                              const next = e.target.value as DemoAppt['status']
+                              setAppts((prev) => prev.map((x) => (x.id === a.id ? { ...x, status: next } : x)))
+                              const portalId = (a as any).portalApptId as string | undefined
+                              if (portalId) {
+                                if (next === 'Cancelled') {
+                                  removeAppointment(portalId)
+                                } else if (next === 'Completed') {
+                                  updateAppointmentStatus(portalId, 'Completed')
+                                } else if (next === 'Scheduled') {
+                                  updateAppointmentStatus(portalId, 'Scheduled')
+                                }
                               }
-                            }
-                          }}
-                          style={{ padding: '8px 10px' }}
-                        >
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
+                            }}
+                            style={{ padding: '8px 10px' }}
+                          >
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        )}
                       </td>
                       <td>
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
-                          onClick={() => {
-                            if (!window.confirm('Remove this row from the preview list? (Only this browser; not the API inbox.)')) return
-                            const portalId = (a as any).portalApptId as string | undefined
-                            if (portalId) removeAppointment(portalId)
-                            setAppts((prev) => prev.filter((x) => x.id !== a.id))
-                          }}
-                        >
-                          Remove
-                        </button>
+                        {a.status === 'Requested' ? (
+                          <span className="muted" style={{ fontSize: 12 }}>
+                            —
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn"
+                            style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                            onClick={() => {
+                              if (!window.confirm('Remove this row from the preview list? (Only this browser; not the API inbox.)')) return
+                              const portalId = (a as any).portalApptId as string | undefined
+                              if (portalId) removeAppointment(portalId)
+                              setAppts((prev) => prev.filter((x) => x.id !== a.id))
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
