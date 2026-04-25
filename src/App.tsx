@@ -13,6 +13,7 @@ import Contact from './pages/Contact'
 import Privacy from './pages/Privacy'
 import BookOnline from './pages/BookOnline'
 import OrderingPortal from './pages/OrderingPortal'
+import MedicationEducation from './pages/MedicationEducation'
 import PharmacyOptions from './pages/PharmacyOptions'
 import PharmacyPartner from './pages/PharmacyPartner'
 import MountainViewPharmacy from './pages/MountainViewPharmacy'
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/ordering" element={<OrderingPortal />} />
+          <Route path="/medications" element={<MedicationEducation />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
 
@@ -121,6 +123,7 @@ export default function App() {
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/book" element={<BookOnline />} />
         <Route path="/ordering" element={<OrderingPortal />} />
+        <Route path="/medications" element={<MedicationEducation />} />
         <Route path="/order-now" element={<PharmacyOptions />} />
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />

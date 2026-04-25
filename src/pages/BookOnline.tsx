@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { MARKETING_ONLY } from '../config/mode'
 import { getMarketingIntegrations } from '../marketing/providerStore'
-import { bookAppointment, getPortalState, slotsForDate, subscribePortalState } from '../data/portalStore'
+import { getScheduleConfig, bookAppointment, getPortalState, slotsForDate, subscribePortalState, type ScheduleConfigV1 } from '../data/portalStore'
 import { apiPost } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import type { UiApptType } from '../medplum/scheduling'
@@ -74,6 +74,30 @@ function buildMonthCells(month: Date) {
   return cells.slice(0, 42)
 }
 
+function buildMonthCellsVisible(month: Date, visibleDows: number[]) {
+  const all = buildMonthCells(month)
+  const vis = new Set(visibleDows)
+  const out: Array<{ date: Date; inMonth: boolean }> = []
+  for (let i = 0; i < all.length; i += 7) {
+    const week = all.slice(i, i + 7)
+    for (const dow of visibleDows) {
+      const cell = week.find((c) => c.date.getDay() === dow)
+      if (cell && vis.has(cell.date.getDay())) out.push(cell)
+    }
+  }
+  return out
+}
+
+function timeLabel24To12(hhmm: string) {
+  const [hRaw, mRaw] = hhmm.split(':').map((x) => Number(x))
+  if (!Number.isFinite(hRaw) || !Number.isFinite(mRaw)) return hhmm
+  const h = Math.max(0, Math.min(23, hRaw | 0))
+  const m = Math.max(0, Math.min(59, mRaw | 0))
+  const suffix = h >= 12 ? 'PM' : 'AM'
+  const hour12 = ((h + 11) % 12) + 1
+  return `${hour12}:${String(m).padStart(2, '0')} ${suffix}`
+}
+
 export default function BookOnline() {
   const publicBookingMarketing = MARKETING_ONLY
     ? getMarketingIntegrations().publicBookingUrl?.trim() || ''
@@ -90,6 +114,7 @@ export default function BookOnline() {
   const [notes, setNotes] = useState('')
   const [availability, setAvailability] = useState<{ blackouts: string[]; booked: string[] }>({ blackouts: [], booked: [] })
   const [availError, setAvailError] = useState<string | null>(null)
+  const [scheduleCfg, setScheduleCfg] = useState<ScheduleConfigV1>(() => getScheduleConfig())
 
   const prices = useMemo(
     () => ({
@@ -130,6 +155,7 @@ export default function BookOnline() {
         blackouts: [...s.blackoutDates],
         booked: s.bookedSlots.map((k) => (k.length > 16 ? k.slice(0, 16) : k)),
       })
+      setScheduleCfg(getScheduleConfig())
     }
     applyPortal()
     return subscribePortalState(applyPortal)
@@ -139,7 +165,16 @@ export default function BookOnline() {
   const blackoutSet = useMemo(() => new Set(availability.blackouts), [availability.blackouts])
   const bookedSet = useMemo(() => new Set(availability.booked.map((x) => x.slice(0, 16))), [availability.booked])
 
-  const monthCells = useMemo(() => buildMonthCells(calendarMonth), [calendarMonth])
+  const visibleDows = useMemo(() => {
+    const enabled = Object.keys(scheduleCfg.hoursByDow || {})
+      .map((k) => Number(k))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b)
+      .filter((dow) => Boolean(scheduleCfg.hoursByDow[dow]?.enabled))
+    return enabled.length ? enabled : [0, 1, 2, 3, 4, 5, 6]
+  }, [scheduleCfg])
+
+  const monthCells = useMemo(() => buildMonthCellsVisible(calendarMonth, visibleDows), [calendarMonth, visibleDows])
 
   const availableTimesForSelectedDay = useMemo(() => {
     if (!selectedDate) return []
@@ -445,16 +480,19 @@ export default function BookOnline() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                    gridTemplateColumns: `repeat(${visibleDows.length}, minmax(0, 1fr))`,
                     gap: 8,
                     userSelect: 'none',
                   }}
                 >
-                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-                    <div key={d} className="muted" style={{ fontSize: 12, fontWeight: 800, textAlign: 'center' }}>
-                      {d}
-                    </div>
-                  ))}
+                  {visibleDows.map((dow) => {
+                    const d = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dow] || String(dow)
+                    return (
+                      <div key={d} className="muted" style={{ fontSize: 12, fontWeight: 800, textAlign: 'center' }}>
+                        {d}
+                      </div>
+                    )
+                  })}
 
                   {monthCells.map((c, idx) => {
                     const key = ymdLocal(c.date)
@@ -485,10 +523,12 @@ export default function BookOnline() {
                         style={{
                           padding: '10px 0',
                           borderRadius: 12,
-                          opacity: disabled ? 0.35 : 1,
+                          opacity: dayClosed ? 1 : disabled ? 0.35 : 1,
                           borderColor: isSelected ? 'rgba(122, 15, 28, 0.55)' : undefined,
                           background: isSelected
                             ? 'rgba(122, 15, 28, 0.10)'
+                            : state === 'closed'
+                              ? '#111827'
                             : state === 'open'
                               ? 'rgba(20, 83, 45, 0.10)'
                               : state === 'booked'
@@ -496,12 +536,17 @@ export default function BookOnline() {
                                 : inMonth
                                   ? 'white'
                                   : 'transparent',
-                          color: inMonth ? 'var(--text-h)' : 'rgba(31, 41, 55, 0.45)',
+                          color:
+                            state === 'closed'
+                              ? 'white'
+                              : inMonth
+                                ? 'var(--text-h)'
+                                : 'rgba(31, 41, 55, 0.45)',
                           fontWeight: isSelected ? 900 : 700,
                           boxShadow: isToday ? 'rgba(10, 30, 63, 0.18) 0 10px 18px -14px' : undefined,
                         }}
                         title={
-                          dayClosed ? 'Closed' : !hasTemplate ? 'No hours set' : !hasOpen ? 'Fully booked' : 'Available'
+                          dayClosed ? 'Closed (blackout)' : !hasTemplate ? 'No hours set' : !hasOpen ? 'Fully booked' : 'Available'
                         }
                       >
                         {c.date.getDate()}
@@ -572,7 +617,7 @@ export default function BookOnline() {
                         <option value="">Select a time…</option>
                         {availableTimesForSelectedDay.map((s) => (
                           <option key={`${s.date}_${s.time}`} value={s.time}>
-                            {s.time}
+                            {timeLabel24To12(s.time)}
                           </option>
                         ))}
                       </select>
@@ -582,7 +627,7 @@ export default function BookOnline() {
 
                 <div className="divider" />
                 <p className="muted" style={{ margin: 0 }}>
-                  Green days have openings. Gray days are fully booked. Red “Closed” days are blocked out.
+                  Green days have openings. Gray days are fully booked. Black days are closed/blocked out.
                 </p>
               </div>
             </div>
