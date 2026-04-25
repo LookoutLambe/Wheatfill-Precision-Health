@@ -3,7 +3,7 @@ export type AppointmentStatus = 'Requested' | 'Scheduled' | 'Completed' | 'Cance
 
 export type OrderCategory = 'GLP-1' | 'Labs' | 'Supplements' | 'Other'
 export type OrderStatus = 'New' | 'In Review' | 'Ordered' | 'Closed'
-export type Glp1Medication = 'Semaglutide' | 'Tirzepatide' | 'Liraglutide' | 'Not sure'
+export type Glp1Medication = 'Semaglutide' | 'Tirzepatide' | 'Not sure'
 
 export type AppointmentRequest = {
   id: string

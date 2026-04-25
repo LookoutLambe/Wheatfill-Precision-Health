@@ -74,24 +74,120 @@ export default function OrderingPortal() {
           </div>
 
           {category === 'GLP-1' ? (
-            <div className="formRow" style={{ marginTop: 12 }}>
-              <label>
-                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                  GLP-1
+            <>
+              <div className="formRow" style={{ marginTop: 12 }}>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    GLP-1
+                  </div>
+                  <select
+                    className="select"
+                    value={glp1}
+                    onChange={(e) => setGlp1(e.target.value as Glp1Medication)}
+                  >
+                    <option>Semaglutide</option>
+                    <option>Tirzepatide</option>
+                    <option>Not sure</option>
+                  </select>
+                </label>
+                <div />
+              </div>
+
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 850, color: 'var(--text-h)' }}>
+                  About semaglutide &amp; tirzepatide (how they work + key risks)
+                </summary>
+                <div className="muted" style={{ marginTop: 10, lineHeight: 1.55, fontSize: 14 }}>
+                  <p style={{ marginTop: 0 }}>
+                    <strong>Important:</strong> This is general education and not medical advice. Your clinician will
+                    review your history and decide what is appropriate for you.
+                  </p>
+
+                  <div className="divider" />
+
+                  <h3 style={{ margin: '0 0 6px', fontSize: 15, color: 'var(--text-h)' }}>What they are</h3>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>
+                      <strong>Semaglutide</strong> and <strong>tirzepatide</strong> are “incretin mimetics” used for
+                      certain patients with type 2 diabetes and/or weight management (depending on the specific product
+                      and clinical context). See MedlinePlus for details.
+                    </li>
+                    <li>
+                      Both may help by increasing insulin release when blood sugar is high and by slowing stomach
+                      emptying (which can increase fullness).{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a619057.html" target="_blank" rel="noreferrer">
+                        Semaglutide (MedlinePlus)
+                      </a>{' '}
+                      ·{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a622044.html" target="_blank" rel="noreferrer">
+                        Tirzepatide (MedlinePlus)
+                      </a>
+                    </li>
+                  </ul>
+
+                  <div className="divider" />
+
+                  <h3 style={{ margin: '0 0 6px', fontSize: 15, color: 'var(--text-h)' }}>How they function</h3>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>
+                      <strong>Semaglutide</strong>: helps the pancreas release the right amount of insulin when blood
+                      sugar is high and slows movement of food through the stomach.{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a619057.html" target="_blank" rel="noreferrer">
+                        Source
+                      </a>
+                    </li>
+                    <li>
+                      <strong>Tirzepatide</strong>: also helps the pancreas release insulin when blood sugar is high,
+                      slows stomach emptying, may decrease appetite, and can cause weight loss.{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a622044.html" target="_blank" rel="noreferrer">
+                        Source
+                      </a>
+                    </li>
+                  </ul>
+
+                  <div className="divider" />
+
+                  <h3 style={{ margin: '0 0 6px', fontSize: 15, color: 'var(--text-h)' }}>Key risks to know</h3>
+                  <ul style={{ margin: 0, paddingLeft: 18 }}>
+                    <li>
+                      <strong>Thyroid tumor warning:</strong> both have an important warning about thyroid tumors seen in
+                      animal studies. Do not use if you (or your family) have a history of medullary thyroid cancer or
+                      MEN2. Seek care for neck lump/swelling, hoarseness, trouble swallowing, or shortness of breath.{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a619057.html" target="_blank" rel="noreferrer">
+                        Semaglutide warning
+                      </a>{' '}
+                      ·{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a622044.html" target="_blank" rel="noreferrer">
+                        Tirzepatide warning
+                      </a>
+                    </li>
+                    <li>
+                      <strong>Common side effects:</strong> nausea, vomiting, diarrhea, constipation / stomach upset
+                      can occur.{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a619057.html" target="_blank" rel="noreferrer">
+                        Semaglutide side effects
+                      </a>{' '}
+                      ·{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a622044.html" target="_blank" rel="noreferrer">
+                        Tirzepatide side effects
+                      </a>
+                    </li>
+                    <li>
+                      <strong>Seek urgent care</strong> for severe or persistent abdominal pain (possible pancreatitis),
+                      allergic reaction symptoms (swelling, trouble breathing), decreased urination/swelling, or vision
+                      changes.{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a619057.html" target="_blank" rel="noreferrer">
+                        Semaglutide safety
+                      </a>{' '}
+                      ·{' '}
+                      <a href="https://medlineplus.gov/druginfo/meds/a622044.html" target="_blank" rel="noreferrer">
+                        Tirzepatide safety
+                      </a>
+                    </li>
+                  </ul>
                 </div>
-                <select
-                  className="select"
-                  value={glp1}
-                  onChange={(e) => setGlp1(e.target.value as Glp1Medication)}
-                >
-                  <option>Semaglutide</option>
-                  <option>Tirzepatide</option>
-                  <option>Liraglutide</option>
-                  <option>Not sure</option>
-                </select>
-              </label>
-              <div />
-            </div>
+              </details>
+            </>
           ) : null}
 
           <label style={{ display: 'block', marginTop: 12 }}>
