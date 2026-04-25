@@ -347,6 +347,33 @@ html.pharmacyCartOpen body {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 16px;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.teamWorkspaceHeaderMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  justify-content: flex-end;
+  margin-left: auto;
+  min-width: 0;
+}
+
+/* Red button + strong label (reuses .btnAccent red/white) */
+.teamWorkspaceHeaderSignOut {
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .teamWorkspaceHeaderMeta {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }
 
 .teamWorkspaceHeaderRow h1 {

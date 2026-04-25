@@ -503,11 +503,21 @@ export default function ProviderVbmsWorkspace() {
       <header className="teamWorkspaceHeader" aria-label="Team Workspace">
         <div className="teamWorkspaceHeaderRow">
           <h1>Team Workspace</h1>
-          {who ? (
-            <div className="pill" style={{ width: 'fit-content' }}>
-              Signed in as: {who}
-            </div>
-          ) : null}
+          <div className="teamWorkspaceHeaderMeta">
+            {who ? (
+              <div className="pill" style={{ width: 'fit-content' }}>
+                Signed in as: {who}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className="btn btnAccent teamWorkspaceHeaderSignOut"
+              onClick={signOut}
+              title="Sign out of the team workspace"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
         <div className="teamWorkspaceIntro">
           <p>
@@ -553,10 +563,6 @@ export default function ProviderVbmsWorkspace() {
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
           </Link>
-          <button type="button" className="btn" onClick={signOut} title="Sign out of the team workspace">
-            Sign out
-          </button>
-          <span className="pill pillRed">Provider</span>
         </div>
       </header>
 
