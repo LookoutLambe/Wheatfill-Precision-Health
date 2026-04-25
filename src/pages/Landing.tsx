@@ -443,9 +443,9 @@ export default function Landing() {
             <div className="divider" />
 
             <details className="landingFaqItem">
-              <summary className="landingFaqSummary">Do I need a patient account or sign-in?</summary>
+              <summary className="landingFaqSummary">Do I need to sign in to use this website?</summary>
               <div className="landingFaqBody muted">
-                No. Most visitors can book and contact the practice without creating a patient login. If you ever receive a separate portal link, the team will provide it directly.
+                No for most visitors—you can book and contact the practice without creating a login here. Some workflows (like certain catalog checkouts on the full practice app) may ask you to sign in so the team can attach your order details securely. If you ever receive a separate portal link, the team will provide it directly.
               </div>
             </details>
 

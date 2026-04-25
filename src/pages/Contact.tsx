@@ -1,13 +1,89 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiPost } from '../api/client'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
+
+const CONTACT_DRAFT_KEY = 'wph_contact_draft_v1'
+
+type ContactDraftV1 = {
+  v: 1
+  name: string
+  email: string
+  message: string
+  savedAt: string
+}
+
+type ContactReceipt = {
+  createdAt: string
+  name: string
+  email: string
+  message: string
+}
+
+function readContactDraft(): ContactDraftV1 | null {
+  try {
+    const raw = localStorage.getItem(CONTACT_DRAFT_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as ContactDraftV1
+    if (!parsed || parsed.v !== 1) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeContactDraft(draft: ContactDraftV1) {
+  localStorage.setItem(CONTACT_DRAFT_KEY, JSON.stringify(draft))
+}
+
+function clearContactDraft() {
+  localStorage.removeItem(CONTACT_DRAFT_KEY)
+}
 
 export default function Contact() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [sent, setSent] = useState(false)
+  const [receipt, setReceipt] = useState<ContactReceipt | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const draftTimer = useRef<number | null>(null)
+
+  useEffect(() => {
+    const d = readContactDraft()
+    if (!d) return
+    setName(d.name || '')
+    setEmail(d.email || '')
+    setMessage(d.message || '')
+  }, [])
+
+  const draftPayload = useMemo(() => {
+    return {
+      v: 1 as const,
+      name,
+      email,
+      message,
+      savedAt: new Date().toISOString(),
+    }
+  }, [email, message, name])
+
+  useEffect(() => {
+    if (MARKETING_ONLY) return
+    setDraftStatus('saving')
+    if (draftTimer.current) window.clearTimeout(draftTimer.current)
+    draftTimer.current = window.setTimeout(() => {
+      try {
+        writeContactDraft(draftPayload)
+        setDraftStatus('saved')
+        window.setTimeout(() => setDraftStatus((s) => (s === 'saved' ? 'idle' : s)), 900)
+      } catch {
+        setDraftStatus('error')
+      }
+    }, 350)
+
+    return () => {
+      if (draftTimer.current) window.clearTimeout(draftTimer.current)
+    }
+  }, [draftPayload])
 
   if (MARKETING_ONLY) {
     return (
@@ -98,11 +174,11 @@ export default function Contact() {
             />
           </label>
 
-          {sent ? (
-            <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
-              Message sent.
-            </div>
-          ) : null}
+          <p className="muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 12, lineHeight: 1.45 }}>
+            Draft autosaves in this browser as you type.{' '}
+            {draftStatus === 'saving' ? 'Saving…' : draftStatus === 'saved' ? 'Saved.' : draftStatus === 'error' ? 'Could not save draft.' : null}
+          </p>
+
           {error ? (
             <div style={{ marginTop: 10, color: '#7f1d1d', fontSize: 12, fontWeight: 800 }}>
               {error}
@@ -118,13 +194,22 @@ export default function Contact() {
               onClick={() => {
                 ;(async () => {
                   setError(null)
+                  setReceipt(null)
                   try {
                     await apiPost('/v1/public/contact', { name, email, message })
+                    const snapName = name.trim()
+                    const snapEmail = email.trim()
+                    const snapMessage = message.trim()
                     setName('')
                     setEmail('')
                     setMessage('')
-                    setSent(true)
-                    setTimeout(() => setSent(false), 1800)
+                    clearContactDraft()
+                    setReceipt({
+                      createdAt: new Date().toLocaleString(),
+                      name: snapName,
+                      email: snapEmail,
+                      message: snapMessage,
+                    })
                   } catch (e: any) {
                     setError(String(e?.message || e))
                   }
@@ -140,12 +225,51 @@ export default function Contact() {
                 setName('')
                 setEmail('')
                 setMessage('')
-                setSent(false)
+                clearContactDraft()
+                setReceipt(null)
+                setError(null)
               }}
             >
               Clear
             </button>
           </div>
+
+          {receipt ? (
+            <section className="card cardAccentSoft bookingReceipt" style={{ marginTop: 12 }}>
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Message sent</h2>
+                <span className="pill">Receipt</span>
+              </div>
+              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                What happens next: the practice typically replies within one business day. If this is urgent, call your
+                clinician’s office phone (if you have it) or seek emergency care for emergencies.
+              </p>
+              <div className="divider" />
+              <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
+                <div>
+                  <strong>Submitted</strong>: {receipt.createdAt}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Name</strong>: {receipt.name}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Email</strong>: {receipt.email}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Message</strong>: {receipt.message}
+                </div>
+              </div>
+              <div className="divider" />
+              <div className="btnRow noPrint" style={{ flexWrap: 'wrap' }}>
+                <button type="button" className="btn btnPrimary" onClick={() => window.print()}>
+                  Print / save as PDF
+                </button>
+                <button type="button" className="btn" onClick={() => setReceipt(null)}>
+                  Dismiss
+                </button>
+              </div>
+            </section>
+          ) : null}
         </section>
       </div>
     </div>

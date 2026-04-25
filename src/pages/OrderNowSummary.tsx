@@ -501,7 +501,7 @@ export default function OrderNowSummary() {
                   <Link to={`/patient/login?next=${loginNext}`} style={{ fontWeight: 800 }}>
                     Sign in
                   </Link>{' '}
-                  (patient account) so the team receives your order with this address and signature. You can still open
+                  on this site so the team can receive your order with this address and signature. You can still open
                   PayPal now to pay; signing in is needed to file the order on our side.
                 </p>
               ) : (

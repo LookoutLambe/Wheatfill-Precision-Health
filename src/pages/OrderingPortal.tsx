@@ -1,16 +1,60 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { apiGet, apiPost } from '../api/client'
 import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
-import { formatPatientLabel, getCurrentPatient } from '../patient/patientAuth'
+import { formatPatientLabel, getCurrentPatient, getCurrentPatientUsername } from '../patient/patientAuth'
+
+const ORDER_REQ_DRAFT_PREFIX = 'wph_order_request_draft_v1:'
+
+type OrderRequestDraftV1 = {
+  v: 1
+  category: OrderCategory
+  glp1?: Glp1Medication
+  request: string
+  savedAt: string
+}
+
+type OrderRequestReceipt = {
+  createdAt: string
+  category: OrderCategory
+  glp1?: Glp1Medication
+  request: string
+}
+
+function readOrderRequestDraft(username: string): OrderRequestDraftV1 | null {
+  if (!username) return null
+  try {
+    const raw = localStorage.getItem(`${ORDER_REQ_DRAFT_PREFIX}${username}`)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as OrderRequestDraftV1
+    if (!parsed || parsed.v !== 1) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeOrderRequestDraft(username: string, draft: OrderRequestDraftV1) {
+  if (!username) return
+  localStorage.setItem(`${ORDER_REQ_DRAFT_PREFIX}${username}`, JSON.stringify(draft))
+}
+
+function clearOrderRequestDraft(username: string) {
+  if (!username) return
+  localStorage.removeItem(`${ORDER_REQ_DRAFT_PREFIX}${username}`)
+}
 
 export default function OrderingPortal() {
   const patient = getCurrentPatient()
+  const patientUsername = getCurrentPatientUsername()
   const patientName = patient ? formatPatientLabel(patient) : ''
   const [category, setCategory] = useState<OrderCategory>('GLP-1')
   const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [request, setRequest] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
+  const [receipt, setReceipt] = useState<OrderRequestReceipt | null>(null)
+  const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const draftTimer = useRef<number | null>(null)
 
   const [orders, setOrders] = useState<any[]>([])
   useEffect(() => {
@@ -18,6 +62,46 @@ export default function OrderingPortal() {
       .then((r) => setOrders(r.orders))
       .catch(() => setOrders([]))
   }, [])
+
+  useEffect(() => {
+    if (!patientUsername) return
+    const d = readOrderRequestDraft(patientUsername)
+    if (!d) return
+    setCategory(d.category)
+    if (d.glp1) setGlp1(d.glp1)
+    if (typeof d.request === 'string') setRequest(d.request)
+  }, [patientUsername])
+
+  const draftPayload = useMemo(() => {
+    return {
+      v: 1 as const,
+      category,
+      glp1: category === 'GLP-1' ? glp1 : undefined,
+      request,
+      savedAt: new Date().toISOString(),
+    }
+  }, [category, glp1, request])
+
+  useEffect(() => {
+    if (!patientUsername) return
+    if (!patientName) return
+
+    setDraftStatus('saving')
+    if (draftTimer.current) window.clearTimeout(draftTimer.current)
+    draftTimer.current = window.setTimeout(() => {
+      try {
+        writeOrderRequestDraft(patientUsername, draftPayload)
+        setDraftStatus('saved')
+        window.setTimeout(() => setDraftStatus((s) => (s === 'saved' ? 'idle' : s)), 900)
+      } catch {
+        setDraftStatus('error')
+      }
+    }, 350)
+
+    return () => {
+      if (draftTimer.current) window.clearTimeout(draftTimer.current)
+    }
+  }, [draftPayload, patientName, patientUsername])
 
   const visibleOrders = patientName ? orders : []
 
@@ -209,6 +293,8 @@ export default function OrderingPortal() {
               disabled={!patientName || !request.trim()}
               style={{ opacity: !patientName || !request.trim() ? 0.6 : 1 }}
               onClick={() => {
+                setNotice(null)
+                setReceipt(null)
                 apiPost('/v1/patient/orders', {
                   category,
                   item: category === 'GLP-1' ? glp1 : undefined,
@@ -217,24 +303,95 @@ export default function OrderingPortal() {
                   .then(() => apiGet<{ orders: any[] }>('/v1/patient/orders'))
                   .then((r) => {
                     setOrders(r.orders)
+                    const snap = request.trim()
                     setRequest('')
+                    clearOrderRequestDraft(patientUsername)
+                    setReceipt({
+                      createdAt: new Date().toLocaleString(),
+                      category,
+                      glp1: category === 'GLP-1' ? glp1 : undefined,
+                      request: snap,
+                    })
                     setNotice('Request submitted.')
-                    setTimeout(() => setNotice(null), 1600)
+                    setTimeout(() => setNotice(null), 2200)
                   })
                   .catch((e: any) => {
                     setNotice(String(e?.message || e))
-                    setTimeout(() => setNotice(null), 2200)
+                    setTimeout(() => setNotice(null), 3200)
                   })
               }}
             >
               Submit
             </button>
+            {patientUsername ? (
+              <button
+                type="button"
+                className="btn"
+                disabled={!patientName}
+                onClick={() => {
+                  clearOrderRequestDraft(patientUsername)
+                  setRequest('')
+                  setCategory('GLP-1')
+                  setGlp1('Semaglutide')
+                  setDraftStatus('idle')
+                  setNotice('Draft cleared.')
+                  setTimeout(() => setNotice(null), 1400)
+                }}
+              >
+                Clear draft
+              </button>
+            ) : null}
           </div>
+
+          {patientUsername && patientName ? (
+            <p className="muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 12, lineHeight: 1.45 }}>
+              Drafts autosave in this browser while you are signed in.{' '}
+              {draftStatus === 'saving' ? 'Saving…' : draftStatus === 'saved' ? 'Saved.' : draftStatus === 'error' ? 'Could not save draft.' : null}
+            </p>
+          ) : null}
 
           {notice ? (
             <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
               {notice}
             </div>
+          ) : null}
+
+          {receipt ? (
+            <section className="card cardAccentSoft bookingReceipt" style={{ marginTop: 12 }}>
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Request submitted</h2>
+                <span className="pill">Receipt</span>
+              </div>
+              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                What happens next: the practice reviews your request and updates status here. If something is time-sensitive, call the practice or use the contact page and note urgency.
+              </p>
+              <div className="divider" />
+              <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
+                <div>
+                  <strong>Submitted</strong>: {receipt.createdAt}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Category</strong>: {receipt.category}
+                </div>
+                {receipt.category === 'GLP-1' ? (
+                  <div style={{ marginTop: 8 }}>
+                    <strong>GLP-1 selection</strong>: {receipt.glp1 || '—'}
+                  </div>
+                ) : null}
+                <div style={{ marginTop: 8 }}>
+                  <strong>Request</strong>: {receipt.request}
+                </div>
+              </div>
+              <div className="divider" />
+              <div className="btnRow noPrint" style={{ flexWrap: 'wrap' }}>
+                <button type="button" className="btn btnPrimary" onClick={() => window.print()}>
+                  Print / save as PDF
+                </button>
+                <button type="button" className="btn" onClick={() => setReceipt(null)}>
+                  Dismiss
+                </button>
+              </div>
+            </section>
           ) : null}
         </section>
 
