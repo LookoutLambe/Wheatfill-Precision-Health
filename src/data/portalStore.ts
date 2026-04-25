@@ -1,5 +1,5 @@
 export type AppointmentType = 'New Patient Consultation' | 'Follow-Up Consultation'
-export type AppointmentStatus = 'Requested' | 'Scheduled' | 'Completed'
+export type AppointmentStatus = 'Requested' | 'Scheduled' | 'Completed' | 'Cancelled'
 
 export type OrderCategory = 'GLP-1' | 'Labs' | 'Supplements' | 'Other'
 export type OrderStatus = 'New' | 'In Review' | 'Ordered' | 'Closed'
@@ -276,7 +276,7 @@ export function scheduleAppointment(input: {
         : a,
     )
     writeState({ ...state, appointments: next, bookedSlots: nextBooked })
-    return
+    return input.appointmentId
   }
 
   const req: AppointmentRequest = {
@@ -292,12 +292,30 @@ export function scheduleAppointment(input: {
     scheduledTime: input.time,
   }
   writeState({ ...state, appointments: [req, ...state.appointments], bookedSlots: nextBooked })
+  return req.id
 }
 
 export function updateAppointmentStatus(appointmentId: string, status: AppointmentStatus) {
   const state = readState()
   const next = state.appointments.map((a) => (a.id === appointmentId ? { ...a, status } : a))
   writeState({ ...state, appointments: next })
+}
+
+/** Cancel/remove an appointment and free its booked slot (if any). */
+export function removeAppointment(appointmentId: string) {
+  const state = readState()
+  const appt = state.appointments.find((a) => a.id === appointmentId)
+  const nextAppts = state.appointments.filter((a) => a.id !== appointmentId)
+  if (!appt?.scheduledDate || !appt?.scheduledTime) {
+    writeState({ ...state, appointments: nextAppts })
+    return
+  }
+  const key = slotKey(appt.scheduledDate, appt.scheduledTime.slice(0, 5))
+  writeState({
+    ...state,
+    appointments: nextAppts,
+    bookedSlots: state.bookedSlots.filter((k) => k !== key),
+  })
 }
 
 export function createOrderRequest(input: {

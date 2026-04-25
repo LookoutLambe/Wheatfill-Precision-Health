@@ -9,6 +9,8 @@ const KEY = WORKSPACE_LOCAL_STORAGE_KEY
 
 export type PersistedAppt = {
   id: string
+  /** Appointment id in portalStore, used to keep /provider/schedule in sync. */
+  portalApptId?: string
   patientId: string
   /** Display name at schedule time; survives if inbox message is later deleted. */
   patientName?: string
@@ -60,6 +62,7 @@ export function loadMarketingWorkspaceState(): MarketingWorkspaceStateV1 {
       if (status === 'Requested') status = 'Scheduled'
       return {
         id: String(a.id ?? ''),
+        portalApptId: typeof (a as any).portalApptId === 'string' && String((a as any).portalApptId).trim() ? String((a as any).portalApptId) : undefined,
         patientId: String(a.patientId ?? ''),
         patientName: typeof a.patientName === 'string' && a.patientName.trim() ? a.patientName.trim() : undefined,
         type: String(a.type ?? ''),

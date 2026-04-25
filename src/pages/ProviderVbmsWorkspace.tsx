@@ -4,7 +4,15 @@ import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getApiUrl, getToken } from '../api/client'
 import { MARKETING_ONLY } from '../config/mode'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
-import { addBlackoutDate, getPortalState, removeBlackoutDate, scheduleAppointment, subscribePortalState } from '../data/portalStore'
+import {
+  addBlackoutDate,
+  getPortalState,
+  removeAppointment,
+  removeBlackoutDate,
+  scheduleAppointment,
+  subscribePortalState,
+  updateAppointmentStatus,
+} from '../data/portalStore'
 import {
   getMarketingIntegrations,
   getMarketingProviderLoginDisplay,
@@ -14,7 +22,16 @@ import {
 import { loadMarketingWorkspaceState, saveMarketingWorkspaceState } from '../marketing/workspaceStore'
 
 type DemoPatient = { id: string; label: string }
-type DemoAppt = { id: string; patientId: string; patientName?: string; type: string; when: string; status: string }
+type DemoAppt = {
+  id: string
+  /** Appointment id in portalStore (drives /provider/schedule). */
+  portalApptId?: string
+  patientId: string
+  patientName?: string
+  type: string
+  when: string
+  status: string
+}
 type DemoMsg = {
   id: string
   from: string
@@ -638,6 +655,16 @@ export default function ProviderVbmsWorkspace() {
                           onChange={(e) => {
                             const next = e.target.value
                             setAppts((prev) => prev.map((x) => (x.id === a.id ? { ...x, status: next } : x)))
+                            const portalId = (a as any).portalApptId as string | undefined
+                            if (portalId) {
+                              if (next === 'Cancelled') {
+                                removeAppointment(portalId)
+                              } else if (next === 'Completed') {
+                                updateAppointmentStatus(portalId, 'Completed')
+                              } else if (next === 'Scheduled') {
+                                updateAppointmentStatus(portalId, 'Scheduled')
+                              }
+                            }
                           }}
                           style={{ padding: '8px 10px' }}
                         >
@@ -653,6 +680,8 @@ export default function ProviderVbmsWorkspace() {
                           style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
                           onClick={() => {
                             if (!window.confirm('Remove this row from the preview list? (Only this browser; not the API inbox.)')) return
+                            const portalId = (a as any).portalApptId as string | undefined
+                            if (portalId) removeAppointment(portalId)
                             setAppts((prev) => prev.filter((x) => x.id !== a.id))
                           }}
                         >
@@ -762,18 +791,29 @@ export default function ProviderVbmsWorkspace() {
                 const time = (qsTime || '').slice(0, 5)
                 const whenText = date && time ? `${date} ${time}` : qsWhen.trim() || '—'
                 if (custom) {
-                  setAppts((prev) => [{ id: `a_${Math.random().toString(16).slice(2)}`, patientId: 'custom:local', patientName: custom, type: qsType, when: whenText, status: 'Scheduled' }, ...prev])
+                  const portalApptId = date && time ? scheduleAppointment({ patientName: custom, type: qsType, date, time }) : undefined
+                  setAppts((prev) => [
+                    {
+                      id: `a_${Math.random().toString(16).slice(2)}`,
+                      portalApptId,
+                      patientId: 'custom:local',
+                      patientName: custom,
+                      type: qsType,
+                      when: whenText,
+                      status: 'Scheduled',
+                    } as any,
+                    ...prev,
+                  ])
                   setQsCustomName('')
-                  if (date && time) {
-                    scheduleAppointment({ patientName: custom, type: qsType, date, time })
-                  }
                   return
                 }
                 const pl = allPatientOptions.find((p) => p.id === qsPatient)
                 const nameSnap = (pl?.label || labelForPatientId(qsPatient)).trim() || '—'
+                const portalApptId = date && time ? scheduleAppointment({ patientName: nameSnap, type: qsType, date, time }) : undefined
                 setAppts((prev) => [
                   {
                     id: `a_${Math.random().toString(16).slice(2)}`,
+                    portalApptId,
                     patientId: qsPatient,
                     patientName: nameSnap,
                     type: qsType,
@@ -782,9 +822,6 @@ export default function ProviderVbmsWorkspace() {
                   },
                   ...prev,
                 ])
-                if (date && time) {
-                  scheduleAppointment({ patientName: nameSnap, type: qsType, date, time })
-                }
               }}
             >
               Schedule
