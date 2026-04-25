@@ -67,7 +67,23 @@ export default function ProviderSchedule() {
     return subscribePortalState(() => setTick((n) => (n + 1) % 1_000_000))
   }, [])
 
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart])
+  const visibleDows = useMemo(() => {
+    const c = getScheduleConfig()
+    const enabled = Object.keys(c.hoursByDow || {})
+      .map((k) => Number(k))
+      .filter((n) => Number.isFinite(n))
+      .sort((a, b) => a - b)
+      .filter((dow) => Boolean(c.hoursByDow[dow]?.enabled))
+    return enabled.length ? enabled : [1, 2, 3, 4, 5]
+  }, [weekStart])
+
+  const days = useMemo(() => {
+    // weekStart is Monday. Build visible days within this Mon-based week.
+    return visibleDows.map((dow) => {
+      const delta = dow === 0 ? -1 : dow - 1
+      return addDays(weekStart, delta)
+    })
+  }, [visibleDows, weekStart])
   const dayKeys = useMemo(() => days.map((d) => ymdLocal(d)), [days])
 
   const { appointments } = getPortalState()
@@ -110,7 +126,8 @@ export default function ProviderSchedule() {
 
   const weekLabel = useMemo(() => {
     const a = days[0]
-    const b = days[6]
+    const b = days[days.length - 1]
+    if (!a || !b) return ''
     const fmt = (d: Date) => d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     const year =
       a.getFullYear() === b.getFullYear() ? ` ${a.getFullYear()}` : ` ${a.getFullYear()}–${b.getFullYear()}`
@@ -153,7 +170,8 @@ export default function ProviderSchedule() {
         </div>
       </section>
 
-      <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>
+      <div className="providerScheduleGrid">
+      <section className="card cardAccentSoft providerScheduleSettings">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Schedule settings</h2>
           <span className="pill">Hours + slot size</span>
@@ -283,7 +301,7 @@ export default function ProviderSchedule() {
         </div>
       </section>
 
-      <section className="card cardAccentNavy cardSpan12">
+      <section className="card cardAccentNavy providerScheduleCalendar">
         <div className="tableWrap">
           <table className="table" aria-label="Weekly schedule">
             <thead>
@@ -291,7 +309,7 @@ export default function ProviderSchedule() {
                 <th style={{ width: 120 }}>Time</th>
                 {days.map((d) => (
                   <th key={d.toISOString()}>
-                    {d.toLocaleDateString(undefined, { weekday: 'short' })}{' '}
+                    {DOW_LABEL[d.getDay()] || d.toLocaleDateString(undefined, { weekday: 'short' })}{' '}
                     <span className="muted">{d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   </th>
                 ))}
@@ -300,7 +318,7 @@ export default function ProviderSchedule() {
             <tbody>
               {times.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="muted">
+                  <td colSpan={1 + days.length} className="muted">
                     No hours set for this week. (We generate slots from your schedule settings.)
                   </td>
                 </tr>
@@ -374,6 +392,7 @@ export default function ProviderSchedule() {
           </table>
         </div>
       </section>
+      </div>
 
       {selected ? (
         <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { apiGet, apiPost } from '../api/client'
+import { apiPost } from '../api/client'
 import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
-import { formatPatientLabel, getCurrentPatient, getCurrentPatientUsername } from '../patient/patientAuth'
 
-const ORDER_REQ_DRAFT_PREFIX = 'wph_order_request_draft_v1:'
+const ORDER_REQ_DRAFT_KEY = 'wph_order_request_draft_public_v1'
 
 type OrderRequestDraftV1 = {
   v: 1
+  fromName: string
+  fromEmail: string
   category: OrderCategory
   glp1?: Glp1Medication
   request: string
@@ -16,15 +17,16 @@ type OrderRequestDraftV1 = {
 
 type OrderRequestReceipt = {
   createdAt: string
+  fromName: string
+  fromEmail: string
   category: OrderCategory
   glp1?: Glp1Medication
   request: string
 }
 
-function readOrderRequestDraft(username: string): OrderRequestDraftV1 | null {
-  if (!username) return null
+function readOrderRequestDraft(): OrderRequestDraftV1 | null {
   try {
-    const raw = localStorage.getItem(`${ORDER_REQ_DRAFT_PREFIX}${username}`)
+    const raw = localStorage.getItem(ORDER_REQ_DRAFT_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as OrderRequestDraftV1
     if (!parsed || parsed.v !== 1) return null
@@ -34,20 +36,17 @@ function readOrderRequestDraft(username: string): OrderRequestDraftV1 | null {
   }
 }
 
-function writeOrderRequestDraft(username: string, draft: OrderRequestDraftV1) {
-  if (!username) return
-  localStorage.setItem(`${ORDER_REQ_DRAFT_PREFIX}${username}`, JSON.stringify(draft))
+function writeOrderRequestDraft(draft: OrderRequestDraftV1) {
+  localStorage.setItem(ORDER_REQ_DRAFT_KEY, JSON.stringify(draft))
 }
 
-function clearOrderRequestDraft(username: string) {
-  if (!username) return
-  localStorage.removeItem(`${ORDER_REQ_DRAFT_PREFIX}${username}`)
+function clearOrderRequestDraft() {
+  localStorage.removeItem(ORDER_REQ_DRAFT_KEY)
 }
 
 export default function OrderingPortal() {
-  const patient = getCurrentPatient()
-  const patientUsername = getCurrentPatientUsername()
-  const patientName = patient ? formatPatientLabel(patient) : ''
+  const [fromName, setFromName] = useState('')
+  const [fromEmail, setFromEmail] = useState('')
   const [category, setCategory] = useState<OrderCategory>('GLP-1')
   const [glp1, setGlp1] = useState<Glp1Medication>('Semaglutide')
   const [request, setRequest] = useState('')
@@ -56,41 +55,24 @@ export default function OrderingPortal() {
   const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const draftTimer = useRef<number | null>(null)
 
-  const [orders, setOrders] = useState<any[]>([])
-  useEffect(() => {
-    apiGet<{ orders: any[] }>('/v1/patient/orders')
-      .then((r) => setOrders(r.orders))
-      .catch(() => setOrders([]))
-  }, [])
-
-  useEffect(() => {
-    if (!patientUsername) return
-    const d = readOrderRequestDraft(patientUsername)
-    if (!d) return
-    setCategory(d.category)
-    if (d.glp1) setGlp1(d.glp1)
-    if (typeof d.request === 'string') setRequest(d.request)
-  }, [patientUsername])
-
   const draftPayload = useMemo(() => {
     return {
       v: 1 as const,
+      fromName,
+      fromEmail,
       category,
       glp1: category === 'GLP-1' ? glp1 : undefined,
       request,
       savedAt: new Date().toISOString(),
     }
-  }, [category, glp1, request])
+  }, [category, fromEmail, fromName, glp1, request])
 
   useEffect(() => {
-    if (!patientUsername) return
-    if (!patientName) return
-
     setDraftStatus('saving')
     if (draftTimer.current) window.clearTimeout(draftTimer.current)
     draftTimer.current = window.setTimeout(() => {
       try {
-        writeOrderRequestDraft(patientUsername, draftPayload)
+        writeOrderRequestDraft(draftPayload)
         setDraftStatus('saved')
         window.setTimeout(() => setDraftStatus((s) => (s === 'saved' ? 'idle' : s)), 900)
       } catch {
@@ -101,9 +83,17 @@ export default function OrderingPortal() {
     return () => {
       if (draftTimer.current) window.clearTimeout(draftTimer.current)
     }
-  }, [draftPayload, patientName, patientUsername])
-
-  const visibleOrders = patientName ? orders : []
+  }, [draftPayload])
+  
+  useEffect(() => {
+    const d = readOrderRequestDraft()
+    if (!d) return
+    setFromName(d.fromName || '')
+    setFromEmail(d.fromEmail || '')
+    setCategory(d.category)
+    if (d.glp1) setGlp1(d.glp1)
+    if (typeof d.request === 'string') setRequest(d.request)
+  }, [])
 
   return (
     <div className="page">
@@ -111,8 +101,7 @@ export default function OrderingPortal() {
         <div>
           <h1 style={{ margin: 0 }}>Order Requests</h1>
           <p className="muted pageSubtitle">
-            Request refills, labs, or follow-up questions and track status from the practice (signed-in area on this
-            site).
+            Request refills, labs, or follow-up questions. This form sends a note to the provider inbox—no sign-in required.
           </p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
@@ -129,17 +118,31 @@ export default function OrderingPortal() {
           <div className="divider" />
 
           <div className="formRow">
-            <div>
+            <label>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Signed in as
+                Your name (required)
               </div>
-              <div className="pill">{patientName || '—'}</div>
-              {!patientName ? (
-                <div className="muted" style={{ marginTop: 8, fontSize: 13 }}>
-                  Please <Link to="/patient/login">sign in</Link> to submit order requests on this site.
-                </div>
-              ) : null}
-            </div>
+              <input
+                className="input"
+                value={fromName}
+                onChange={(e) => setFromName(e.target.value)}
+                placeholder="First and last name"
+                autoComplete="name"
+              />
+            </label>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Email (recommended)
+              </div>
+              <input
+                className="input"
+                value={fromEmail}
+                onChange={(e) => setFromEmail(e.target.value)}
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+            </label>
             <label>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 Category
@@ -290,65 +293,84 @@ export default function OrderingPortal() {
             <button
               type="button"
               className="btn btnAccent"
-              disabled={!patientName || !request.trim()}
-              style={{ opacity: !patientName || !request.trim() ? 0.6 : 1 }}
+              disabled={!fromName.trim() || !request.trim()}
+              style={{ opacity: !fromName.trim() || !request.trim() ? 0.6 : 1 }}
               onClick={() => {
                 setNotice(null)
                 setReceipt(null)
-                apiPost('/v1/patient/orders', {
-                  category,
-                  item: category === 'GLP-1' ? glp1 : undefined,
-                  request,
-                })
-                  .then(() => apiGet<{ orders: any[] }>('/v1/patient/orders'))
-                  .then((r) => {
-                    setOrders(r.orders)
-                    const snap = request.trim()
+                ;(async () => {
+                  try {
+                    const snapReq = request.trim()
+                    const snapName = fromName.trim()
+                    const snapEmail = fromEmail.trim()
+                    const bodyLines = [
+                      `Category: ${category}`,
+                      category === 'GLP-1' ? `GLP-1: ${glp1}` : null,
+                      `Request: ${snapReq}`,
+                    ].filter(Boolean) as string[]
+
+                    await apiPost('/v1/public/team-inbox', {
+                      kind: 'order_request',
+                      fromName: snapName,
+                      fromEmail: snapEmail,
+                      body: bodyLines.join('\n'),
+                      meta: {
+                        category,
+                        glp1: category === 'GLP-1' ? glp1 : undefined,
+                        request: snapReq,
+                      },
+                    })
+
                     setRequest('')
-                    clearOrderRequestDraft(patientUsername)
+                    clearOrderRequestDraft()
                     setReceipt({
                       createdAt: new Date().toLocaleString(),
+                      fromName: snapName,
+                      fromEmail: snapEmail,
                       category,
                       glp1: category === 'GLP-1' ? glp1 : undefined,
-                      request: snap,
+                      request: snapReq,
                     })
                     setNotice('Request submitted.')
                     setTimeout(() => setNotice(null), 2200)
-                  })
-                  .catch((e: any) => {
+                  } catch (e: any) {
                     setNotice(String(e?.message || e))
                     setTimeout(() => setNotice(null), 3200)
-                  })
+                  }
+                })()
               }}
             >
               Submit
             </button>
-            {patientUsername ? (
-              <button
-                type="button"
-                className="btn"
-                disabled={!patientName}
-                onClick={() => {
-                  clearOrderRequestDraft(patientUsername)
-                  setRequest('')
-                  setCategory('GLP-1')
-                  setGlp1('Semaglutide')
-                  setDraftStatus('idle')
-                  setNotice('Draft cleared.')
-                  setTimeout(() => setNotice(null), 1400)
-                }}
-              >
-                Clear draft
-              </button>
-            ) : null}
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                clearOrderRequestDraft()
+                setFromName('')
+                setFromEmail('')
+                setRequest('')
+                setCategory('GLP-1')
+                setGlp1('Semaglutide')
+                setDraftStatus('idle')
+                setNotice('Draft cleared.')
+                setTimeout(() => setNotice(null), 1400)
+              }}
+            >
+              Clear draft
+            </button>
           </div>
 
-          {patientUsername && patientName ? (
-            <p className="muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 12, lineHeight: 1.45 }}>
-              Drafts autosave in this browser while you are signed in.{' '}
-              {draftStatus === 'saving' ? 'Saving…' : draftStatus === 'saved' ? 'Saved.' : draftStatus === 'error' ? 'Could not save draft.' : null}
-            </p>
-          ) : null}
+          <p className="muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 12, lineHeight: 1.45 }}>
+            Draft autosaves in this browser as you type.{' '}
+            {draftStatus === 'saving'
+              ? 'Saving…'
+              : draftStatus === 'saved'
+                ? 'Saved.'
+                : draftStatus === 'error'
+                  ? 'Could not save draft.'
+                  : null}
+          </p>
 
           {notice ? (
             <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>
@@ -363,13 +385,21 @@ export default function OrderingPortal() {
                 <span className="pill">Receipt</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                What happens next: the practice reviews your request and updates status here. If something is time-sensitive, call the practice or use the contact page and note urgency.
+                What happens next: the practice reviews your request and follows up. If something is time-sensitive, use the contact page and note urgency (or call the practice number if you have it).
               </p>
               <div className="divider" />
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
                 <div>
                   <strong>Submitted</strong>: {receipt.createdAt}
                 </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Name</strong>: {receipt.fromName}
+                </div>
+                {receipt.fromEmail ? (
+                  <div style={{ marginTop: 8 }}>
+                    <strong>Email</strong>: {receipt.fromEmail}
+                  </div>
+                ) : null}
                 <div style={{ marginTop: 8 }}>
                   <strong>Category</strong>: {receipt.category}
                 </div>
@@ -393,56 +423,6 @@ export default function OrderingPortal() {
               </div>
             </section>
           ) : null}
-        </section>
-
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Status</h2>
-            <span className="pill pillRed">Updates</span>
-          </div>
-          <div className="divider" />
-
-          {!patientName ? (
-            <p className="muted">Sign in to view your order status.</p>
-          ) : visibleOrders.length === 0 ? (
-            <p className="muted">No order requests found.</p>
-          ) : (
-            <table className="table" aria-label="Order status">
-              <thead>
-                <tr>
-                  <th>Submitted</th>
-                  <th>Category</th>
-                  <th>Item</th>
-                  <th>Request</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleOrders.map((o) => (
-                  <tr key={o.id}>
-                    <td className="muted">
-                      {new Date(o.createdAt).toLocaleString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: '2-digit',
-                      })}
-                    </td>
-                    <td>{o.category}</td>
-                    <td className="muted">{o.item || '—'}</td>
-                    <td>{o.request}</td>
-                    <td>
-                      <span className="pill">{o.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-
-          <div className="divider" />
-          <p className="muted" style={{ margin: 0 }}>
-            Provider changes statuses in the Provider Portal ordering queue.
-          </p>
         </section>
       </div>
     </div>
