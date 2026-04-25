@@ -2374,7 +2374,7 @@ html.pharmacyCartOpen body {
 /* —— Order Now hub (/order-now): products + cart without requiring API —— */
 .orderNowHubPage {
   gap: 22px;
-  max-width: 720px;
+  max-width: 1120px;
   margin: 0 auto;
 }
 
@@ -2401,7 +2401,7 @@ html.pharmacyCartOpen body {
   margin: 0;
   font-size: 16px;
   line-height: 1.55;
-  max-width: 56ch;
+  max-width: none;
 }
 
 .orderNowHubHomeBtn {
