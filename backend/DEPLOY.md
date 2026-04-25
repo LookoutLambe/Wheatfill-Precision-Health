@@ -56,7 +56,12 @@ In GitHub repo settings:
 
 #### If you still see `Error: P3009`
 
-That error is **only** reported by **`prisma migrate deploy`** (or `migrate dev`), not by `db push`. If it still appears, **your Render (or CI) build command is still running `npx prisma migrate deploy`**. Remove it.
+**Read the log line: is the error in *Build* or in *Start*?**
+
+- **Build** (while “Building…” or `npm run build` / `prisma generate`): the failure is **before** the container runs our `start` script. Almost always the **Build Command in the Render dashboard** still includes `npx prisma migrate deploy` or `prisma migrate deploy`. **Delete that** from the build. Use only: `npm ci && npm run build` (with **Root Directory** = `backend`, or `cd backend && …` if you run from the repo root).
+- **Start** (container already built, process starting): the updated `scripts/start-prod.mjs` runs a small SQL script to clear a stuck row in `_prisma_migrations`, then `prisma db push`, then the API. If P3009 still shows here, paste that log; also confirm **`DIRECT_URL`** (or a non-pooled direct Postgres URL) is set so Prisma can run DDL when needed.
+
+P3009 is always from Prisma’s **Migrate** path (`prisma migrate deploy` / `migrate dev`), not from normal queries. The **Type** / **URI** dropdown in Neon’s UI only changes how the string is copied, not the error.
 
 - **Correct build** (from repo root, or set Render **Root Directory** to `backend`): `npm ci && npm run build` only.
 - **Correct start**: `npm start` (or `node scripts/start-prod.mjs`).
