@@ -9,10 +9,10 @@ import { MedplumClient } from '@medplum/core'
 import type { MedicationRequest } from '@medplum/fhirtypes'
 import Stripe from 'stripe'
 
-import { prisma } from './db'
-import { hashPassword, verifyPassword } from './auth/password'
-import { registerAuth, requireRole } from './auth/authz'
-import { decryptSecret, encryptSecret } from './crypto/secrets'
+import { prisma } from './db.js'
+import { hashPassword, verifyPassword } from './auth/password.js'
+import { registerAuth, requireRole } from './auth/authz.js'
+import { decryptSecret, encryptSecret } from './crypto/secrets.js'
 
 const PORT = Number(process.env.PORT || 8080)
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5176'

@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { MedplumClient } from '@medplum/core'
 import type { Appointment, Patient, Practitioner } from '@medplum/fhirtypes'
-import { prisma } from '../db'
+import { prisma } from '../db.js'
 
 /**
  * One-time migration helper:
