@@ -292,6 +292,63 @@ export default function Landing() {
             </div>
           </section>
 
+          <section
+            className="card cardAccentSoft landingWhyUs"
+            aria-labelledby="landing-why-us-heading"
+            style={{ margin: 0 }}
+          >
+            <div className="cardTitle">
+              <h2 id="landing-why-us-heading" style={{ margin: 0 }}>
+                Why {PRACTICE_PUBLIC_NAME}?
+              </h2>
+              <span className="pill">Why us</span>
+            </div>
+            <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+              A care model built for busy adults who want real planning—not generic handouts—so you can improve
+              metabolism, weight, and energy with clarity and follow-through.
+            </p>
+            <div className="divider" />
+            <div className="landingWhyUsGrid">
+              <div className="landingWhyUsItem">
+                <div className="landingWhyUsItemTitle">Precision, not a template</div>
+                <p className="landingWhyUsItemText">
+                  Plans are individualized to your history, risk, and goals—so recommendations match your physiology, not
+                  a one-size protocol.
+                </p>
+              </div>
+              <div className="landingWhyUsItem">
+                <div className="landingWhyUsItemTitle">Everything in one place</div>
+                <p className="landingWhyUsItemText">
+                  Book, medication education, order requests, and the storefront catalog are on this site—so you
+                  are not shuffled between disconnected logins to get things done.
+                </p>
+              </div>
+              <div className="landingWhyUsItem">
+                <div className="landingWhyUsItemTitle">Clarity and safety</div>
+                <p className="landingWhyUsItemText">
+                  We are upfront about options, monitoring, and what “success” can look like—so you can make informed
+                  decisions with a team that stays in touch.
+                </p>
+              </div>
+              <div className="landingWhyUsItem">
+                <div className="landingWhyUsItemTitle">Long-term in mind</div>
+                <p className="landingWhyUsItemText">
+                  Visits, check-ins, and adjustments are built for sustainability—so changes are more likely to stick
+                  when life gets busy.
+                </p>
+              </div>
+            </div>
+            <div className="divider" />
+            <div className="btnRow">
+              <Link to="/about" className="btn" style={{ textDecoration: 'none' }}>
+                About the team
+              </Link>
+              <Link to="/pricing" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
+                Pricing
+              </Link>
+            </div>
+          </section>
+
           <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
             <div className="cardTitle">
               <h2 id="landing-catalog-heading" style={{ margin: 0 }}>

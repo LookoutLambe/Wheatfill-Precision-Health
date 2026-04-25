@@ -2070,6 +2070,52 @@ html.pharmacyCartOpen body {
   font-size: 14px;
 }
 
+.landingWhyUs {
+  margin: 0;
+}
+
+.landingWhyUsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px 16px;
+}
+
+@media (min-width: 560px) {
+  .landingWhyUsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .landingWhyUsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.landingWhyUsItem {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(10, 30, 63, 0.1);
+  background: rgba(255, 255, 255, 0.75);
+  box-sizing: border-box;
+}
+
+.landingWhyUsItemTitle {
+  font-weight: 850;
+  color: var(--text-h);
+  font-size: 15px;
+  line-height: 1.3;
+  margin: 0 0 6px;
+}
+
+.landingWhyUsItemText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(31, 41, 55, 0.78);
+}
+
 .landingFaqItem {
   border: 1px solid rgba(10, 30, 63, 0.12);
   border-radius: 14px;
