@@ -52,10 +52,16 @@ In GitHub repo settings:
 
 ### Database schema (Render / production)
 
-The default **`npm start`** in this backend runs **`prisma db push`** and then starts the server. The schema in `prisma/schema.prisma` is applied directly to the database, so deploys do **not** depend on a clean `_prisma_migrations` table. That avoids **P3009** / stuck failed migration records from blocking your service when a past `prisma migrate deploy` half-failed.
+`npm start` runs `scripts/start-prod.mjs`, which (1) **best-effort** runs `prisma migrate resolve --rolled-back 20260425_postgres_init` to clear a stuck **P3009** state, (2) runs **`prisma db push`**, (3) starts the server. It does **not** run `prisma migrate deploy`.
 
-- **Render (Docker or native)**: set **Build** to compile only (e.g. `npm install` + `npm run build`), **not** `prisma migrate deploy`. The container applies the schema at boot via `prisma db push` from `package.json` `start`.
-- **If you add `prisma migrate deploy` to a CI/build step** yourself, you are opting into the migration table; then you can still see **P3009** and must [resolve failed migrations](https://www.prisma.io/docs/orm/prisma-migrate/workflows/patching-and-hotfixing#failed-migration) manually, or stop running `migrate deploy` in the build and rely on `npm start` only.
-- **Local** development still uses `npx prisma migrate dev` to evolve versioned history under `prisma/migrations/`; production sync uses the schema file.
-- **Skip the push (escape hatch)**: if you need to start the process without running `db push`, use `npm run start:server` (assumes the DB is already in sync).
+#### If you still see `Error: P3009`
+
+That error is **only** reported by **`prisma migrate deploy`** (or `migrate dev`), not by `db push`. If it still appears, **your Render (or CI) build command is still running `npx prisma migrate deploy`**. Remove it.
+
+- **Correct build** (from repo root, or set Render **Root Directory** to `backend`): `npm ci && npm run build` only.
+- **Correct start**: `npm start` (or `node scripts/start-prod.mjs`).
+- You can use the example **`render.yaml`** in the repo root as a template; it does not run migrate in the build.
+- For Docker, the `Dockerfile` `CMD` runs `node scripts/start-prod.mjs` (so the same logic runs in the container).
+- **Skip all Prisma at boot** (emergency): set `WPH_SKIP_PRISMA=1` and use the same `npm start` entry, or use `npm run start:server` (no schema sync).
+- **Local** development still uses `npx prisma migrate dev` to evolve `prisma/migrations/`; production uses the **schema** via `db push` after the optional resolve step.
 

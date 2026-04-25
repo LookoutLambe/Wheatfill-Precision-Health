@@ -1,0 +1,12 @@
+# Render Blueprint (optional): set Root Directory in dashboard to "backend" or use this file.
+# If you still see Prisma P3009, your service is still running `prisma migrate deploy` — remove
+# that from the Build command (this blueprint never runs migrate deploy).
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: wph-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health

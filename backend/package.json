@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "prisma generate && tsc -p tsconfig.json",
-    "start": "prisma db push && node dist/server.js",
+    "start": "node scripts/start-prod.mjs",
     "start:server": "node dist/server.js",
     "migrate:medplum": "tsx src/scripts/migrate-to-medplum.ts",
     "prisma:generate": "prisma generate",

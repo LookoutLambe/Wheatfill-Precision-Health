@@ -16,7 +16,8 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/scripts ./scripts
 
 EXPOSE 8080
-CMD ["npm", "start"]
+CMD ["node", "scripts/start-prod.mjs"]
 
