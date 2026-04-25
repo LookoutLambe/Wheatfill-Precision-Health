@@ -10,7 +10,8 @@ export type CatalogVialStrength = {
 }
 
 export function parseCatalogVialName(name: string): CatalogVialStrength | null {
-  const m = name.match(/(\d+(?:\.\d+)?)\s*mg\/mL\s*-\s*(\d+(?:\.\d+)?)\s*mL/i)
+  /* Hyphen, en dash, or em dash between concentration and fill volume */
+  const m = name.match(/(\d+(?:\.\d+)?)\s*mg\/mL\s*[-–—]\s*(\d+(?:\.\d+)?)\s*mL/i)
   if (!m) return null
   const mgPerMl = Number(m[1])
   const volumeMl = Number(m[2])

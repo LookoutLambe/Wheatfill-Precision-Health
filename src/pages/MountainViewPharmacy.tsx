@@ -151,7 +151,7 @@ export default function MountainViewPharmacy() {
                           </th>
                           <td className="muted mountainViewSub">{p.subtitle}</td>
                           <td className="mountainViewDosingCell">
-                            <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} />
+                            <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
                           </td>
                           <td className="mountainViewPrice" aria-label={`List price ${moneyWhole(p.priceCents)}`}>
                             {moneyWhole(p.priceCents)}

@@ -113,24 +113,27 @@ export default function PharmacyOptions() {
         <p className="muted orderNowSectionSub">
           List prices for our standard vial SKUs. Your selections are saved in this browser until you
           check out or clear the cart on the catalog page. Checkout is with the practice, not directly with
-          the pharmacy website.
+          the pharmacy website. Each card shows <strong>total mg in the vial</strong>, <strong>approximate list $/mg</strong>{' '}
+          for comparison, and a link to the <Link to="/medications#dosing-guide">titration dosing guide</Link>.
         </p>
 
         <ul className="orderNowProductList">
           {CATALOG_HIGHLIGHT_PRODUCTS.map((p) => (
             <li key={p.sku} className="orderNowProductCard">
-              <CatalogVialThumb family={p.family} />
-              <div className="orderNowProductBody">
-                <div className="orderNowProductName">{p.name}</div>
-                <div className="muted orderNowProductSub">{p.subtitle}</div>
-                <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} />
+              <div className="orderNowProductTop">
+                <CatalogVialThumb family={p.family} />
+                <div className="orderNowProductBody">
+                  <div className="orderNowProductName">{p.name}</div>
+                  <div className="muted orderNowProductSub">{p.subtitle}</div>
+                </div>
+                <div className="orderNowProductMeta">
+                  <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
+                  <button type="button" className="btn catalogOutlineBtn orderNowAddBtn" onClick={() => onAddLine(p.sku)}>
+                    Add To Cart
+                  </button>
+                </div>
               </div>
-              <div className="orderNowProductMeta">
-                <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
-                <button type="button" className="btn catalogOutlineBtn orderNowAddBtn" onClick={() => onAddLine(p.sku)}>
-                  Add To Cart
-                </button>
-              </div>
+              <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
             </li>
           ))}
         </ul>

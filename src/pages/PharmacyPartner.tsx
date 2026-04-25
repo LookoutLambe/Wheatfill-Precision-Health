@@ -163,25 +163,27 @@ export default function PharmacyPartner() {
             <ul className="pharmacyProductList">
               {partner.products.map((p) => (
                 <li key={p.sku} className="pharmacyProductRow card cardAccentSoft">
-                  <CatalogVialThumb family={vialFamilyForSku(p.sku)} />
-                  <div className="pharmacyProductBody">
-                    <div className="pharmacyProductTitle">{p.name}</div>
-                    <div className="muted pharmacyProductSubtitle">{p.subtitle}</div>
-                    <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} />
-                    <div className="pharmacyProductPriceRow">
-                      <span className="pharmacyProductPrice">{moneyWhole(p.priceCents)}</span>
-                      <button
-                        type="button"
-                        className="btn catalogOutlineBtn pharmacyAddBtn"
-                        onClick={() => {
-                          bumpCartSku(slug, p.sku, 1)
-                          setCartOpen(true)
-                        }}
-                      >
-                        Add To Cart
-                      </button>
+                  <div className="pharmacyProductRowTop">
+                    <CatalogVialThumb family={vialFamilyForSku(p.sku)} />
+                    <div className="pharmacyProductBody">
+                      <div className="pharmacyProductTitle">{p.name}</div>
+                      <div className="muted pharmacyProductSubtitle">{p.subtitle}</div>
+                      <div className="pharmacyProductPriceRow">
+                        <span className="pharmacyProductPrice">{moneyWhole(p.priceCents)}</span>
+                        <button
+                          type="button"
+                          className="btn catalogOutlineBtn pharmacyAddBtn"
+                          onClick={() => {
+                            bumpCartSku(slug, p.sku, 1)
+                            setCartOpen(true)
+                          }}
+                        >
+                          Add To Cart
+                        </button>
+                      </div>
                     </div>
                   </div>
+                  <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
                 </li>
               ))}
             </ul>

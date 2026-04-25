@@ -1971,11 +1971,18 @@ html.pharmacyCartOpen body {
 
 .pharmacyProductRow {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 16px !important;
+  margin: 0;
+}
+
+.pharmacyProductRowTop {
+  display: flex;
   flex-direction: row;
   align-items: stretch;
   gap: 16px;
-  padding: 16px !important;
-  margin: 0;
 }
 
 .pharmacyVialThumb {
@@ -2260,6 +2267,19 @@ html.pharmacyCartOpen body {
   opacity: 0.92;
 }
 
+.catalogProductDosingBand {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(10, 30, 63, 0.045);
+  border: 1px solid rgba(10, 30, 63, 0.1);
+}
+
+.catalogProductDosingBand .catalogProductDosing {
+  margin-top: 0;
+}
+
 .pharmacyProductPriceRow {
   margin-top: auto;
   display: flex;
@@ -2496,7 +2516,7 @@ html.pharmacyCartOpen body {
 }
 
 @media (max-width: 560px) {
-  .pharmacyProductRow {
+  .pharmacyProductRowTop {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -2624,14 +2644,20 @@ html.pharmacyCartOpen body {
 }
 
 .orderNowProductCard {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 14px 16px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 16px 16px;
   border-radius: 14px;
   border: 1px solid rgba(10, 30, 63, 0.1);
   background: #fff;
+}
+
+.orderNowProductTop {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px 16px;
+  align-items: start;
 }
 
 .orderNowProductCard .pharmacyVialThumb {
@@ -3273,7 +3299,7 @@ html.pharmacyCartOpen body {
 }
 
 @media (max-width: 560px) {
-  .orderNowProductCard {
+  .orderNowProductTop {
     grid-template-columns: 1fr;
     justify-items: stretch;
   }
