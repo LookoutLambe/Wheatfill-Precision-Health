@@ -1,0 +1,2 @@
+# Prisma TOML must be UTF-8 without BOM; Linux/CI parse strictly.
+backend/prisma/migrations/migration_lock.toml text eol=lf
