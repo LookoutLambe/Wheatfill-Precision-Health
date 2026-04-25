@@ -864,9 +864,10 @@ html.pharmacyCartOpen body {
   gap: 18px;
 }
 
-@media (min-width: 901px) {
+/* Use a slightly lower breakpoint so typical laptop viewports (with browser chrome/side panels) still show 2-up. */
+@media (min-width: 860px) {
   .aboutTeamGrid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
 }
