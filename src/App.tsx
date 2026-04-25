@@ -10,7 +10,9 @@ import PeptideTherapy from './pages/PeptideTherapy'
 import About from './pages/About'
 import Pricing from './pages/Pricing'
 import Contact from './pages/Contact'
+import NoticeOfPrivacyPractices from './pages/NoticeOfPrivacyPractices'
 import Privacy from './pages/Privacy'
+import TermsOfService from './pages/TermsOfService'
 import BookOnline from './pages/BookOnline'
 import OrderingPortal from './pages/OrderingPortal'
 import MedicationEducation from './pages/MedicationEducation'
@@ -81,6 +83,8 @@ export default function App() {
           <Route path="/medications" element={<MedicationEducation />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/npp" element={<NoticeOfPrivacyPractices />} />
+          <Route path="/terms" element={<TermsOfService />} />
 
           <Route path="/book" element={<BookOnline />} />
           <Route path="/order-now" element={<PharmacyOptions />} />
@@ -133,6 +137,8 @@ export default function App() {
         <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/npp" element={<NoticeOfPrivacyPractices />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/patient/login" element={<PatientBackendLogin />} />
         <Route

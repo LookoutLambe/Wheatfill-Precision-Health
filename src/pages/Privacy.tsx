@@ -1,9 +1,23 @@
+import { Link } from 'react-router-dom'
+
 export default function Privacy() {
   return (
     <div className="page">
       <div>
         <h1 style={{ margin: 0 }}>Privacy Policy</h1>
-        <p className="muted pageSubtitle">Messaging Terms and Conditions</p>
+        <p className="muted pageSubtitle">Website &amp; SMS — messaging and marketing data practices</p>
+        <p className="muted" style={{ marginTop: 6, maxWidth: 56 * 16, fontSize: 15, lineHeight: 1.55 }}>
+          For your <strong>HIPAA Notice of Privacy Practices</strong> (how we use and disclose health information), see
+          the{' '}
+          <Link to="/npp" style={{ color: 'var(--navy-2)', fontWeight: 800 }}>
+            Notice of Privacy Practices
+          </Link>
+          . For website terms, see{' '}
+          <Link to="/terms" style={{ color: 'var(--navy-2)', fontWeight: 800 }}>
+            Terms of Service
+          </Link>
+          .
+        </p>
       </div>
 
       <section className="card cardAccentNavy">
@@ -70,8 +84,8 @@ export default function Privacy() {
           <span className="pill">Contact</span>
         </div>
         <div className="divider" />
-        <p className="muted">
-          If you have questions about this policy, please contact Wheatfill Precision Health.
+        <p className="muted" style={{ margin: 0 }}>
+          If you have questions about this policy, please contact us via the <Link to="/contact">Contact</Link> page.
         </p>
       </section>
     </div>
