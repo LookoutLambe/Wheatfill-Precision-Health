@@ -1,6 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getPortalState, getScheduleConfig, isDateBlackout, isSlotBooked, slotsForDate } from '../data/portalStore'
+import {
+  getPortalState,
+  getScheduleConfig,
+  isDateBlackout,
+  isSlotBooked,
+  removeAppointment,
+  removeBlackoutDate,
+  slotsForDate,
+  subscribePortalState,
+  updateAppointmentStatus,
+} from '../data/portalStore'
 
 function ymdLocal(d: Date) {
   const y = d.getFullYear()
@@ -36,10 +46,15 @@ function timeLabel(hhmm: string) {
 
 export default function ProviderSchedule() {
   const [weekOffset, setWeekOffset] = useState(0)
+  const [, setTick] = useState(0)
   const weekStart = useMemo(() => {
     const base = startOfWeekMonday(new Date())
     return addDays(base, weekOffset * 7)
   }, [weekOffset])
+
+  useEffect(() => {
+    return subscribePortalState(() => setTick((n) => (n + 1) % 1_000_000))
+  }, [])
 
   const days = useMemo(() => Array.from({ length: 5 }, (_, i) => addDays(weekStart, i)), [weekStart])
   const dayKeys = useMemo(() => days.map((d) => ymdLocal(d)), [days])
@@ -79,6 +94,12 @@ export default function ProviderSchedule() {
       a.getFullYear() === b.getFullYear() ? ` ${a.getFullYear()}` : ` ${a.getFullYear()}–${b.getFullYear()}`
     return `${fmt(a)} – ${fmt(b)}${year}`
   }, [days])
+
+  const [selected, setSelected] = useState<
+    | null
+    | { kind: 'appt'; id: string; slotKey: string; date: string; time: string; name: string; type: string; status: string; notes?: string }
+    | { kind: 'closed'; date: string }
+  >(null)
 
   return (
     <div className="page">
@@ -145,14 +166,47 @@ export default function ProviderSchedule() {
                       return (
                         <td key={slotKey}>
                           {closed ? (
-                            <span className="pill pillRed">Closed</span>
+                            <button
+                              type="button"
+                              className="pill pillRed"
+                              style={{ border: 'none', cursor: 'pointer' }}
+                              onClick={() => setSelected({ kind: 'closed', date: dateKey })}
+                              title="Click to manage blackout"
+                            >
+                              Closed
+                            </button>
                           ) : appt ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{
+                                width: '100%',
+                                textAlign: 'left',
+                                padding: 10,
+                                borderRadius: 10,
+                                border: '1px solid rgba(10, 30, 63, 0.16)',
+                                background: 'rgba(255,255,255,0.85)',
+                              }}
+                              onClick={() =>
+                                setSelected({
+                                  kind: 'appt',
+                                  id: appt.id,
+                                  slotKey,
+                                  date: dateKey,
+                                  time: t,
+                                  name: appt.name,
+                                  type: appt.type,
+                                  status: appt.status,
+                                  notes: appt.notes,
+                                })
+                              }
+                              title="Click to manage appointment"
+                            >
                               <div style={{ fontWeight: 850, color: 'var(--text-h)' }}>{appt.name}</div>
                               <div className="muted" style={{ fontSize: 12 }}>
                                 {appt.type} · {appt.status}
                               </div>
-                            </div>
+                            </button>
                           ) : booked ? (
                             <span className="pill">Booked</span>
                           ) : (
@@ -170,6 +224,100 @@ export default function ProviderSchedule() {
           </table>
         </div>
       </section>
+
+      {selected ? (
+        <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>
+          {selected.kind === 'closed' ? (
+            <>
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Blackout day</h2>
+                <span className="pill pillRed">Closed</span>
+              </div>
+              <div className="divider" />
+              <p className="muted" style={{ marginTop: 0 }}>
+                Date: <strong>{selected.date}</strong>
+              </p>
+              <div className="btnRow">
+                <button
+                  type="button"
+                  className="btn btnDanger"
+                  onClick={() => {
+                    if (!confirm(`Remove blackout for ${selected.date}?`)) return
+                    removeBlackoutDate(selected.date)
+                    setSelected(null)
+                  }}
+                >
+                  Remove blackout
+                </button>
+                <button type="button" className="btn" onClick={() => setSelected(null)}>
+                  Close
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Appointment</h2>
+                <span className="pill">{selected.status}</span>
+              </div>
+              <div className="divider" />
+              <div style={{ display: 'grid', gap: 6 }}>
+                <div>
+                  <span className="muted">Patient:</span> <strong>{selected.name}</strong>
+                </div>
+                <div>
+                  <span className="muted">Type:</span> {selected.type}
+                </div>
+                <div>
+                  <span className="muted">When:</span> {selected.date} · {timeLabel(selected.time)}
+                </div>
+                {selected.notes?.trim() ? (
+                  <div>
+                    <span className="muted">Notes:</span> {selected.notes}
+                  </div>
+                ) : null}
+              </div>
+              <div className="divider" />
+              <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    updateAppointmentStatus(selected.id, 'Completed')
+                    setSelected((p) => (p && p.kind === 'appt' ? { ...p, status: 'Completed' } : p))
+                  }}
+                >
+                  Mark completed
+                </button>
+                <button
+                  type="button"
+                  className="btn btnDanger"
+                  onClick={() => {
+                    if (!confirm(`Delete this appointment for ${selected.name}?`)) return
+                    removeAppointment(selected.id)
+                    setSelected(null)
+                  }}
+                >
+                  Delete appointment
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    updateAppointmentStatus(selected.id, 'Cancelled')
+                    setSelected((p) => (p && p.kind === 'appt' ? { ...p, status: 'Cancelled' } : p))
+                  }}
+                >
+                  Cancel (keep record)
+                </button>
+                <button type="button" className="btn" onClick={() => setSelected(null)}>
+                  Close
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      ) : null}
     </div>
   )
 }
