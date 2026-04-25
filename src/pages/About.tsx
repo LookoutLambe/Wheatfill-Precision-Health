@@ -5,12 +5,8 @@ import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDispl
 export default function About() {
   return (
     <div className="page">
-      <div>
+      <div className="aboutHeader">
         <h1 style={{ margin: 0 }}>About</h1>
-        <p className="muted pageSubtitle">
-          Precision-based, patient-centered telehealth for metabolic optimization and long-term
-          wellness.
-        </p>
       </div>
 
       <section className="card cardAccentRed aboutMissionBlock">

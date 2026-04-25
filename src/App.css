@@ -925,6 +925,14 @@ html.pharmacyCartOpen body {
   margin: 0 0 0.9em;
 }
 
+.aboutHeader {
+  text-align: center;
+}
+
+.aboutHeader h1 {
+  margin: 0;
+}
+
 .twoCol.twoColLanding > * {
   min-width: 0;
 }
