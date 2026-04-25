@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
-import VenmoPayToHint from '../components/VenmoPayToHint'
 import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
@@ -230,7 +229,6 @@ export default function Landing() {
               the practice confirms your order (amount and pay-to from your care team). If something goes
               wrong with your order, your care team handles it from our side.
             </p>
-            <VenmoPayToHint style={{ marginTop: 8, marginBottom: 14 }} />
             <div className="landingCatalogStartingRows">
               <div className="landingCatalogStartingAt">
                 <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
