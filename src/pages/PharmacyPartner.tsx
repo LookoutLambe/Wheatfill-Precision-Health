@@ -5,6 +5,7 @@ import CatalogCartDrawer from '../components/CatalogCartDrawer'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
+import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { bumpCartSku, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet } from '../api/client'
@@ -55,6 +56,14 @@ export default function PharmacyPartner() {
               priceCents: p.priceCents,
               currency: 'usd',
             })),
+          })
+          setError(null)
+          setOfflineCatalog(true)
+        } else if (slug === 'hallandale') {
+          setPartner({
+            slug,
+            name: 'Hallandale Pharmacy',
+            products: HALLANDALE_FALLBACK_PRODUCTS,
           })
           setError(null)
           setOfflineCatalog(true)

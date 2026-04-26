@@ -4,6 +4,7 @@ import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 import { apiGet } from '../api/client'
+import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 
 const SLUG = 'hallandale'
 const PARTNER = 'Hallandale Pharmacy'
@@ -28,16 +29,19 @@ export default function HallandalePharmacy() {
   const baseId = useId()
   const [partner, setPartner] = useState<PartnerResp['partner'] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [offlineCatalog, setOfflineCatalog] = useState(false)
 
   useEffect(() => {
     apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(SLUG)}`)
       .then((r) => {
         setPartner(r.partner)
         setError(null)
+        setOfflineCatalog(false)
       })
-      .catch((e) => {
-        setPartner(null)
-        setError(String((e as any)?.message || e || 'Failed to load catalog.'))
+      .catch(() => {
+        setPartner({ slug: SLUG, name: PARTNER, products: HALLANDALE_FALLBACK_PRODUCTS })
+        setError(null)
+        setOfflineCatalog(true)
       })
   }, [])
 
@@ -119,6 +123,14 @@ export default function HallandalePharmacy() {
           <div style={{ fontWeight: 900 }}>Catalog error</div>
           <div className="divider" />
           <div className="muted">{error}</div>
+        </section>
+      ) : null}
+
+      {offlineCatalog ? (
+        <section className="card cardAccentSoft" style={{ maxWidth: 980 }}>
+          <div style={{ fontWeight: 900 }}>Offline catalog</div>
+          <div className="divider" />
+          <div className="muted">Showing the latest known Hallandale list prices. Connect the API to sync live inventory.</div>
         </section>
       ) : null}
 

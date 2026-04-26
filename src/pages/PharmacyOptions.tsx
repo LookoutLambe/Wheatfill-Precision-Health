@@ -7,6 +7,7 @@ import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDispl
 import { CATALOG_HIGHLIGHT_PRODUCTS } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
+import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerWithProducts = { slug: string; name: string; products: Product[] }
@@ -57,7 +58,13 @@ export default function PharmacyOptions() {
             })),
           },
         )
-        setHallPartner(hall)
+        setHallPartner(
+          hall || {
+            slug: hallSlug,
+            name: 'Hallandale Pharmacy',
+            products: HALLANDALE_FALLBACK_PRODUCTS,
+          },
+        )
       })
       .catch(() => {
         if (cancelled) return
@@ -72,7 +79,11 @@ export default function PharmacyOptions() {
             currency: 'usd',
           })),
         })
-        setHallPartner(null)
+        setHallPartner({
+          slug: hallSlug,
+          name: 'Hallandale Pharmacy',
+          products: HALLANDALE_FALLBACK_PRODUCTS,
+        })
       })
     return () => {
       cancelled = true
@@ -183,36 +194,26 @@ export default function PharmacyOptions() {
                 Full list
               </Link>
             </div>
-            {hallPartner ? (
-              <ul className="orderNowProductList">
-                {hallPartner.products.map((p) => (
-                  <li key={p.sku} className="orderNowProductCard">
-                    <div className="orderNowProductTop">
-                      <CatalogVialThumb family={vialFamilyForSku(p.sku)} />
-                      <div className="orderNowProductBody">
-                        <div className="orderNowProductName">{p.name}</div>
-                        <div className="muted orderNowProductSub">{p.subtitle}</div>
-                      </div>
-                      <div className="orderNowProductMeta">
-                        <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
-                        <button
-                          type="button"
-                          className="btn catalogOutlineBtn orderNowAddBtn"
-                          onClick={() => onAddLine(hallSlug, p.sku)}
-                        >
-                          Add To Cart
-                        </button>
-                      </div>
+            <ul className="orderNowProductList">
+              {(hallPartner?.products || HALLANDALE_FALLBACK_PRODUCTS).map((p) => (
+                <li key={p.sku} className="orderNowProductCard">
+                  <div className="orderNowProductTop">
+                    <CatalogVialThumb family={vialFamilyForSku(p.sku)} />
+                    <div className="orderNowProductBody">
+                      <div className="orderNowProductName">{p.name}</div>
+                      <div className="muted orderNowProductSub">{p.subtitle}</div>
                     </div>
-                    <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="muted" style={{ margin: 0 }}>
-                Hallandale list will load when the API is reachable.
-              </p>
-            )}
+                    <div className="orderNowProductMeta">
+                      <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
+                      <button type="button" className="btn catalogOutlineBtn orderNowAddBtn" onClick={() => onAddLine(hallSlug, p.sku)}>
+                        Add To Cart
+                      </button>
+                    </div>
+                  </div>
+                  <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
