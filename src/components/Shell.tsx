@@ -55,6 +55,9 @@ function headerCatalogSlugForPath(pathname: string): string {
   return DEFAULT_CATALOG_PARTNER_SLUG
 }
 
+const STAFF_REVEAL_KEY = 'wph_staff_reveal'
+const STAFF_REVEAL_TAPS = 2
+
 export default function Shell() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -96,6 +99,14 @@ export default function Shell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
   const [marketingProviderAuthed, setMarketingProviderAuthedState] = useState(() => isMarketingProviderAuthed())
+  const [staffReveal, setStaffReveal] = useState(() => {
+    try {
+      return localStorage.getItem(STAFF_REVEAL_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+  const [, setStaffTapCount] = useState(0)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -135,6 +146,23 @@ export default function Shell() {
       window.removeEventListener('storage', sync)
     }
   }, [])
+
+  const onStaffEasterEggTap = () => {
+    // Avoid leaking the staff entry point in the DOM until explicitly revealed by staff.
+    setStaffTapCount((c) => {
+      const next = c + 1
+      if (next >= STAFF_REVEAL_TAPS) {
+        try {
+          localStorage.setItem(STAFF_REVEAL_KEY, '1')
+        } catch {
+          // ignore
+        }
+        setStaffReveal(true)
+        return 0
+      }
+      return next
+    })
+  }
 
   const base = (import.meta as any).env?.BASE_URL?.toString() || '/'
   const internal = (p: string) => `${base.replace(/\/$/, '')}${p.startsWith('/') ? p : `/${p}`}`
@@ -345,28 +373,30 @@ export default function Shell() {
               Catalog
             </NavLink>
           )}
-          {/* Staff access: keep provider sign-in reachable on mobile even when the dock covers the footer link. */}
-          {marketingProviderAuthed ? (
-            <NavLink
-              to="/provider"
-              className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
-              style={{ textDecoration: 'none' }}
-              onClick={closeMenu}
-              title="Staff workspace"
-            >
-              Staff
-            </NavLink>
-          ) : (
-            <NavLink
-              to="/provider/login"
-              className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
-              style={{ textDecoration: 'none' }}
-              onClick={closeMenu}
-              title="Staff sign-in"
-            >
-              Staff
-            </NavLink>
-          )}
+          {/* Staff entry stays hidden unless revealed (avoids casual discovery). */}
+          {staffReveal ? (
+            marketingProviderAuthed ? (
+              <NavLink
+                to="/provider"
+                className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
+                style={{ textDecoration: 'none' }}
+                onClick={closeMenu}
+                title="Staff workspace"
+              >
+                Staff
+              </NavLink>
+            ) : (
+              <NavLink
+                to="/staff"
+                className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
+                style={{ textDecoration: 'none' }}
+                onClick={closeMenu}
+                title="Staff sign-in"
+              >
+                Staff
+              </NavLink>
+            )
+          ) : null}
         </nav>
       ) : null}
 
@@ -386,29 +416,39 @@ export default function Shell() {
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
             <div className="footerFineprint footerStaffGate" aria-label="Staff access">
-              {!USE_MEDPLUM_PROVIDER_PORTAL && marketingProviderAuthed ? (
-                <span className="footerStaffSession">
-                  <span className="footerStaffMuted">Staff signed in as {getMarketingProviderLoginDisplay() || 'provider'}.</span>{' '}
-                  <NavLink to="/provider" className="footerStaffLink">
-                    Workspace
+              <button
+                type="button"
+                className="footerStaffLink footerStaffButton"
+                onClick={onStaffEasterEggTap}
+                aria-label="Staff access"
+              >
+                {staffReveal ? 'Staff access' : ' '}
+              </button>
+              {staffReveal ? (
+                !USE_MEDPLUM_PROVIDER_PORTAL && marketingProviderAuthed ? (
+                  <span className="footerStaffSession">
+                    <span className="footerStaffMuted">Staff signed in as {getMarketingProviderLoginDisplay() || 'provider'}.</span>{' '}
+                    <NavLink to="/provider" className="footerStaffLink">
+                      Workspace
+                    </NavLink>
+                    <span className="footerStaffMuted"> · </span>
+                    <button
+                      type="button"
+                      className="footerStaffLink footerStaffButton"
+                      onClick={() => {
+                        setMarketingProviderAuthed(false)
+                        navigate('/', { replace: true })
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </span>
+                ) : (
+                  <NavLink to="/staff" className="footerStaffLink">
+                    Staff sign-in
                   </NavLink>
-                  <span className="footerStaffMuted"> · </span>
-                  <button
-                    type="button"
-                    className="footerStaffLink footerStaffButton"
-                    onClick={() => {
-                      setMarketingProviderAuthed(false)
-                      navigate('/', { replace: true })
-                    }}
-                  >
-                    Sign out
-                  </button>
-                </span>
-              ) : (
-                <NavLink to="/provider/login" className="footerStaffLink">
-                  Provider sign-in (staff only)
-                </NavLink>
-              )}
+                )
+              ) : null}
             </div>
           </div>
         </div>
