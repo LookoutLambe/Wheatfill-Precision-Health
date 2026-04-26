@@ -453,6 +453,24 @@ html.pharmacyCartOpen body {
   padding: 2px 0 4px;
 }
 
+/* Team workspace widgets: keep page manageable with per-panel scroll. */
+.teamWorkspacePage .cardGrid {
+  align-items: stretch;
+}
+
+.teamWorkspacePage .cardGrid > .card:not(.cardSpan12) {
+  /* Cap height so long tables don't make the whole page enormous. */
+  max-height: min(72svh, 760px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.teamWorkspacePage--panel .cardGrid > .card {
+  max-height: min(78svh, 860px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
 @media (max-width: 640px) {
   .teamWorkspaceIntro {
     padding: 14px 14px;

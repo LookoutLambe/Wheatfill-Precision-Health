@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getToken } from '../api/client'
@@ -134,7 +134,13 @@ function parseInboxBodyForQuickSchedule(body: string) {
 }
 
 export default function ProviderVbmsWorkspace() {
+  const location = useLocation()
   const navigate = useNavigate()
+  const panel = useMemo(() => {
+    const raw = new URLSearchParams(location.search).get('panel') || ''
+    const v = raw.trim().toLowerCase()
+    return v === 'inbox' || v === 'schedule' || v === 'orders' ? (v as 'inbox' | 'schedule' | 'orders') : null
+  }, [location.search])
   const who = getMarketingProviderLoginDisplay()
   const signOut = useCallback(() => {
     setMarketingProviderAuthed(false)
@@ -579,7 +585,7 @@ export default function ProviderVbmsWorkspace() {
   }, [apptFilter, apptTokens, scheduleApptsMerged])
 
   return (
-    <div className="page teamWorkspacePage">
+    <div className={`page teamWorkspacePage ${panel ? 'teamWorkspacePage--panel' : ''}`}>
       <header className="teamWorkspaceHeader" aria-label="Team Workspace">
         <div className="teamWorkspaceHeaderRow">
           <h1>Team Workspace</h1>
@@ -626,9 +632,15 @@ export default function ProviderVbmsWorkspace() {
           </span>
         </div>
         <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
-          </Link>
+          {panel ? (
+            <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
+              Back to workspace
+            </Link>
+          ) : (
+            <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+              Home
+            </Link>
+          )}
           {staffCalendarUrl ? (
             <a
               href={staffCalendarUrl}
@@ -651,7 +663,8 @@ export default function ProviderVbmsWorkspace() {
       </header>
 
       <div className="cardGrid">
-        <section className="card cardAccentNavy cardSpan12">
+        {!panel ? (
+          <section className="card cardAccentNavy cardSpan12">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Requests</h2>
             {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} new</span> : <span className="pill">Queue</span>}
@@ -682,12 +695,21 @@ export default function ProviderVbmsWorkspace() {
               Patient order page
             </Link>
           </div>
-        </section>
+          </section>
+        ) : null}
 
-        <section className="card cardAccentSoft" id="wph-inbox">
+        {panel && panel !== 'inbox' ? null : (
+          <section className={`card cardAccentSoft ${panel ? 'cardSpan12' : ''}`} id="wph-inbox">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Inbox</h2>
-            {newCount > 0 ? <span className="pill pillRed">{newCount} new</span> : <span className="pill">Inbox</span>}
+            <Link
+              to={panel ? '/provider' : '/provider?panel=inbox'}
+              className={`pill ${newCount > 0 ? 'pillRed' : ''}`}
+              style={{ textDecoration: 'none' }}
+              title={panel ? 'Back to workspace' : 'Open full inbox'}
+            >
+              {panel ? 'Back' : newCount > 0 ? `${newCount} new` : 'Open'}
+            </Link>
           </div>
           <div className="divider" />
           <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
@@ -840,13 +862,20 @@ export default function ProviderVbmsWorkspace() {
               </table>
             </div>
           ) : null}
-        </section>
+          </section>
+        )}
 
-        <section className="card cardAccentSoft">
+        {panel && panel !== 'schedule' ? null : (
+          <section className={`card cardAccentSoft ${panel ? 'cardSpan12' : ''}`}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
-            <Link to="/provider/schedule" className="pill pillRed" style={{ textDecoration: 'none' }}>
-              Manage
+            <Link
+              to={panel ? '/provider' : '/provider?panel=schedule'}
+              className="pill pillRed"
+              style={{ textDecoration: 'none' }}
+              title={panel ? 'Back to workspace' : 'Open full list'}
+            >
+              {panel ? 'Back' : 'Open'}
             </Link>
           </div>
           <div className="divider" />
@@ -963,7 +992,8 @@ export default function ProviderVbmsWorkspace() {
               </table>
             </div>
           )}
-        </section>
+          </section>
+        )}
 
         <section className="card cardAccentNavy cardSpan12" id="wph-quick-schedule">
           <div className="cardTitle">
@@ -1372,7 +1402,7 @@ export default function ProviderVbmsWorkspace() {
           ) : null}
         </section>
 
-        <section className="card cardAccentSoft">
+        {panel ? null : <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Audit log</h2>
             <span className="pill">Compliance</span>
@@ -1385,13 +1415,21 @@ export default function ProviderVbmsWorkspace() {
           <p className="muted" style={{ margin: 0 }}>
             No audit events yet.
           </p>
-        </section>
+        </section>}
 
-        <section className="card cardAccentRed" id="wph-orders">
+        {panel && panel !== 'orders' ? null : (
+        <section className={`card cardAccentRed ${panel ? 'cardSpan12' : ''}`} id="wph-orders">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <div className="btnRow" style={{ margin: 0 }}>
-              {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} new</span> : <span className="pill pillRed">Order Now</span>}
+              <Link
+                to={panel ? '/provider' : '/provider?panel=orders'}
+                className="pill pillRed"
+                style={{ textDecoration: 'none' }}
+                title={panel ? 'Back to workspace' : 'Open full orders'}
+              >
+                {panel ? 'Back' : ordersNewCount > 0 ? `${ordersNewCount} new` : 'Open'}
+              </Link>
               <button type="button" className="btn" disabled={ordersLoading || !getToken()} onClick={() => void loadOrders()}>
                 {ordersLoading ? 'Loading…' : 'Refresh'}
               </button>
@@ -1534,6 +1572,7 @@ export default function ProviderVbmsWorkspace() {
             </div>
           ) : null}
         </section>
+        )}
 
         {/* Training/demo sandbox removed for production */}
       </div>
