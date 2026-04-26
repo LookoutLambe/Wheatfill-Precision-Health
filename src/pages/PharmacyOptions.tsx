@@ -185,7 +185,7 @@ export default function PharmacyOptions() {
         </p>
 
         <div className="orderNowDualCatalogGrid" role="region" aria-label="Mountain View and Hallandale catalogs">
-          <div className="orderNowDualCatalogCol">
+          <div className="orderNowDualCatalogCol orderNowDualCatalogCol--mv">
             <div className="orderNowDualCatalogHead">
               <div className="orderNowDualCatalogTitle">{mvPartner?.name || resolvedFulfillmentPharmacyName()}</div>
               <Link to={`/order-now/${mvSlug}`} className="btn" style={{ textDecoration: 'none' }}>
@@ -218,7 +218,7 @@ export default function PharmacyOptions() {
             </ul>
           </div>
 
-          <div className="orderNowDualCatalogCol">
+          <div className="orderNowDualCatalogCol orderNowDualCatalogCol--hall">
             <div className="orderNowDualCatalogHead">
               <div className="orderNowDualCatalogTitle">Hallandale Pharmacy</div>
               <Link to={`/order-now/${hallSlug}`} className="btn" style={{ textDecoration: 'none' }}>
