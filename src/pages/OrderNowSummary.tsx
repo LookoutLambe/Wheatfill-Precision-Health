@@ -7,6 +7,7 @@ import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet, apiPost, getToken } from '../api/client'
+import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
@@ -257,8 +258,7 @@ export default function OrderNowSummary() {
 
         {offlineCatalog ? (
           <div className="orderNowOffline orderNowOffline--subtle" role="status" style={{ marginTop: 14 }}>
-            You&apos;re viewing list prices for this catalog. Connect the live API for up-to-date inventory and checkout
-            when your deployment is ready.
+            {CATALOG_OFFLINE_BODY_ORDER_SUMMARY}
           </div>
         ) : null}
 

@@ -30,6 +30,7 @@ const ProviderLogin = lazy(() => import('./pages/ProviderLogin'))
 const ProviderOrderingTest = lazy(() => import('./pages/ProviderOrderingTest'))
 const ProviderPayments = lazy(() => import('./pages/ProviderPayments'))
 const ProviderIntegrations = lazy(() => import('./pages/ProviderIntegrations'))
+import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
 import { PATIENT_USES_MEDPLUM } from './config/patientFeatures'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from './config/providerAuth'
@@ -84,8 +85,9 @@ export default function App() {
     // Marketing-only build: no PHI routes on GitHub Pages.
     // Allow a local "provider admin" (links only) with a test login.
     return (
-      <Suspense fallback={fallback}>
-      <Routes>
+      <RouteErrorBoundary>
+        <Suspense fallback={fallback}>
+          <Routes>
         <Route element={<Shell />}>
           <Route path="/" element={<Landing />} />
           <Route path="/peptides" element={<PeptideTherapy />} />
@@ -134,14 +136,16 @@ export default function App() {
         <Route path="/storefront" element={<StripeConnectStorefront />} />
         <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
         <Route path="/storefront/success" element={<StripeConnectStorefront />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-      </Suspense>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </RouteErrorBoundary>
     )
   }
   return (
-    <Suspense fallback={fallback}>
-    <Routes>
+    <RouteErrorBoundary>
+      <Suspense fallback={fallback}>
+        <Routes>
       <Route element={<Shell />}>
         <Route path="/" element={<Landing />} />
         <Route path="/peptides" element={<PeptideTherapy />} />
@@ -213,8 +217,9 @@ export default function App() {
       <Route path="/storefront" element={<StripeConnectStorefront />} />
       <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
       <Route path="/storefront/success" element={<StripeConnectStorefront />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-    </Suspense>
+        <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </RouteErrorBoundary>
   )
 }

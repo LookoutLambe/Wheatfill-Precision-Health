@@ -5,6 +5,7 @@ import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 import { apiGet } from '../api/client'
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
+import { CATALOG_OFFLINE_BODY_HALLANDALE_TABLE } from '../lib/catalogOfflineCopy'
 
 const SLUG = 'hallandale'
 const PARTNER = 'Hallandale Pharmacy'
@@ -130,7 +131,7 @@ export default function HallandalePharmacy() {
         <section className="card cardAccentSoft" style={{ maxWidth: 980 }}>
           <div style={{ fontWeight: 900 }}>Offline catalog</div>
           <div className="divider" />
-          <div className="muted">Showing the latest known Hallandale list prices. Connect the API to sync live inventory.</div>
+          <div className="muted">{CATALOG_OFFLINE_BODY_HALLANDALE_TABLE}</div>
         </section>
       ) : null}
 

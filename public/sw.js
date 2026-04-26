@@ -1,19 +1,15 @@
 /* eslint-disable no-restricted-globals */
 
-// Minimal PWA service worker (prototype).
-// Cache static assets for offline use; use network-first for navigations.
+// PWA service worker: fresh HTML navigations; cache hashed build assets only.
 
-// Bump to flush stale app shells that can blank-screen after deploys.
-const CACHE = 'wph-cache-v5-pwa';
+const CACHE = 'wph-cache-v6-pwa';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+  // Do not precache index.html — it goes stale across deploys and causes blank screens.
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
       cache.addAll([
-        // These are relative to the SW scope (GitHub Pages subpath safe).
-        './',
-        './index.html',
         './manifest.webmanifest',
         './app-icon.png',
         './favicon.svg',
@@ -30,7 +26,6 @@ self.addEventListener('activate', (event) => {
       caches.keys().then((keys) =>
         Promise.all(
           keys.map((k) => {
-            // Remove older WPH caches (and anything not matching the current one).
             if (k === CACHE) return Promise.resolve();
             if (String(k).startsWith('wph-cache-')) return caches.delete(k);
             return Promise.resolve();
@@ -45,39 +40,66 @@ function isNavigationRequest(request) {
   return request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html');
 }
 
+function sameOrigin(url) {
+  try {
+    return new URL(url).origin === self.location.origin;
+  } catch {
+    return false;
+  }
+}
+
+/** Vite build chunks + common static extensions (same-origin only). */
+function isBundledAssetRequest(request) {
+  if (request.method !== 'GET') return false;
+  if (!sameOrigin(request.url)) return false;
+  try {
+    const p = new URL(request.url).pathname;
+    return p.includes('/assets/') || /\.(png|jpe?g|gif|webp|svg|ico|woff2?)$/i.test(p);
+  } catch {
+    return false;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // Network-first for SPA navigations so routes stay fresh.
+  // HTML / SPA navigations: network-only (no caching) so deploys always get a fresh shell.
   if (isNavigationRequest(request)) {
     event.respondWith(
-      // Force a real network revalidation for the app shell. This avoids blank screens where
-      // an older cached index.html references JS chunks that no longer exist after deploy.
-      fetch(request, { cache: 'no-store' })
-        .then((resp) => {
-          const copy = resp.clone();
-          // Always cache the SPA shell, not the specific route URL.
-          caches.open(CACHE).then((cache) => cache.put('./index.html', copy)).catch(() => {});
-          return resp;
-        })
-        .catch(() => caches.match('./index.html')),
+      fetch(request, { cache: 'no-store' }).catch(
+        () =>
+          new Response(
+            '<!doctype html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Offline</title></head><body style="font-family:system-ui,sans-serif;padding:2rem;max-width:28rem;margin:auto"><p>You appear to be offline.</p><p><a href="/">Try again</a></p></body></html>',
+            { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+          ),
+      ),
     );
     return;
   }
 
-  // Cache-first for assets.
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
+  // Hashed JS/CSS/images: network-first, update cache on success; offline falls back to cache.
+  if (isBundledAssetRequest(request)) {
+    event.respondWith(
+      fetch(request, { cache: 'no-cache' })
         .then((resp) => {
-          const copy = resp.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          if (resp.ok) {
+            const copy = resp.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy)).catch(() => {});
+          }
           return resp;
         })
-        .catch(() => cached);
-    }),
-  );
-});
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
 
+  // Other same-origin GETs (e.g. manifest): try network; do not aggressively cache unknown paths.
+  if (sameOrigin(request.url)) {
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
+    return;
+  }
+
+  // Cross-origin: browser default
+  event.respondWith(fetch(request));
+});

@@ -10,6 +10,7 @@ import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { bumpCartSku, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet } from '../api/client'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
+import { CATALOG_OFFLINE_BODY_CATALOG_PAGE } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
@@ -156,8 +157,7 @@ export default function PharmacyPartner() {
 
         {offlineCatalog ? (
           <div className="orderNowOffline" role="status">
-            Offline catalog: list prices below match our standard menu. Connect your API to sync with the database and
-            enable integrated checkout when available.
+            {CATALOG_OFFLINE_BODY_CATALOG_PAGE}
           </div>
         ) : null}
 
