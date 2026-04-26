@@ -1264,12 +1264,6 @@ export default function ProviderVbmsWorkspace() {
             </div>
           </div>
           <div className="divider" />
-          <p className="muted" style={{ marginTop: 0, fontSize: 14, lineHeight: 1.45 }}>
-            When a patient checks out on the <strong>Order Now</strong> catalog (signed in), their <strong>line items</strong>,{' '}
-            <strong>ship-to</strong>, and <strong>agreements / typed signature</strong> are stored on the API and show here
-            so the team knows exactly what to place and where to send it. Update status as you work the order.
-          </p>
-          <div className="divider" />
           {ordersError ? (
             <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, margin: '0 0 10px' }}>
               {ordersError}
