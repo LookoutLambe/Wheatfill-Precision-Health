@@ -490,8 +490,12 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
     select: { activePaymentProvider: true, stripeConnectedAccountId: true },
   })
 
-  if (providerRow?.activePaymentProvider !== 'stripe') return reply.badRequest('Card checkout is not configured.')
-  if (!stripe || !providerRow?.stripeConnectedAccountId) return reply.badRequest('Stripe is not configured.')
+  // Allow card checkout when Stripe is configured even if the practice hasn't explicitly flipped a "stripe" toggle yet.
+  // If a connected account is present, we run the session on that connected account; otherwise we fall back to the platform account.
+  if (providerRow?.activePaymentProvider && providerRow.activePaymentProvider !== 'stripe') {
+    return reply.badRequest('Card checkout is not configured.')
+  }
+  if (!stripe) return reply.badRequest('Stripe is not configured.')
 
   const products = await prisma.pharmacyProduct.findMany({
     where: { partnerId: partner.id, isActive: true, sku: { in: body.items.map((i) => i.sku) } },
@@ -510,52 +514,52 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
   const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?paid=1`
   const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?canceled=1`
 
-  const session = await stripe.checkout.sessions.create(
-    {
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      line_items: [
-        ...body.items.map((it) => {
-          const p = bySku.get(it.sku)!
-          return {
-            price_data: {
-              currency: (p.currency || 'usd').toLowerCase(),
-              unit_amount: p.priceCents,
-              product_data: { name: p.name, metadata: { sku: p.sku, partner: partner.slug } },
+  const sessionCreateParams = {
+    mode: 'payment' as const,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    line_items: [
+      ...body.items.map((it) => {
+        const p = bySku.get(it.sku)!
+        return {
+          price_data: {
+            currency: (p.currency || 'usd').toLowerCase(),
+            unit_amount: p.priceCents,
+            product_data: { name: p.name, metadata: { sku: p.sku, partner: partner.slug } },
+          },
+          quantity: it.quantity,
+        }
+      }),
+      ...(shippingInsuranceCents
+        ? [
+            {
+              price_data: {
+                currency: 'usd',
+                unit_amount: shippingInsuranceCents,
+                product_data: { name: 'Shipping insurance' },
+              },
+              quantity: 1,
             },
-            quantity: it.quantity,
-          }
-        }),
-        ...(shippingInsuranceCents
-          ? [
-              {
-                price_data: {
-                  currency: 'usd',
-                  unit_amount: shippingInsuranceCents,
-                  product_data: { name: 'Shipping insurance' },
-                },
-                quantity: 1,
+          ]
+        : []),
+      ...(shippingCents
+        ? [
+            {
+              price_data: {
+                currency: 'usd',
+                unit_amount: shippingCents,
+                product_data: { name: 'Shipping' },
               },
-            ]
-          : []),
-        ...(shippingCents
-          ? [
-              {
-                price_data: {
-                  currency: 'usd',
-                  unit_amount: shippingCents,
-                  product_data: { name: 'Shipping' },
-                },
-                quantity: 1,
-              },
-            ]
-          : []),
-      ],
-      metadata: { partnerSlug: partner.slug, kind: 'public_catalog_checkout' },
-    },
-    { stripeAccount: providerRow.stripeConnectedAccountId },
-  )
+              quantity: 1,
+            },
+          ]
+        : []),
+    ],
+    metadata: { partnerSlug: partner.slug, kind: 'public_catalog_checkout' },
+  }
+  const session = providerRow?.stripeConnectedAccountId
+    ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
+    : await stripe.checkout.sessions.create(sessionCreateParams)
 
   return { ok: true, checkoutUrl: session.url }
 })
@@ -2421,50 +2425,50 @@ await app.register(async (protectedScope) => {
       const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}?canceled=1&order=${order.id}`
 
       if (active === 'stripe') {
-        if (!stripe || !providerRow?.stripeConnectedAccountId) return { orderId: order.id, totalCents: total, checkoutUrl: null }
-        const session = await stripe.checkout.sessions.create(
-          {
-            mode: 'payment',
-            success_url: successUrl,
-            cancel_url: cancelUrl,
-            line_items: [
-              ...order.items.map((it) => ({
-                price_data: {
-                  currency: 'usd',
-                  unit_amount: it.unitPriceCents,
-                  product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug } },
-                },
-                quantity: it.quantity,
-              })),
-              ...(shippingInsuranceCents
-                ? [
-                    {
-                      price_data: {
-                        currency: 'usd',
-                        unit_amount: shippingInsuranceCents,
-                        product_data: { name: 'Shipping insurance' },
-                      },
-                      quantity: 1,
+        if (!stripe) return { orderId: order.id, totalCents: total, checkoutUrl: null }
+        const sessionCreateParams = {
+          mode: 'payment' as const,
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          line_items: [
+            ...order.items.map((it) => ({
+              price_data: {
+                currency: 'usd',
+                unit_amount: it.unitPriceCents,
+                product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug } },
+              },
+              quantity: it.quantity,
+            })),
+            ...(shippingInsuranceCents
+              ? [
+                  {
+                    price_data: {
+                      currency: 'usd',
+                      unit_amount: shippingInsuranceCents,
+                      product_data: { name: 'Shipping insurance' },
                     },
-                  ]
-                : []),
-              ...(shippingCents
-                ? [
-                    {
-                      price_data: {
-                        currency: 'usd',
-                        unit_amount: shippingCents,
-                        product_data: { name: 'Shipping' },
-                      },
-                      quantity: 1,
+                    quantity: 1,
+                  },
+                ]
+              : []),
+            ...(shippingCents
+              ? [
+                  {
+                    price_data: {
+                      currency: 'usd',
+                      unit_amount: shippingCents,
+                      product_data: { name: 'Shipping' },
                     },
-                  ]
-                : []),
-            ],
-            metadata: { orderId: order.id },
-          },
-          { stripeAccount: providerRow.stripeConnectedAccountId },
-        )
+                    quantity: 1,
+                  },
+                ]
+              : []),
+          ],
+          metadata: { orderId: order.id },
+        }
+        const session = providerRow?.stripeConnectedAccountId
+          ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
+          : await stripe.checkout.sessions.create(sessionCreateParams)
         await prisma.payment.create({
           data: {
             method: 'stripe',
