@@ -1,6 +1,6 @@
 import type { Organization } from '@medplum/fhirtypes'
 import type { MedplumClient } from '@medplum/core'
-import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
+import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
 
 const EXT_BASE = 'https://wheatfillprecisionhealth.com/fhir/StructureDefinition'
 
@@ -13,8 +13,6 @@ export type PracticeIntegrations = {
   pharmacyUrl: string
   videoVisitUrl: string
   fulfillmentPartnerName: string
-  catalogVenmoPayUrl: string
-  paymentProcessorsNote: string
 }
 
 type IntegrationUrlKey =
@@ -23,13 +21,12 @@ type IntegrationUrlKey =
   | 'patientPortalUrl'
   | 'pharmacyUrl'
   | 'videoVisitUrl'
-  | 'catalogVenmoPayUrl'
 
 export function readIntegrations(org?: Organization | null): PracticeIntegrations {
   const ext = org?.extension || []
   const getUrl = (name: IntegrationUrlKey) =>
     (ext.find((e) => e.url === `${EXT_BASE}/${name}`) as any)?.valueUrl?.toString().trim() || ''
-  const getString = (name: 'fulfillmentPartnerName' | 'paymentProcessorsNote') => {
+  const getString = (name: 'fulfillmentPartnerName') => {
     const row = ext.find((e) => e.url === `${EXT_BASE}/${name}`) as any
     const s = row?.valueString?.toString().trim() || row?.valueUrl?.toString().trim() || ''
     return s
@@ -41,8 +38,6 @@ export function readIntegrations(org?: Organization | null): PracticeIntegration
     pharmacyUrl: getUrl('pharmacyUrl'),
     videoVisitUrl: getUrl('videoVisitUrl'),
     fulfillmentPartnerName: getString('fulfillmentPartnerName') || CONTRACTED_PHARMACY_NAME,
-    catalogVenmoPayUrl: getUrl('catalogVenmoPayUrl') || CATALOG_VENMO.payUrl,
-    paymentProcessorsNote: getString('paymentProcessorsNote'),
   }
 }
 
@@ -52,7 +47,7 @@ export function writeIntegrations(org: Organization, next: PracticeIntegrations)
     value.trim()
       ? [{ url: `${EXT_BASE}/${name}`, valueUrl: value.trim() } as any]
       : []
-  const mkString = (name: 'fulfillmentPartnerName' | 'paymentProcessorsNote', value: string) =>
+  const mkString = (name: 'fulfillmentPartnerName', value: string) =>
     value.trim() ? ([{ url: `${EXT_BASE}/${name}`, valueString: value.trim() }] as any[]) : []
   return {
     ...org,
@@ -67,8 +62,6 @@ export function writeIntegrations(org: Organization, next: PracticeIntegrations)
         'fulfillmentPartnerName',
         next.fulfillmentPartnerName.trim() === CONTRACTED_PHARMACY_NAME ? '' : next.fulfillmentPartnerName,
       ),
-      ...mkUrl('catalogVenmoPayUrl', next.catalogVenmoPayUrl.trim() === CATALOG_VENMO.payUrl ? '' : next.catalogVenmoPayUrl),
-      ...mkString('paymentProcessorsNote', next.paymentProcessorsNote),
     ],
   }
 }

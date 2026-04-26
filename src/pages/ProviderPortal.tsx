@@ -324,12 +324,11 @@ export default function ProviderPortal() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments</h2>
-            <span className="pill">Venmo · processors</span>
+            <span className="pill">Stripe</span>
           </div>
           <div className="divider" />
           <p className="muted">
-            Customer checkout: <b>Venmo</b>, <b>PayPal</b>, <b>Zelle</b>, and optional <b>Stripe</b> (see public site) after
-            the team confirms amount. Configure rails under Payments.
+            Customer checkout uses Stripe. Configure payment settings under Payments.
           </p>
           <div className="divider" />
           <Link to="/provider/payments" className="btn btnPrimary" style={{ textDecoration: 'none', width: '100%' }}>

@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { BookVisitCta } from '../components/CharmMarketingCtas'
-import { CATALOG_PAYPAL, CATALOG_ZELLE_EMAIL, STRIPE_CHECKOUT_URL } from '../config/provider'
 
 export default function Pricing() {
   return (
@@ -81,7 +80,7 @@ export default function Pricing() {
               <span className="pill">$180+</span>
             </div>
             <p className="muted" style={{ marginTop: 6 }}>
-              Starting at <b>$180</b>
+              Monthly medication cost varies by dose and vial size.
             </p>
           </div>
           <div className="card cardAccentRed" style={{ gridColumn: 'span 6' }}>
@@ -90,7 +89,7 @@ export default function Pricing() {
               <span className="pill">$260+</span>
             </div>
             <p className="muted" style={{ marginTop: 6 }}>
-              Starting at <b>$260</b>
+              Monthly medication cost varies by dose and vial size.
             </p>
           </div>
         </div>
@@ -164,37 +163,12 @@ export default function Pricing() {
 
           <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
-              What payment methods do you accept?
+              How does payment work?
             </div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
-              For catalog-style orders (after the team confirms amount), use{' '}
-              {STRIPE_CHECKOUT_URL ? (
-                <>
-                  <a href={STRIPE_CHECKOUT_URL} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
-                    Pay by card
-                  </a>{' '}
-                  (Stripe)
-                </>
-              ) : CATALOG_PAYPAL ? (
-                <>
-                  <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
-                    Check out
-                  </a>{' '}
-                  ({CATALOG_PAYPAL.label})
-                </>
-              ) : (
-                <>
-                  a payment link (shared by the team)
-                </>
-              )}
-              . You can also use <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
-              {STRIPE_CHECKOUT_URL ? (
-                <>
-                  .
-                </>
-              ) : null}
-              . Cash App and other cards may apply for visits and programs.
+              We’ll confirm your plan and total before you pay. If medication is prescribed, your care team will send
+              instructions for completing payment and coordinating fulfillment.
             </div>
           </div>
         </div>

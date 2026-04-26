@@ -49,9 +49,6 @@ enum BillingItemType {
 enum PaymentMethod {
   stripe
   clover
-  manual_venmo
-  /** Staff-recorded PayPal (e.g. link checkout); not from PayPal webhooks. */
-  manual_paypal
 }
 
 enum ProviderPaymentProvider {

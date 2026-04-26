@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
-import VenmoPayToHint from '../components/VenmoPayToHint'
 import { getMarketingProviderLoginDisplay, isMarketingProviderAuthed } from '../marketing/providerStore'
 
 type DemoPatient = { id: string; label: string }
@@ -287,20 +286,6 @@ export default function MarketingProviderDemoDashboard() {
               </table>
             </div>
           )}
-        </section>
-
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Payments (preview)</h2>
-            <span className="pill">Venmo · PayPal</span>
-          </div>
-          <div className="divider" />
-          <p className="muted">
-            Catalog checkout uses <b>Venmo</b> (or <b>PayPal</b> to the site’s pay-to email) after the practice confirms
-            amount and recipient with the patient. Optional card processors (Stripe/Clover) can be wired later for other
-            flows.
-          </p>
-          <VenmoPayToHint style={{ marginTop: 10 }} />
         </section>
 
         <section className="card cardAccentSoft">

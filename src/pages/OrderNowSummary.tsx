@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
-import { catalogPayUrlForOrderTotalCents } from '../lib/catalogPaypalAmountUrl'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { US_STATE_OPTIONS } from '../data/usStates'
@@ -123,10 +122,6 @@ export default function OrderNowSummary() {
       return
     }
 
-    const lineSummary = items
-      .map((it) => `${it.product.name} (x${it.quantity})`)
-      .join(' · ')
-    const payUrl = catalogPayUrlForOrderTotalCents(total, lineSummary)
     const tok = getToken()
 
     if (tok) {
@@ -155,8 +150,11 @@ export default function OrderNowSummary() {
             window.location.href = res.checkoutUrl
             return
           }
-          if (!payUrl) throw new Error('Payment link is not configured yet.')
-          window.open(payUrl, '_blank', 'noopener,noreferrer')
+          // Static marketing build: if no checkout URL is configured, submit still records the order
+          // and the practice will follow up to coordinate payment + fulfillment.
+          writeCartForSlug(slug, {})
+          setCheckoutError(null)
+          alert('Order submitted. Your care team will follow up with next steps.')
         } catch (e: any) {
           setCheckoutError(String(e?.message || e))
         } finally {
@@ -176,9 +174,11 @@ export default function OrderNowSummary() {
             },
             '',
           )
-          const url = res?.checkoutUrl || payUrl
-          if (!url) throw new Error('Payment link is not configured yet.')
-          window.location.href = url
+          if (res?.checkoutUrl) {
+            window.location.href = res.checkoutUrl
+            return
+          }
+          throw new Error('Please sign in to submit your order.')
         } catch (e: any) {
           setCheckoutError(String(e?.message || e))
         } finally {

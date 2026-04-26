@@ -471,6 +471,35 @@ html.pharmacyCartOpen body {
   overscroll-behavior: contain;
 }
 
+/* Keep widget headers visible while scrolling. */
+.teamWorkspacePage .cardGrid > .card {
+  position: relative;
+}
+
+.teamWorkspacePage .cardGrid > .card > .cardTitle {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  margin: -16px -16px 10px;
+  padding: 16px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.teamWorkspacePage .cardGrid > .card > .divider:first-of-type {
+  margin-top: 10px;
+}
+
+/* Keep table headers visible inside scrollable widgets. */
+.teamWorkspacePage .cardGrid > .card thead th {
+  position: sticky;
+  top: 58px; /* below sticky cardTitle */
+  z-index: 4;
+}
+
 @media (max-width: 640px) {
   .teamWorkspaceIntro {
     padding: 14px 14px;
@@ -945,10 +974,15 @@ html.pharmacyCartOpen body {
 
 .cardTitle {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.cardTitle > * {
+  min-width: 0;
 }
 
 .pill {
@@ -968,6 +1002,9 @@ html.pharmacyCartOpen body {
   padding: 6px 10px;
   border-radius: 999px;
   vertical-align: middle;
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .pill:has(> .pill) {
@@ -2998,49 +3035,7 @@ html.pharmacyCartOpen body {
   border-color: rgba(10, 30, 63, 0.9) !important;
 }
 
-/* Order summary (/order-now/:slug/summary) — pay only from here */
-/* Venmo callout — cart / summary */
-.venmoPayToHintPanel {
-  padding: 16px 18px;
-  border-radius: 14px;
-  border: 1px solid rgba(10, 30, 63, 0.12);
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
-  box-shadow: rgba(10, 30, 63, 0.06) 0 14px 28px -18px;
-}
-
-.venmoPayToHintPanelTitle {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(31, 41, 55, 0.55);
-  margin-bottom: 8px;
-}
-
-.venmoPayToHintPanelBody {
-  margin: 0 0 14px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: rgba(31, 41, 55, 0.82);
-}
-
-.venmoPayToHintPanelBtn {
-  display: flex;
-  width: 100%;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-.venmoPayToHint--inline p a {
-  font-weight: 700;
-  color: var(--navy);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.venmoPayToHint--inline .btnRow a {
-  text-decoration: none;
-}
+/* Order summary (/order-now/:slug/summary) */
 
 .orderNowSummaryPage {
   max-width: 720px;

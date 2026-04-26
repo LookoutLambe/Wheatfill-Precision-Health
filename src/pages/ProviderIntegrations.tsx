@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import type { Organization, Practitioner } from '@medplum/fhirtypes'
 import { useMedplumApp } from '../medplum/provider'
 import { getOrCreatePracticeOrg, readIntegrations, writeIntegrations, type PracticeIntegrations } from '../medplum/integrations'
-import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
+import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
 import { PROVIDER_PRACTITIONER_ID } from '../medplum/client'
 
 export default function ProviderIntegrations() {
@@ -22,8 +22,6 @@ export default function ProviderIntegrations() {
     pharmacyUrl: '',
     videoVisitUrl: '',
     fulfillmentPartnerName: CONTRACTED_PHARMACY_NAME,
-    catalogVenmoPayUrl: CATALOG_VENMO.payUrl,
-    paymentProcessorsNote: '',
   })
 
   async function load() {
@@ -58,8 +56,7 @@ export default function ProviderIntegrations() {
           <h1 style={{ margin: 0 }}>Integrations</h1>
           <p className="muted" style={{ marginTop: 8 }}>
             Set public booking, staff calendar, and customer sign-in links; order catalog and video; fulfillment name and
-            catalog Venmo link for the public site. PayPal, Venmo, Zelle, and card checkout notes live under{' '}
-            <Link to="/provider/payments">Payments</Link>.
+            customer-facing fulfillment copy for the public site.
           </p>
         </div>
         <div className="pageActions">
@@ -165,32 +162,7 @@ export default function ProviderIntegrations() {
               placeholder={CONTRACTED_PHARMACY_NAME}
             />
           </label>
-          <label>
-            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Catalog Venmo pay link (after the team confirms amount)
-            </div>
-            <input
-              className="input"
-              value={form.catalogVenmoPayUrl}
-              onChange={(e) => setForm((p) => ({ ...p, catalogVenmoPayUrl: e.target.value }))}
-              placeholder="https://venmo.com/..."
-            />
-          </label>
         </div>
-
-        <label style={{ display: 'block', marginTop: 12 }}>
-          <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-            Payment note (PayPal, Venmo, Zelle, Stripe, etc. — internal reference; details under Payments)
-          </div>
-          <textarea
-            className="input"
-            rows={3}
-            value={form.paymentProcessorsNote}
-            onChange={(e) => setForm((p) => ({ ...p, paymentProcessorsNote: e.target.value }))}
-            placeholder="e.g. Zelle to practice@…; Stripe checkout for catalog; Venmo for confirmed amounts."
-            style={{ width: '100%', resize: 'vertical' }}
-          />
-        </label>
 
         {saved ? (
           <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>Saved.</div>

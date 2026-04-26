@@ -1,4 +1,4 @@
-import { CATALOG_VENMO, CONTRACTED_PHARMACY_NAME } from '../config/provider'
+import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
 
 export type MarketingIntegrations = {
   /** Staff: internal calendar (after sign-in to your schedulers). */
@@ -10,10 +10,6 @@ export type MarketingIntegrations = {
   videoVisitUrl: string
   /** Catalog / fulfillment partner shown to customers (e.g. compounding pharmacy). */
   fulfillmentPartnerName: string
-  /** Customer Venmo pay link after the team confirms amount (marketing can override repo default). */
-  catalogVenmoPayUrl: string
-  /** Staff notes for PayPal, Venmo, Zelle, Stripe, etc. */
-  paymentProcessorsNote: string
 }
 
 const KEY_INTEGRATIONS = 'wph_marketing_integrations_v1'
@@ -218,8 +214,6 @@ export function getMarketingIntegrations(): MarketingIntegrations {
     pharmacyUrl: '',
     videoVisitUrl: 'https://doxy.me/',
     fulfillmentPartnerName: CONTRACTED_PHARMACY_NAME,
-    catalogVenmoPayUrl: CATALOG_VENMO.payUrl,
-    paymentProcessorsNote: '',
   }
   try {
     const raw = localStorage.getItem(KEY_INTEGRATIONS)
@@ -241,9 +235,6 @@ export function getMarketingIntegrations(): MarketingIntegrations {
       videoVisitUrl: String(parsed.videoVisitUrl || defaults.videoVisitUrl || ''),
       fulfillmentPartnerName:
         String(parsed.fulfillmentPartnerName ?? defaults.fulfillmentPartnerName).trim() || defaults.fulfillmentPartnerName,
-      catalogVenmoPayUrl:
-        String(parsed.catalogVenmoPayUrl ?? defaults.catalogVenmoPayUrl).trim() || defaults.catalogVenmoPayUrl,
-      paymentProcessorsNote: String(parsed.paymentProcessorsNote ?? defaults.paymentProcessorsNote ?? ''),
     }
     const stripPbHome =
       /^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(String(parsed.bookingUrl || '').trim()) && bookingUrl === ''
@@ -251,8 +242,6 @@ export function getMarketingIntegrations(): MarketingIntegrations {
       /^https?:\/\/(www\.)?practicebetter\.io\/?$/i.test(String(parsed.patientPortalUrl || '').trim()) && patientPortalUrl === ''
     const needsCompatWrite =
       typeof (parsed as Partial<MarketingIntegrations>).fulfillmentPartnerName !== 'string' ||
-      typeof (parsed as Partial<MarketingIntegrations>).catalogVenmoPayUrl !== 'string' ||
-      typeof (parsed as Partial<MarketingIntegrations>).paymentProcessorsNote !== 'string' ||
       typeof (parsed as Partial<MarketingIntegrations>).publicBookingUrl !== 'string'
     // One-time cleanup if older builds stored example.com pharmacy or generic PB home as "booking" / default portal.
     if (
