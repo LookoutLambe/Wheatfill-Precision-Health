@@ -3639,6 +3639,7 @@ html.pharmacyCartOpen body {
   bottom: 0;
   z-index: 120;
   display: none;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
   background: rgba(255, 255, 255, 0.92);
@@ -3651,10 +3652,15 @@ html.pharmacyCartOpen body {
   min-width: 0;
   justify-content: center;
 }
+.mobilePatientDockBtnStaff {
+  font-weight: 900;
+  border-color: rgba(10, 30, 63, 0.22);
+}
 
 @media (max-width: 720px) {
   html.hasMobilePatientDock .main {
-    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    /* Dock may wrap to two rows on small devices. */
+    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
   }
 
   .mobilePatientDock {

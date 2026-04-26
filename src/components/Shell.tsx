@@ -333,6 +333,28 @@ export default function Shell() {
               Catalog
             </NavLink>
           )}
+          {/* Staff access: keep provider sign-in reachable on mobile even when the dock covers the footer link. */}
+          {marketingProviderAuthed ? (
+            <NavLink
+              to="/provider"
+              className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
+              style={{ textDecoration: 'none' }}
+              onClick={closeMenu}
+              title="Staff workspace"
+            >
+              Staff
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/provider/login"
+              className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
+              style={{ textDecoration: 'none' }}
+              onClick={closeMenu}
+              title="Staff sign-in"
+            >
+              Staff
+            </NavLink>
+          )}
         </nav>
       ) : null}
 
