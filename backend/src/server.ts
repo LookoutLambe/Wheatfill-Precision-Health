@@ -319,8 +319,15 @@ async function ensurePharmacySeed() {
     return prisma.pharmacyPartner.create({ data: { slug, name } })
   }
 
+  // Strive is intentionally disabled (practice does not use them).
+  // Keep this idempotent so existing deployments stop advertising it immediately.
+  try {
+    await prisma.pharmacyPartner.update({ where: { slug: 'strive' }, data: { isActive: false } })
+  } catch {
+    /* ignore if it doesn't exist */
+  }
+
   const mv = await ensurePartner('mountain-view', 'Mountain View Pharmacy')
-  await ensurePartner('strive', 'Strive Pharmacy')
   const hall = await ensurePartner('hallandale', 'Hallandale Pharmacy')
 
   const mvProducts = [
