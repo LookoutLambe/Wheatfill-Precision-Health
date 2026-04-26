@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiDelete, apiGet, apiPatch, apiPost, getToken } from '../api/client'
+import { CATALOG_PAYPAL, STRIPE_CHECKOUT_URL } from '../config/provider'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   addBlackoutDate,
@@ -1143,139 +1144,151 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="divider" />
           <p className="muted">
-            <strong>Check out</strong> opens PayPal to the practice email after you confirm the amount with the patient.
-            Zelle is still available from the link below. When you see the payment in your app, record it here
-            so it is stored on the <strong>API</strong> for this team (same session as the inbox).
+            <strong>Check out</strong> opens the payment link you configured for patients (Stripe card link, if set).
+            <strong> Zelle</strong> is still available from the link below. Stripe Checkout sessions (when enabled) are
+            recorded automatically; PayPal (if you ever add it) can be logged manually here.
           </p>
           <VenmoPayToHint style={{ marginTop: 10 }} />
           <div className="divider" />
-          <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
-            <strong>Record a payment you already received</strong> (after the fact; not automatic from PayPal or Zelle).
-          </p>
-          <div className="formRow" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <label>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Amount (USD)
+          {CATALOG_PAYPAL ? (
+            <>
+              <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
+                <strong>Record a payment you already received</strong> (after the fact; not automatic).
+              </p>
+              <div className="formRow" style={{ flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Amount (USD)
+                  </div>
+                  <input
+                    className="input"
+                    value={p2pDollars}
+                    onChange={(e) => setP2pDollars(e.target.value)}
+                    placeholder="e.g. 125.00"
+                    inputMode="decimal"
+                    style={{ minWidth: 120 }}
+                  />
+                </label>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    How they paid
+                  </div>
+                  <select className="select" value={p2pMethod} onChange={(e) => setP2pMethod(e.target.value as 'paypal')}>
+                    <option value="paypal">{CATALOG_PAYPAL.label}</option>
+                  </select>
+                </label>
+                <label style={{ flex: '1 1 200px' }}>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Note (optional)
+                  </div>
+                  <input
+                    className="input"
+                    value={p2pMemo}
+                    onChange={(e) => setP2pMemo(e.target.value)}
+                    placeholder="Name, order ref, etc."
+                    style={{ width: '100%' }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="btn btnPrimary"
+                  disabled={p2pRecording || !getToken()}
+                  onClick={() => {
+                    const raw = p2pDollars.replace(/[$,\s]/g, '').trim()
+                    const n = parseFloat(raw)
+                    if (!Number.isFinite(n) || n <= 0) {
+                      setP2pError('Enter a valid amount greater than zero.')
+                      return
+                    }
+                    const amountCents = Math.round(n * 100)
+                    if (amountCents < 1) {
+                      setP2pError('Amount is too small.')
+                      return
+                    }
+                    setP2pError(null)
+                    setP2pRecording(true)
+                    ;(async () => {
+                      const tok = getToken()
+                      if (!tok) return
+                      try {
+                        await apiPost(
+                          '/v1/provider/p2p-payments',
+                          {
+                            method: p2pMethod,
+                            amountCents,
+                            memo: p2pMemo.trim() || undefined,
+                          },
+                          tok,
+                        )
+                        setP2pDollars('')
+                        setP2pMemo('')
+                        await loadP2pPayments()
+                      } catch (e: any) {
+                        setP2pError(String(e?.message || e))
+                      } finally {
+                        setP2pRecording(false)
+                      }
+                    })()
+                  }}
+                >
+                  {p2pRecording ? 'Saving…' : 'Record payment'}
+                </button>
               </div>
-              <input
-                className="input"
-                value={p2pDollars}
-                onChange={(e) => setP2pDollars(e.target.value)}
-                placeholder="e.g. 125.00"
-                inputMode="decimal"
-                style={{ minWidth: 120 }}
-              />
-            </label>
-            <label>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                How they paid
-              </div>
-              <select className="select" value={p2pMethod} onChange={(e) => setP2pMethod(e.target.value as 'paypal')}>
-                <option value="paypal">PayPal</option>
-              </select>
-            </label>
-            <label style={{ flex: '1 1 200px' }}>
-              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Note (optional)
-              </div>
-              <input
-                className="input"
-                value={p2pMemo}
-                onChange={(e) => setP2pMemo(e.target.value)}
-                placeholder="Name, order ref, etc."
-                style={{ width: '100%' }}
-              />
-            </label>
-            <button
-              type="button"
-              className="btn btnPrimary"
-              disabled={p2pRecording || !getToken()}
-              onClick={() => {
-                const raw = p2pDollars.replace(/[$,\s]/g, '').trim()
-                const n = parseFloat(raw)
-                if (!Number.isFinite(n) || n <= 0) {
-                  setP2pError('Enter a valid amount greater than zero.')
-                  return
-                }
-                const amountCents = Math.round(n * 100)
-                if (amountCents < 1) {
-                  setP2pError('Amount is too small.')
-                  return
-                }
-                setP2pError(null)
-                setP2pRecording(true)
-                ;(async () => {
-                  const tok = getToken()
-                  if (!tok) return
-                  try {
-                    await apiPost(
-                      '/v1/provider/p2p-payments',
-                      {
-                        method: p2pMethod,
-                        amountCents,
-                        memo: p2pMemo.trim() || undefined,
-                      },
-                      tok,
-                    )
-                    setP2pDollars('')
-                    setP2pMemo('')
-                    await loadP2pPayments()
-                  } catch (e: any) {
-                    setP2pError(String(e?.message || e))
-                  } finally {
-                    setP2pRecording(false)
-                  }
-                })()
-              }}
-            >
-              {p2pRecording ? 'Saving…' : 'Record payment'}
-            </button>
-          </div>
+            </>
+          ) : STRIPE_CHECKOUT_URL ? (
+            <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
+              Stripe card payments are tracked automatically in the API when patients complete checkout.
+            </p>
+          ) : null}
           {p2pError ? (
             <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, marginTop: 8, marginBottom: 0 }}>
               {p2pError}
             </p>
           ) : null}
           <div className="divider" />
-          <div className="btnRow" style={{ marginBottom: 8 }}>
-            <button type="button" className="btn" disabled={p2pLoading || !getToken()} onClick={() => void loadP2pPayments()}>
-              {p2pLoading ? 'Loading…' : 'Refresh list'}
-            </button>
-          </div>
-          {p2pItems.length === 0 && !p2pLoading ? (
-            <p className="muted" style={{ margin: 0 }}>
-              No P2P payments recorded yet. After someone uses Check out, log the amount here.
-            </p>
-          ) : null}
-          {p2pItems.length > 0 ? (
-            <div className="tableWrap">
-              <table className="table" aria-label="Recorded P2P payments">
-                <thead>
-                  <tr>
-                    <th>When</th>
-                    <th>Method</th>
-                    <th>Amount</th>
-                    <th>Note</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {p2pItems.map((row) => (
-                    <tr key={row.id}>
-                      <td className="muted">{new Date(row.createdAt).toLocaleString()}</td>
-                      <td className="muted">
-                        {row.method === 'manual_paypal' ? 'PayPal' : row.method}
-                      </td>
-                      <td>
-                        {((row.amountCents || 0) / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
-                      </td>
-                      <td>{row.p2pMemo || '—'}</td>
-                      <td className="muted">{row.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {CATALOG_PAYPAL ? (
+            <>
+              <div className="btnRow" style={{ marginBottom: 8 }}>
+                <button type="button" className="btn" disabled={p2pLoading || !getToken()} onClick={() => void loadP2pPayments()}>
+                  {p2pLoading ? 'Loading…' : 'Refresh list'}
+                </button>
+              </div>
+              {p2pItems.length === 0 && !p2pLoading ? (
+                <p className="muted" style={{ margin: 0 }}>
+                  No payments logged yet. Log any PayPal payments here after you see them in your app.
+                </p>
+              ) : null}
+              {p2pItems.length > 0 ? (
+                <div className="tableWrap">
+                  <table className="table" aria-label="Recorded PayPal payments">
+                    <thead>
+                      <tr>
+                        <th>When</th>
+                        <th>Method</th>
+                        <th>Amount</th>
+                        <th>Note</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {p2pItems.map((row) => (
+                        <tr key={row.id}>
+                          <td className="muted">{new Date(row.createdAt).toLocaleString()}</td>
+                          <td className="muted">
+                            {row.method === 'manual_paypal' ? (CATALOG_PAYPAL?.label || 'PayPal') : row.method}
+                          </td>
+                          <td>
+                            {((row.amountCents || 0) / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                          </td>
+                          <td>{row.p2pMemo || '—'}</td>
+                          <td className="muted">{row.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </>
           ) : null}
         </section>
 
