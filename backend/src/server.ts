@@ -55,6 +55,49 @@ const STRIPE_CONNECT_CLIENT_ID = process.env.STRIPE_CONNECT_CLIENT_ID || ''
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null
 
+/**
+ * Stripe Connect sample integration notes
+ * --------------------------------------
+ * This codebase already uses Stripe for (optional) Connect payouts + Checkout.
+ *
+ * The routes below add a *sample* integration that demonstrates:
+ * - Creating a V2 Connected Account (recipient configuration) where the platform collects fees & handles losses
+ * - Onboarding via Account Links (V2)
+ * - Creating platform-level Products (not on the connected account) and tagging them with the connected account id
+ * - A simple “storefront” that creates destination-charge Checkout Sessions with an application fee
+ * - Parsing thin webhook events for V2 accounts by first parsing the thin payload, then retrieving full event data
+ *
+ * IMPORTANT: Do not commit API keys. Configure these environment variables in your host (Render, etc.):
+ * - STRIPE_SECRET_KEY=sk_live_...  (required)
+ * - STRIPE_WEBHOOK_SECRET=whsec_... (required only if using webhooks)
+ *
+ * V2 account webhooks should use THIN payloads. See:
+ * - https://docs.stripe.com/webhooks.md?snapshot-or-thin=thin
+ */
+
+function requireStripeConfigured() {
+  if (!stripe) {
+    // Helpful runtime error when env vars are missing.
+    // Placeholder: set STRIPE_SECRET_KEY in your backend environment.
+    throw new Error('Stripe is not configured. Set STRIPE_SECRET_KEY (sk_...) in the server environment.')
+  }
+  return stripe
+}
+
+/**
+ * Stripe node SDK does not always expose preview / V2 resources as first-class methods.
+ * We intentionally use `stripe.request(...)` to call preview endpoints while still using a single Stripe Client.
+ */
+async function stripeV2Request<T>(params: { method: 'GET' | 'POST'; path: string; body?: any; query?: any }): Promise<T> {
+  const s = requireStripeConfigured() as any
+  return (await s.request({
+    method: params.method,
+    path: params.path,
+    ...(params.body ? { body: params.body } : {}),
+    ...(params.query ? { query: params.query } : {}),
+  })) as T
+}
+
 const PROVIDER_PRACTITIONER_ID = process.env.PROVIDER_PRACTITIONER_ID || ''
 
 let medplumAdmin: MedplumClient | null = null
@@ -624,6 +667,49 @@ app.post('/v1/billing/stripe/webhook', async (req, reply) => {
   return { received: true }
 })
 
+/**
+ * Sample Connect webhooks (V2 thin payloads)
+ * -----------------------------------------
+ * Configure the webhook destination in Stripe Dashboard to send THIN events for:
+ * - v2.core.account[requirements].updated
+ * - v2.core.account[configuration.configuration_type].capability_status_updated (for each config type you use)
+ *
+ * Then point it at this endpoint and set STRIPE_WEBHOOK_SECRET.
+ */
+app.post('/v1/stripe-connect-demo/webhook', async (req, reply) => {
+  if (!stripe) return reply.badRequest('Stripe not configured. Set STRIPE_SECRET_KEY.')
+  if (!STRIPE_WEBHOOK_SECRET) return reply.badRequest('Stripe webhook secret not configured. Set STRIPE_WEBHOOK_SECRET (whsec_...).')
+  const sig = req.headers['stripe-signature']
+  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Stripe-Signature header.')
+
+  // NOTE: For production hardening, register a raw-body parser and pass the raw bytes here.
+  // This repo currently parses JSON bodies; we keep parity with the existing webhook route above.
+  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
+
+  try {
+    // Thin payloads can still be verified with constructEvent.
+    const thin = (requireStripeConfigured() as any).webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET) as any
+
+    // Thin payloads often omit full nested data. Retrieve the full V2 event by id.
+    // (In Stripe docs this is shown as: client.v2.core.events.retrieve(thinEvent.id))
+    const fullEvent = await stripeV2Request<any>({ method: 'GET', path: `/v2/core/events/${thin.id}` })
+
+    const typ = String(fullEvent?.type || thin?.type || '')
+    if (typ === 'v2.core.account[requirements].updated') {
+      app.log.info({ eventId: fullEvent?.id, type: typ }, 'connect_demo_requirements_updated')
+      // In a real app: notify the user, show which requirements are due, etc.
+    } else if (typ.includes('capability_status_updated')) {
+      app.log.info({ eventId: fullEvent?.id, type: typ }, 'connect_demo_capability_status_updated')
+    } else {
+      app.log.info({ eventId: fullEvent?.id, type: typ }, 'connect_demo_unhandled_event')
+    }
+
+    return { received: true }
+  } catch (e: any) {
+    return reply.unauthorized(`Invalid Stripe signature: ${String(e?.message || e)}`)
+  }
+})
+
 // Clover Hosted Checkout webhook (unauthenticated)
 app.post('/v1/billing/clover/webhook', async (req, reply) => {
   if (!CLOVER_WEBHOOK_SECRET) return reply.badRequest('Clover webhook secret not configured.')
@@ -1091,6 +1177,276 @@ await app.register(async (protectedScope) => {
       }
     },
   )
+
+  /**
+   * Stripe Connect DEMO (sample integration)
+   * ---------------------------------------
+   * These endpoints intentionally keep state minimal:
+   * - Connected account id is stored on the provider User row (stripeConnectedAccountId)
+   * - Product→connected-account mapping is stored in Stripe Product metadata (connected_account_id)
+   *
+   * This is a demo scaffolding to help you wire your own user model + marketplace flows.
+   */
+
+  protectedScope.post(
+    '/v1/stripe-connect-demo/accounts',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
+
+      const body = z
+        .object({
+          displayName: z.string().min(2).max(120),
+          contactEmail: z.string().email().max(200),
+        })
+        .parse((req as any).body)
+
+      // Create a V2 Connected Account. Per requirements: only pass the allowed properties (no top-level `type`).
+      const account = await stripeV2Request<any>({
+        method: 'POST',
+        path: '/v2/core/accounts',
+        body: {
+          display_name: body.displayName,
+          contact_email: body.contactEmail,
+          identity: { country: 'us' },
+          dashboard: 'express',
+          defaults: {
+            responsibilities: {
+              fees_collector: 'application',
+              losses_collector: 'application',
+            },
+          },
+          configuration: {
+            recipient: {
+              capabilities: {
+                stripe_balance: {
+                  stripe_transfers: {
+                    requested: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
+
+      // Store mapping from this provider user → connected account id.
+      await prisma.user.update({
+        where: { id: req.user.sub },
+        data: { stripeConnectedAccountId: String(account.id || '') },
+      })
+
+      return { ok: true, accountId: account.id }
+    },
+  )
+
+  protectedScope.get(
+    '/v1/stripe-connect-demo/account',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
+
+      const user = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { stripeConnectedAccountId: true } })
+      const accountId = user?.stripeConnectedAccountId || ''
+      if (!accountId) return reply.notFound('No connected account yet. Create one first.')
+
+      // Always fetch live status from the API (do not store requirements state in DB for this demo).
+      const account = await stripeV2Request<any>({
+        method: 'GET',
+        path: `/v2/core/accounts/${encodeURIComponent(accountId)}`,
+        query: { include: ['configuration.recipient', 'requirements'] },
+      })
+
+      const readyToReceivePayments =
+        account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === 'active'
+      const requirementsStatus = account?.requirements?.summary?.minimum_deadline?.status
+      const onboardingComplete = requirementsStatus !== 'currently_due' && requirementsStatus !== 'past_due'
+
+      return {
+        ok: true,
+        accountId,
+        readyToReceivePayments: Boolean(readyToReceivePayments),
+        onboardingComplete: Boolean(onboardingComplete),
+        requirementsStatus: requirementsStatus || null,
+        account,
+      }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/stripe-connect-demo/account-link',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
+
+      const user = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { stripeConnectedAccountId: true } })
+      const accountId = user?.stripeConnectedAccountId || ''
+      if (!accountId) return reply.notFound('No connected account yet. Create one first.')
+
+      // Create a V2 account link for onboarding to collect payments.
+      // Placeholder: In production, use your real domain(s) for refresh/return.
+      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+      const refreshUrl = `${origin.replace(/\/$/, '')}/provider/connect-demo?refresh=1`
+      const returnUrl = `${origin.replace(/\/$/, '')}/provider/connect-demo?return=1`
+
+      const accountLink = await stripeV2Request<any>({
+        method: 'POST',
+        path: '/v2/core/account_links',
+        body: {
+          account: accountId,
+          use_case: {
+            type: 'account_onboarding',
+            account_onboarding: {
+              configurations: ['recipient'],
+              refresh_url: refreshUrl,
+              return_url: `${returnUrl}&accountId=${encodeURIComponent(accountId)}`,
+            },
+          },
+        },
+      })
+
+      return { ok: true, url: accountLink?.url }
+    },
+  )
+
+  protectedScope.get(
+    '/v1/stripe-connect-demo/accounts',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async () => {
+      // Demo: list “sellers” as users in the local DB that have a connected account id.
+      const users = await prisma.user.findMany({
+        where: { stripeConnectedAccountId: { not: null } },
+        select: { id: true, displayName: true, username: true, stripeConnectedAccountId: true },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      })
+      return {
+        ok: true,
+        accounts: users
+          .map((u) => ({
+            userId: u.id,
+            label: u.displayName || u.username,
+            accountId: u.stripeConnectedAccountId,
+          }))
+          .filter((x) => Boolean(x.accountId)),
+      }
+    },
+  )
+
+  protectedScope.post(
+    '/v1/stripe-connect-demo/products',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
+      const body = z
+        .object({
+          connectedAccountId: z.string().min(3).max(120),
+          name: z.string().min(2).max(120),
+          description: z.string().max(500).optional().default(''),
+          priceInCents: z.number().int().min(50).max(10_000_000),
+          currency: z.string().min(3).max(3).default('usd'),
+        })
+        .parse((req as any).body)
+
+      // Create product at the PLATFORM level (not on a connected account).
+      // Store the mapping to the connected account in metadata.
+      const s = requireStripeConfigured()
+      const product = await s.products.create({
+        name: body.name,
+        description: body.description || undefined,
+        default_price_data: {
+          unit_amount: body.priceInCents,
+          currency: body.currency.toLowerCase(),
+        },
+        metadata: {
+          connected_account_id: body.connectedAccountId,
+        },
+      })
+      return { ok: true, productId: product.id }
+    },
+  )
+
+  // Public storefront: list platform products + connected accounts they map to.
+  app.get('/v1/stripe-connect-demo/storefront', async (req, reply) => {
+    if (!STRIPE_SECRET_KEY) return reply.badRequest('Storefront is not configured. Set STRIPE_SECRET_KEY (sk_...).')
+    const s = requireStripeConfigured()
+    const products = await s.products.list({ limit: 100, expand: ['data.default_price'] } as any)
+    const accounts = await prisma.user.findMany({
+      where: { stripeConnectedAccountId: { not: null } },
+      select: { displayName: true, username: true, stripeConnectedAccountId: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+    return {
+      ok: true,
+      connectedAccounts: accounts
+        .map((u) => ({
+          label: u.displayName || u.username,
+          accountId: u.stripeConnectedAccountId,
+        }))
+        .filter((x) => Boolean(x.accountId)),
+      products: (products.data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        currency: p.default_price?.currency || null,
+        unitAmount: p.default_price?.unit_amount || null,
+        connectedAccountId: p.metadata?.connected_account_id || null,
+      })),
+    }
+  })
+
+  // Public storefront: start a hosted Checkout session using a destination charge + application fee.
+  app.post('/v1/stripe-connect-demo/checkout', async (req, reply) => {
+    if (!STRIPE_SECRET_KEY) return reply.badRequest('Checkout is not configured. Set STRIPE_SECRET_KEY (sk_...).')
+    const s = requireStripeConfigured()
+
+    const body = z
+      .object({
+        productId: z.string().min(3).max(120),
+        quantity: z.number().int().min(1).max(10).default(1),
+      })
+      .parse((req as any).body)
+
+    const product = await s.products.retrieve(body.productId, { expand: ['default_price'] } as any)
+    const price = (product as any).default_price
+    if (!price?.unit_amount || !price?.currency) return reply.badRequest('Product has no default price.')
+
+    const connectedAccountId = (product as any).metadata?.connected_account_id || ''
+    if (!connectedAccountId) return reply.badRequest('Product is not mapped to a connected account.')
+
+    // Simple platform fee: 8% of the line item total (demo).
+    const lineTotal = Number(price.unit_amount) * body.quantity
+    const applicationFeeAmount = Math.max(0, Math.round(lineTotal * 0.08))
+
+    const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+    const successUrl = `${origin.replace(/\/$/, '')}/storefront/success?session_id={CHECKOUT_SESSION_ID}`
+    const cancelUrl = `${origin.replace(/\/$/, '')}/storefront?canceled=1`
+
+    const session = await s.checkout.sessions.create({
+      line_items: [
+        {
+          price_data: {
+            currency: String(price.currency),
+            unit_amount: Number(price.unit_amount),
+            product_data: { name: product.name, description: product.description || undefined, metadata: { productId: product.id } },
+          },
+          quantity: body.quantity,
+        },
+      ],
+      payment_intent_data: {
+        application_fee_amount: applicationFeeAmount,
+        transfer_data: {
+          destination: connectedAccountId,
+        },
+      },
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    })
+
+    return { ok: true, url: session.url }
+  })
 
   const SetActivePaymentBody = z.object({
     provider: z.enum(['stripe', 'clover']),

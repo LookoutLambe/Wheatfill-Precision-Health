@@ -39,6 +39,9 @@ import MarketingProviderSecurity from './pages/MarketingProviderSecurity'
 import ProviderVbmsWorkspace from './pages/ProviderVbmsWorkspace'
 import ProviderSchedule from './pages/ProviderSchedule'
 import ProviderStaffUsers from './pages/ProviderStaffUsers'
+import ProviderStripeConnectDemo from './pages/ProviderStripeConnectDemo'
+import ProviderStripeConnectProducts from './pages/ProviderStripeConnectProducts'
+import StripeConnectStorefront from './pages/StripeConnectStorefront'
 
 /** React Router `Navigate` must not receive a full `https://…` string — it breaks routing (white screen). */
 function MarketingLeaveToFullApp({ path }: { path: string }) {
@@ -114,8 +117,12 @@ export default function App() {
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
           <Route path="/provider/staff" element={<ProviderStaffUsers />} />
+          <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
+          <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
         </Route>
 
+        <Route path="/storefront" element={<StripeConnectStorefront />} />
+        <Route path="/storefront/success" element={<StripeConnectStorefront />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     )
@@ -182,10 +189,14 @@ export default function App() {
             <Route path="/provider/security" element={<MarketingProviderSecurity />} />
             <Route path="/provider/payments" element={<ProviderVbmsWorkspace />} />
             <Route path="/provider/pharmacy/:slug" element={<ProviderOrderingTest />} />
+            <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
+            <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
           </>
         )}
       </Route>
 
+      <Route path="/storefront" element={<StripeConnectStorefront />} />
+      <Route path="/storefront/success" element={<StripeConnectStorefront />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
