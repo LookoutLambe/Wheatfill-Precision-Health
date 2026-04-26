@@ -269,17 +269,18 @@ app.get('/v1/health', async () => {
 })
 
 async function ensurePharmacySeed() {
-  const existing = await prisma.pharmacyPartner.count()
-  if (existing > 0) return
+  // Idempotent seed: ensure partners exist, then ensure their products exist.
+  const ensurePartner = async (slug: string, name: string) => {
+    const ex = await prisma.pharmacyPartner.findUnique({ where: { slug } })
+    if (ex) return ex
+    return prisma.pharmacyPartner.create({ data: { slug, name } })
+  }
 
-  const mv = await prisma.pharmacyPartner.create({
-    data: { slug: 'mountain-view', name: 'Mountain View Pharmacy' },
-  })
-  await prisma.pharmacyPartner.create({
-    data: { slug: 'strive', name: 'Strive Pharmacy' },
-  })
+  const mv = await ensurePartner('mountain-view', 'Mountain View Pharmacy')
+  await ensurePartner('strive', 'Strive Pharmacy')
+  const hall = await ensurePartner('hallandale', 'Hallandale Pharmacy')
 
-  const products = [
+  const mvProducts = [
     { sku: 'TZ_12_5_2', name: 'Tirzepatide 12.5 mg/mL - 2 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 26000, sortOrder: 10 },
     { sku: 'TZ_25_2', name: 'Tirzepatide 25 mg/mL - 2 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 43000, sortOrder: 20 },
     { sku: 'TZ_25_3', name: 'Tirzepatide 25 mg/mL - 3 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 56000, sortOrder: 30 },
@@ -289,9 +290,40 @@ async function ensurePharmacySeed() {
     { sku: 'SEMA_5_4', name: 'Semaglutide 5 mg/mL - 4 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 43000, sortOrder: 70 },
   ]
 
-  await prisma.pharmacyProduct.createMany({
-    data: products.map((p) => ({ ...p, partnerId: mv.id, currency: 'usd' })),
-  })
+  const hallProducts = [
+    // Semaglutide Flex-Dose (note: 3 mL price adjusted to $235.00 as requested)
+    { sku: 'H_SEMA_2_5_1', name: 'Semaglutide 2.5 mg/mL - 1 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 17500, sortOrder: 10 },
+    { sku: 'H_SEMA_2_5_2', name: 'Semaglutide 2.5 mg/mL - 2 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 19500, sortOrder: 20 },
+    { sku: 'H_SEMA_2_5_3', name: 'Semaglutide 2.5 mg/mL - 3 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 23500, sortOrder: 30 },
+    { sku: 'H_SEMA_2_5_4', name: 'Semaglutide 2.5 mg/mL - 4 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 27000, sortOrder: 40 },
+    // Tirzepatide Flex-Dose
+    { sku: 'H_TZ_10_1', name: 'Tirzepatide 10 mg/mL - 1 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 22000, sortOrder: 50 },
+    { sku: 'H_TZ_10_2', name: 'Tirzepatide 10 mg/mL - 2 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 27000, sortOrder: 60 },
+    { sku: 'H_TZ_10_3', name: 'Tirzepatide 10 mg/mL - 3 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 32000, sortOrder: 70 },
+    { sku: 'H_TZ_10_4', name: 'Tirzepatide 10 mg/mL - 4 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 34500, sortOrder: 80 },
+    // Tirzepatide FORTE Flex-Dose
+    { sku: 'H_TZ_15_4', name: 'Tirzepatide 15 mg/mL - 4 mL', subtitle: 'Tirzepatide FORTE Flex-Dose', priceCents: 37000, sortOrder: 90 },
+  ]
+
+  const upsertProducts = async (partnerId: string, products: any[]) => {
+    for (const p of products) {
+      await prisma.pharmacyProduct.upsert({
+        where: { partnerId_sku: { partnerId, sku: p.sku } },
+        create: { ...p, partnerId, currency: 'usd' },
+        update: {
+          name: p.name,
+          subtitle: p.subtitle,
+          priceCents: p.priceCents,
+          sortOrder: p.sortOrder,
+          currency: 'usd',
+          isActive: true,
+        },
+      })
+    }
+  }
+
+  await upsertProducts(mv.id, mvProducts)
+  await upsertProducts(hall.id, hallProducts)
 }
 
 app.get('/v1/pharmacies', async () => {
@@ -421,6 +453,7 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
   }
 
   const subtotal = body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0)
+  const shippingCents = 3000
   const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
 
   const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
@@ -456,6 +489,14 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
               },
             ]
           : []),
+        {
+          price_data: {
+            currency: 'usd',
+            unit_amount: shippingCents,
+            product_data: { name: 'Shipping' },
+          },
+          quantity: 1,
+        },
       ],
       metadata: { partnerSlug: partner.slug, kind: 'public_catalog_checkout' },
     },
@@ -1950,7 +1991,7 @@ await app.register(async (protectedScope) => {
       }
 
       const subtotal = body.items.reduce((sum, it) => sum + (bySku.get(it.sku)!.priceCents * it.quantity), 0)
-      const shippingCents = 0
+      const shippingCents = 3000
       const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
       const total = subtotal + shippingCents + shippingInsuranceCents
 
@@ -2040,6 +2081,18 @@ await app.register(async (protectedScope) => {
                     },
                   ]
                 : []),
+              ...(shippingCents
+                ? [
+                    {
+                      price_data: {
+                        currency: 'usd',
+                        unit_amount: shippingCents,
+                        product_data: { name: 'Shipping' },
+                      },
+                      quantity: 1,
+                    },
+                  ]
+                : []),
             ],
             metadata: { orderId: order.id },
           },
@@ -2098,6 +2151,16 @@ await app.register(async (protectedScope) => {
                     name: 'Shipping insurance',
                     note: '2% of subtotal',
                     price: shippingInsuranceCents,
+                    unitQty: 1,
+                  },
+                ]
+              : []),
+            ...(shippingCents
+              ? [
+                  {
+                    name: 'Shipping',
+                    note: 'Flat',
+                    price: shippingCents,
                     unitQty: 1,
                   },
                 ]

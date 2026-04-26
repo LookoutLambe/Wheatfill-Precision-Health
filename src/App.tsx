@@ -19,6 +19,7 @@ import MedicationEducation from './pages/MedicationEducation'
 import PharmacyOptions from './pages/PharmacyOptions'
 import PharmacyPartner from './pages/PharmacyPartner'
 import MountainViewPharmacy from './pages/MountainViewPharmacy'
+import HallandalePharmacy from './pages/HallandalePharmacy'
 import OrderNowSummary from './pages/OrderNowSummary'
 import PatientBackendLogin from './pages/PatientBackendLogin'
 import PatientPortal from './pages/PatientPortal'
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
           <Route path="/order-now/:slug" element={<PharmacyPartner />} />
           <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
+          <Route path="/pharmacy/hallandale" element={<HallandalePharmacy />} />
           <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
@@ -132,6 +134,7 @@ export default function App() {
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />
         <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
+        <Route path="/pharmacy/hallandale" element={<HallandalePharmacy />} />
         <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
