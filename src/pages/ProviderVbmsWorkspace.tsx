@@ -121,25 +121,21 @@ function parseInboxBodyForQuickSchedule(body: string) {
   return { visitType, whenText }
 }
 
+const PROVIDER_WORKSPACE_PATH = '/provider'
+const PROVIDER_LOGIN_RETURN_URL = `/provider/login?next=${encodeURIComponent(PROVIDER_WORKSPACE_PATH)}`
+
 export default function ProviderVbmsWorkspace() {
   const location = useLocation()
   const navigate = useNavigate()
-  const panel = useMemo(() => {
-    const raw = new URLSearchParams(location.search).get('panel') || ''
-    const v = raw.trim().toLowerCase()
-    return v === 'inbox' || v === 'schedule' || v === 'orders' ? (v as 'inbox' | 'schedule' | 'orders') : null
-  }, [location.search])
 
-  // Persist panel when staff explicitly opens ?panel=inbox|schedule|orders (jump links / bookmarks).
-  // We do not auto-redirect bare /provider → ?panel=… anymore: that hid inbox/orders and felt like widgets were “missing”.
+  // Legacy bookmarks used ?panel=inbox|schedule|orders for a single-panel layout; always show the full workspace.
   useEffect(() => {
-    if (!panel) return
-    try {
-      localStorage.setItem('wph_provider_last_panel', panel)
-    } catch {
-      // ignore
-    }
-  }, [panel])
+    const sp = new URLSearchParams(location.search)
+    if (!sp.has('panel')) return
+    sp.delete('panel')
+    const q = sp.toString()
+    navigate(`${location.pathname}${q ? `?${q}` : ''}${location.hash}`, { replace: true })
+  }, [location.search, location.pathname, location.hash, navigate])
 
   const readPersisted = useCallback(<T,>(key: string, fallback: T): T => {
     try {
@@ -305,11 +301,6 @@ export default function ProviderVbmsWorkspace() {
     return subscribePortalState(sync)
   }, [])
 
-  const loginUrlForPanel = useMemo(() => {
-    const next = panel ? `/provider?panel=${encodeURIComponent(panel)}` : '/provider'
-    return `/provider/login?next=${encodeURIComponent(next)}`
-  }, [panel])
-
   useEffect(() => {
     if (!isMarketingProviderAuthed()) {
       navigate('/provider/login', { replace: true })
@@ -318,9 +309,9 @@ export default function ProviderVbmsWorkspace() {
     // Staff login stores a JWT for the API; inbox/orders need it on every deploy (including static marketing).
     if (!getToken()) {
       setMarketingProviderAuthed(false)
-      navigate(loginUrlForPanel, { replace: true })
+      navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
     }
-  }, [loginUrlForPanel, navigate])
+  }, [navigate])
 
   const loadTeamInbox = useCallback(async () => {
     const tok = getToken()
@@ -369,7 +360,7 @@ export default function ProviderVbmsWorkspace() {
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
         setInboxError('Session expired. Sign in again to continue.')
         setMarketingProviderAuthed(false)
-        navigate(loginUrlForPanel, { replace: true })
+        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
       } else {
         setInboxError(msg)
       }
@@ -428,7 +419,7 @@ export default function ProviderVbmsWorkspace() {
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
         setOrdersError('Session expired. Sign in again to continue.')
         setMarketingProviderAuthed(false)
-        navigate(loginUrlForPanel, { replace: true })
+        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
       } else {
         setOrdersError(msg)
         setOrders([])
@@ -436,7 +427,7 @@ export default function ProviderVbmsWorkspace() {
     } finally {
       setOrdersLoading(false)
     }
-  }, [loginUrlForPanel, navigate])
+  }, [navigate])
 
   useEffect(() => {
     if (isMarketingProviderAuthed()) void loadOrders()
@@ -618,7 +609,7 @@ export default function ProviderVbmsWorkspace() {
   }, [apptFilter, apptTokens, scheduleApptsMerged])
 
   return (
-    <div className={`page teamWorkspacePage ${panel ? 'teamWorkspacePage--panel' : ''}`}>
+    <div className="page teamWorkspacePage">
       <header className="teamWorkspaceHeader" aria-label="Team Workspace">
         <div className="teamWorkspaceHeaderRow">
           <h1>Team Workspace</h1>
@@ -668,15 +659,9 @@ export default function ProviderVbmsWorkspace() {
           Tip: press <b>/</b> to focus search · <b>r</b> to refresh (inbox/orders)
         </p>
         <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
-          {panel ? (
-            <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-              Back to workspace
-            </Link>
-          ) : (
-            <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-              Home
-            </Link>
-          )}
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Home
+          </Link>
           {staffCalendarUrl ? (
             <a
               href={staffCalendarUrl}
@@ -705,8 +690,7 @@ export default function ProviderVbmsWorkspace() {
       ) : null}
 
       <div className="cardGrid">
-        {!panel ? (
-          <section className="card cardAccentNavy cardSpan12">
+        <section className="card cardAccentNavy cardSpan12">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Requests</h2>
             {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} new</span> : <span className="pill">Queue</span>}
@@ -716,10 +700,10 @@ export default function ProviderVbmsWorkspace() {
           </p>
           <div className="divider" />
           <div className="btnRow">
-            <Link to="/provider?panel=orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+            <Link to="/provider#wph-orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
               View order requests
             </Link>
-            <Link to="/provider?panel=inbox" className="btn" style={{ textDecoration: 'none' }}>
+            <Link to="/provider#wph-inbox" className="btn" style={{ textDecoration: 'none' }}>
               View inbox
             </Link>
             <Link to="/provider/schedule" className="btn" style={{ textDecoration: 'none' }}>
@@ -729,21 +713,14 @@ export default function ProviderVbmsWorkspace() {
               Patient order page
             </Link>
           </div>
-          </section>
-        ) : null}
+        </section>
 
-        {panel && panel !== 'inbox' ? null : (
-          <section className={`card cardAccentSoft ${panel ? 'cardSpan12' : ''}`} id="wph-inbox">
+        <section className="card cardAccentSoft" id="wph-inbox">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Inbox</h2>
-            <Link
-              to={panel ? '/provider' : '/provider?panel=inbox'}
-              className={`pill ${newCount > 0 ? 'pillRed' : ''}`}
-              style={{ textDecoration: 'none' }}
-              title={panel ? 'Back to workspace' : 'Open full inbox'}
-            >
-              {panel ? 'Back' : newCount > 0 ? `${newCount} new` : 'Open'}
-            </Link>
+            <span className={`pill ${newCount > 0 ? 'pillRed' : ''}`} title="New messages in this inbox">
+              {newCount > 0 ? `${newCount} new` : 'Up to date'}
+            </span>
           </div>
           <div className="divider" />
           <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
@@ -899,11 +876,9 @@ export default function ProviderVbmsWorkspace() {
               </div>
             </div>
           ) : null}
-          </section>
-        )}
+        </section>
 
-        {panel && panel !== 'schedule' ? null : (
-          <section className={`card cardAccentSoft ${panel ? 'cardSpan12' : ''}`}>
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
             <Link to="/provider/schedule" className="pill pillRed" style={{ textDecoration: 'none' }} title="Open calendar">
@@ -1027,8 +1002,7 @@ export default function ProviderVbmsWorkspace() {
               </div>
             </div>
           )}
-          </section>
-        )}
+        </section>
 
         <section className="card cardAccentNavy cardSpan12" id="wph-quick-schedule">
           <div className="cardTitle">
@@ -1284,7 +1258,7 @@ export default function ProviderVbmsWorkspace() {
 
         {/* Payments panel removed. */}
 
-        {panel ? null : <section className="card cardAccentSoft">
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Audit log</h2>
             <span className="pill">Compliance</span>
@@ -1297,21 +1271,15 @@ export default function ProviderVbmsWorkspace() {
           <p className="muted" style={{ margin: 0 }}>
             No audit events yet.
           </p>
-        </section>}
+        </section>
 
-        {panel && panel !== 'orders' ? null : (
-        <section className={`card cardAccentRed ${panel ? 'cardSpan12' : ''}`} id="wph-orders">
+        <section className="card cardAccentRed" id="wph-orders">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <div className="btnRow" style={{ margin: 0 }}>
-              <Link
-                to={panel ? '/provider' : '/provider?panel=orders'}
-                className="pill pillRed"
-                style={{ textDecoration: 'none' }}
-                title={panel ? 'Back to workspace' : 'Open full orders'}
-              >
-                {panel ? 'Back' : ordersNewCount > 0 ? `${ordersNewCount} new` : 'Open'}
-              </Link>
+              <span className="pill pillRed" title="New orders awaiting action">
+                {ordersNewCount > 0 ? `${ordersNewCount} new` : 'Queue clear'}
+              </span>
               <button type="button" className="btn" disabled={ordersLoading || !getToken()} onClick={() => void loadOrders()}>
                 {ordersLoading ? 'Loading…' : 'Refresh'}
               </button>
@@ -1475,7 +1443,6 @@ export default function ProviderVbmsWorkspace() {
             </div>
           ) : null}
         </section>
-        )}
 
         {/* Training/demo sandbox removed for production */}
       </div>
