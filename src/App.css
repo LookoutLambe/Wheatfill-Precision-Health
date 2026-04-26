@@ -3537,6 +3537,70 @@ html.pharmacyCartOpen body {
   .mountainViewTable tbody td:last-child {
     min-width: 7rem;
   }
+
+  /* Mobile: stack the pricing table into readable rows (no horizontal drag). */
+  .mountainViewTableWrap {
+    overflow-x: visible;
+    border: none;
+    border-radius: 0;
+  }
+
+  .mountainViewTable {
+    min-width: 0;
+    background: transparent;
+  }
+
+  .mountainViewTable thead {
+    display: none;
+  }
+
+  .mountainViewTable tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mountainViewTable tbody tr {
+    display: block;
+    border: 1px solid rgba(10, 30, 63, 0.12);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: rgba(10, 30, 63, 0.06) 0 14px 26px -22px;
+  }
+
+  .mountainViewTable tbody th,
+  .mountainViewTable tbody td {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(10, 30, 63, 0.08);
+    align-items: start;
+  }
+
+  .mountainViewTable tbody tr > *:last-child {
+    border-bottom: none;
+  }
+
+  .mountainViewTable tbody th::before,
+  .mountainViewTable tbody td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(31, 41, 55, 0.65);
+    font-weight: 900;
+  }
+
+  .mountainViewTable td:last-child {
+    text-align: left;
+    white-space: normal;
+  }
+
+  .mountainViewAddBtn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Patient navigation helpers */

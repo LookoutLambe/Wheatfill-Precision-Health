@@ -151,17 +151,19 @@ export default function HallandalePharmacy() {
                       <tbody>
                         {rows.map((p) => (
                           <tr key={p.sku}>
-                            <th scope="row" className="mountainViewProductName">
+                            <th scope="row" className="mountainViewProductName" data-label="Product">
                               {p.name}
                             </th>
-                            <td className="muted mountainViewSub">{p.subtitle}</td>
-                            <td className="mountainViewDosingCell">
+                            <td className="muted mountainViewSub" data-label="Description">
+                              {p.subtitle}
+                            </td>
+                            <td className="mountainViewDosingCell" data-label="Per vial">
                               <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
                             </td>
-                            <td className="mountainViewPrice" aria-label={`List price ${moneyWhole(p.priceCents)}`}>
+                            <td className="mountainViewPrice" aria-label={`List price ${moneyWhole(p.priceCents)}`} data-label="List price">
                               {moneyWhole(p.priceCents)}
                             </td>
-                            <td>
+                            <td data-label="Add">
                               <button type="button" className="btn btnPrimary mountainViewAddBtn" onClick={() => onAdd(p.sku, p.name)}>
                                 Add to cart
                               </button>
