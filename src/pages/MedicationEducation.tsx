@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import { PEPTIDE_EDUCATION, peptideAnchorId } from '../data/peptideEducation'
+
 function ext(url: string) {
   return (
     <a href={url} target="_blank" rel="noopener noreferrer">
@@ -28,6 +30,9 @@ export default function MedicationEducation() {
           <a className="btn catalogOutlineBtn" href="#dosing-guide" style={{ textDecoration: 'none' }}>
             Dosing guide
           </a>
+          <Link to="/peptides" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
+            Peptide education
+          </Link>
         </div>
       </div>
 
@@ -141,9 +146,67 @@ export default function MedicationEducation() {
         </div>
       </section>
 
+      <section
+        id="research-peptides"
+        className="card cardAccentNavy"
+        style={{ marginTop: 12, scrollMarginTop: 88 }}
+      >
+        <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Research peptides (separate from GLP‑1 drugs)</h2>
+          <span className="pill">Education</span>
+        </div>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
+          The <strong>semaglutide and tirzepatide</strong> content above applies to FDA-labeled product families used for
+          weight and metabolic care when your clinician says they are appropriate. The compounds below are
+          <strong> not the same class</strong>: they are small signaling molecules that often show up in precision- or
+          compounding-related discussions, many <strong>without the same U.S. approval and labeling</strong> story as
+          Wegovy<sup>®</sup> or Zepbound<sup>®</sup>. Each card gives a <strong>why use it</strong> (typical goals in
+          discussion) and points you to the peptide page, where the <strong>deeper science</strong> lives under
+          &quot;Learn more: science and references.&quot; Not personal medical advice. Each link opens the full
+          write-up.
+        </p>
+        <div className="divider" />
+        <div className="cardGrid" style={{ alignItems: 'start' }}>
+          {PEPTIDE_EDUCATION.map((p) => (
+            <div key={p.id} className="card cardAccentSoft" style={{ margin: 0 }}>
+              <div className="cardTitle">
+                <h3 style={{ margin: 0, fontSize: 'clamp(16px, 1.8vw, 18px)' }}>{p.title}</h3>
+                <span className="pill">{p.pill}</span>
+              </div>
+              <p className="muted" style={{ marginTop: 8, marginBottom: 0, fontSize: 13, lineHeight: 1.5 }}>
+                {p.oneLiner}
+              </p>
+              <p
+                className="muted medicationPeptideBlurb"
+                style={{
+                  marginTop: 6,
+                  marginBottom: 0,
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 5,
+                  WebkitBoxOrient: 'vertical' as const,
+                  overflow: 'hidden',
+                }}
+              >
+                <strong>Why use it (typical goals in discussion):</strong> {p.whyUseIt}
+              </p>
+              <p className="muted" style={{ marginTop: 10, marginBottom: 0, fontSize: 13 }}>
+                <Link
+                  to={`/peptides#${peptideAnchorId(p.id)}`}
+                  style={{ fontWeight: 650 }}
+                >
+                  Open full profile on Peptide Therapy
+                </Link>
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section className="card cardAccentSoft" style={{ marginTop: 12 }}>
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>How they function (high level)</h2>
+          <h2 style={{ margin: 0 }}>How GLP-1 / dual incretin medications work (high level)</h2>
           <span className="pill">Mechanism</span>
         </div>
         <ul className="muted" style={{ margin: '10px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>

@@ -1,116 +1,22 @@
-import { useCallback, useId, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useId, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 
 import { apiPost } from '../api/client'
 import { MARKETING_ONLY } from '../config/mode'
-import { PUBLIC_INQUIRY_EMAIL } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME, PUBLIC_INQUIRY_EMAIL } from '../config/provider'
+import { PEPTIDE_EDUCATION, type PeptideId, peptideAnchorId } from '../data/peptideEducation'
+import { peptideVialImageSrc, peptideVialRibbonClass } from '../data/peptideVialImages'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
-type PeptideId =
-  | 'bpc157'
-  | 'tb500'
-  | 'ghkcu'
-  | 'cjcipa'
-  | 'semax'
-  | 'motsc'
-  | 'aod'
-  | 'ta1'
-  | 'kpv'
-
-type PeptideItem = {
-  id: PeptideId
-  title: string
-  pill: string
-  summary: string
-  body: string
+function hashToPeptideId(raw: string): PeptideId | null {
+  const s = raw.startsWith('#') ? raw.slice(1) : raw
+  const found = PEPTIDE_EDUCATION.find((p) => peptideAnchorId(p.id) === s)
+  return found ? found.id : null
 }
-
-const PEPTIDES: PeptideItem[] = [
-  {
-    id: 'bpc157',
-    title: 'BPC-157',
-    pill: 'Research',
-    summary:
-      'Discussed in preclinical and early research contexts related to tissue repair pathways and gastrointestinal models.',
-    body:
-      'Scientific literature has explored BPC-157 in experimental settings involving connective tissue and gut-barrier models. It is not FDA-approved in the United States for human drug indications. Federal compounding lists and enforcement priorities for peptides have changed over time; whether any formulation could be available in the future depends on law, pharmacy policy, and an individualized clinical evaluation—not on marketing claims.',
-  },
-  {
-    id: 'tb500',
-    title: 'TB-500 (Thymosin Beta-4)',
-    pill: 'Research',
-    summary:
-      'Studied in research settings for cellular processes involved in tissue remodeling; not a consumer product claim.',
-    body:
-      'Thymosin beta-4 has been investigated in research literature for mechanisms related to cell movement and repair models. It is not FDA-approved as a drug for specific patient conditions in the US. Some peptides in this family have appeared on federal compounding restriction lists. Any future discussion of clinical use would require appropriate licensure, pharmacy alignment, and evidence-based decision-making.',
-  },
-  {
-    id: 'ghkcu',
-    title: 'GHK-Cu (Copper Peptide)',
-    pill: 'Research',
-    summary:
-      'Cosmetic and laboratory research contexts; not FDA-approved as a systemic therapy for the uses sometimes described online.',
-    body:
-      'GHK-Cu is widely referenced in dermatology-adjacent research and cosmetic science. Statements about wound, skin, or hair outcomes can be interpreted as drug claims when tied to non-approved substances. This page does not assert therapeutic benefits. Patients should rely on FDA-approved treatments for medical conditions and discuss any research compound only with a qualified clinician.',
-  },
-  {
-    id: 'cjcipa',
-    title: 'CJC-1295 / Ipamorelin',
-    pill: 'Research',
-    summary:
-      'Growth-hormone secretagogue combinations have received heightened regulatory scrutiny in compounded drug enforcement.',
-    body:
-      'These agents have been studied for their pharmacologic class effects on growth hormone axis signaling. They are not described here as treatments. Federal authorities have taken public enforcement positions related to compounded growth-hormone-related peptides. Availability, if any, would depend on current rules, compounding pharmacy policy, and whether a prescriber determines a legitimate medical purpose consistent with state scope and malpractice coverage.',
-  },
-  {
-    id: 'semax',
-    title: 'Semax & Selank',
-    pill: 'Research',
-    summary:
-      'Neuropeptide families studied abroad; not FDA-approved drug products in the United States.',
-    body:
-      'Some countries have approved or studied certain neuropeptide formulations under their own regulatory frameworks. That does not create a US approval pathway. Research publications discuss a range of behavioral and physiologic endpoints; this site summarizes only at a high level and does not promise cognitive, mood, or performance outcomes.',
-  },
-  {
-    id: 'motsc',
-    title: 'MOTS-c',
-    pill: 'Research',
-    summary:
-      'Mitochondrial-derived peptide studied in metabolic research models; regulatory status for human compounding is constrained.',
-    body:
-      'MOTS-c appears in scientific discussion of mitochondrial signaling and aging-related biology. It is not FDA-approved here as a drug for patients. Like other peptides on federal restriction lists, it may not be lawfully compounded for general use in many circumstances. Any future clinical pathway would need to align with current FDA and state guidance.',
-  },
-  {
-    id: 'aod',
-    title: 'AOD-9604',
-    pill: 'Research',
-    summary:
-      'Has appeared in weight-related research discourse; not FDA-approved as a drug for fat loss in the US.',
-    body:
-      'AOD-9604 has been discussed in research contexts related to lipolysis pathways. Specific weight-loss claims for non-approved substances raise compliance risk. Wheatfill Precision Health does not use this page to advertise outcomes; we note only that literature exists and that prescribing must follow law, evidence, and pharmacy capability.',
-  },
-  {
-    id: 'ta1',
-    title: 'Thymosin Alpha-1',
-    pill: 'Research',
-    summary:
-      'Approved in some non-US jurisdictions for certain uses; not FDA-approved here; compounding rules apply.',
-    body:
-      'Thymosin alpha-1 has international regulatory histories that do not automatically translate to US patient access. Immune-related language is especially sensitive from an FDA/FTC perspective. We avoid structure/function claims tied to this compound and point patients toward licensed clinicians for questions about approved immunizations and therapies.',
-  },
-  {
-    id: 'kpv',
-    title: 'KPV',
-    pill: 'Research',
-    summary:
-      'Short peptide discussed in inflammation and gut research literature; human use claims are not made here.',
-    body:
-      'KPV is described in peer-reviewed work involving inflammatory signaling models. This is not medical advice and not an offer of therapy. Compounding eligibility and board scope must be confirmed before any clinical program is advertised or delivered.',
-  },
-]
 
 export default function PeptideTherapy() {
   const baseId = useId()
+  const location = useLocation()
   const [openId, setOpenId] = useState<PeptideId | null>(null)
   const [waitEmail, setWaitEmail] = useState('')
   const [waitName, setWaitName] = useState('')
@@ -123,6 +29,11 @@ export default function PeptideTherapy() {
   const toggle = useCallback((id: PeptideId) => {
     setOpenId((prev) => (prev === id ? null : id))
   }, [])
+
+  useEffect(() => {
+    const fromHash = hashToPeptideId(location.hash)
+    if (fromHash) setOpenId(fromHash)
+  }, [location.hash])
 
   const submitWaitlist = useCallback(async () => {
     setWaitError(null)
@@ -198,6 +109,31 @@ export default function PeptideTherapy() {
         </div>
       </header>
 
+      <nav className="peptidePageNav" aria-label="On this page" id="peptide-on-page-nav">
+        <span className="peptidePageNavLabel">On this page</span>
+        <a href="#peptide-disclaimer-heading" className="peptidePageNavLink">
+          Regulation
+        </a>
+        <a href="#what-peptides-heading" className="peptidePageNavLink">
+          What are peptides
+        </a>
+        <a href="#portfolio-heading" className="peptidePageNavLink">
+          Portfolio
+        </a>
+        <a href="#standard-heading" className="peptidePageNavLink">
+          Wheatfill standard
+        </a>
+        <a href="#peptide-availability" className="peptidePageNavLink">
+          Availability
+        </a>
+        <a href="#peptide-fda-disclaimer" className="peptidePageNavLink">
+          FDA disclaimer
+        </a>
+        <a href="#peptide-waitlist" className="peptidePageNavLink">
+          Waitlist
+        </a>
+      </nav>
+
       <section className="card cardAccentRed peptideDisclaimer" aria-labelledby="peptide-disclaimer-heading">
         <div className="cardTitle">
           <h2 id="peptide-disclaimer-heading" style={{ margin: 0 }}>
@@ -246,30 +182,66 @@ export default function PeptideTherapy() {
           </h2>
         </div>
         <p className="muted peptideSectionLead">
-          Below is a reference list of compounds sometimes discussed in precision medicine contexts. Tap a row to read
-          a short, conservative summary.{' '}
-          <strong>We are not offering these products on this page.</strong> Availability would depend on future law,
-          pharmacy policy, and clinical appropriateness.
+          Each card shows <strong>why people look up the name</strong>, a product-style illustration, and{' '}
+          <strong>peer-reviewed entry points in PubMed</strong> (a specific paper where we list one, plus targeted
+          search links you can filter further). Open <strong>Read full profile</strong> for the rest of the science,
+          regulation, and expanded link list—we are not a shop; this is education only. For{' '}
+          <Link to="/medications">GLP-1 medication education</Link> (semaglutide, tirzepatide), use our separate page. Use
+          the <a href="#peptide-on-page-nav">On this page</a> menu to jump to sections.
         </p>
 
         <div className="cardGrid peptidePortfolioGrid" role="presentation">
-          {PEPTIDES.map((item) => {
+          {PEPTIDE_EDUCATION.map((item, itemIndex) => {
             const isOpen = openId === item.id
             const headingId = `${baseId}-${item.id}-heading`
             const panelId = `${baseId}-${item.id}-panel`
             return (
               <article
                 key={item.id}
+                id={peptideAnchorId(item.id)}
                 className={`card cardAccentSoft landingAccordionCard peptideAccordionCard${isOpen ? ' isOpen' : ''}`}
+                style={{ scrollMarginTop: 88 }}
               >
                 <div className="landingAccordionTop">
+                  <div className={`peptideCardVial peptideCardVial--tone${itemIndex % 3}`}>
+                    <div className="peptideCardVialFrame">
+                      <img
+                        src={peptideVialImageSrc(item.id)}
+                        alt={`${item.vialDisplayName} (illustrative vial, education only)`}
+                        className="peptideCardVialImg"
+                        width={320}
+                        height={400}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </div>
+                    <div className={`peptideCardVialLabel ${peptideVialRibbonClass(item.id)}`}>
+                      <span className="peptideCardVialBrand">Peptide (illustration)</span>
+                      <span className="peptideCardVialName">{item.vialDisplayName}</span>
+                      <span className="peptideCardVialHint">Not a product listing from us</span>
+                    </div>
+                  </div>
                   <div className="cardTitle">
                     <h3 id={headingId} style={{ margin: 0, fontSize: 'clamp(17px, 2.2vw, 20px)' }}>
                       {item.title}
                     </h3>
                     <span className="pill">{item.pill}</span>
                   </div>
-                  <p className="muted landingAccordionSummary">{item.summary}</p>
+                  <p className="muted landingAccordionSummary peptideCardWhy">{item.summary}</p>
+                  {item.peerReviewedPicks.length > 0 ? (
+                    <div className="peptideCardPeerBlock">
+                      <p className="peptideCardPeerKicker">Peer-reviewed (PubMed)</p>
+                      <ul className="peptideCardPeerList">
+                        {item.peerReviewedPicks.map((pr) => (
+                          <li key={pr.href + pr.label}>
+                            <a href={pr.href} target="_blank" rel="noopener noreferrer">
+                              {pr.label}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     className="landingAccordionToggle"
@@ -277,7 +249,7 @@ export default function PeptideTherapy() {
                     aria-controls={panelId}
                     onClick={() => toggle(item.id)}
                   >
-                    <span>{isOpen ? 'Show less' : 'Read summary'}</span>
+                    <span>{isOpen ? 'Show less' : 'Read full profile'}</span>
                     <span className="landingAccordionChevron" aria-hidden="true" />
                   </button>
                 </div>
@@ -288,9 +260,71 @@ export default function PeptideTherapy() {
                   className="landingAccordionPanel"
                 >
                   <div className="landingAccordionPanelInner">
-                    <p className="muted landingAccordionPara" style={{ marginTop: 0 }}>
-                      {item.body}
+                    <p className="peptideEduKicker muted" style={{ marginTop: 0, marginBottom: 6, fontSize: 12, fontWeight: 750 }}>
+                      What it is
                     </p>
+                    <p className="muted landingAccordionPara" style={{ marginTop: 0 }}>
+                      {item.whatItIs}
+                    </p>
+                    <p className="peptideEduKicker muted" style={{ marginTop: 12, marginBottom: 6, fontSize: 12, fontWeight: 750 }}>
+                      What it does (short)
+                    </p>
+                    <p className="muted landingAccordionPara" style={{ marginTop: 0 }}>
+                      {item.whatItDoes}
+                    </p>
+                    <p className="peptideEduKicker muted" style={{ marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: 750 }}>
+                      Why use it
+                    </p>
+                    <p className="muted" style={{ marginTop: 0, marginBottom: 0, fontSize: 12, lineHeight: 1.45, opacity: 0.9 }}>
+                      Typical goals and settings people connect to this name in discussion—not a personal prescription.
+                    </p>
+                    <p className="muted landingAccordionPara" style={{ marginTop: 8 }}>
+                      {item.whyUseIt}
+                    </p>
+                    {item.peerReviewedPicks.length > 0 ? (
+                      <div style={{ marginTop: 12 }}>
+                        <p className="peptideEduKicker muted" style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 750 }}>
+                          Peer-reviewed (PubMed) — same links as the card
+                        </p>
+                        <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6, fontSize: 14 }}>
+                          {item.peerReviewedPicks.map((pr) => (
+                            <li key={pr.href + pr.label + 'panel'}>
+                              <a href={pr.href} target="_blank" rel="noopener noreferrer">
+                                {pr.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    <p className="peptideEduKicker muted" style={{ marginTop: 12, marginBottom: 6, fontSize: 12, fontWeight: 750 }}>
+                      Regulation and safety
+                    </p>
+                    <p className="muted landingAccordionPara" style={{ marginTop: 0 }}>
+                      {item.regulatoryAndSafety}
+                    </p>
+                    <div style={{ marginTop: 14 }} className="peptideLearnMoreScience">
+                      <p className="peptideEduKicker muted" style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 750 }}>
+                        Learn more: science and references
+                      </p>
+                      <p
+                        className="muted landingAccordionPara"
+                        style={{ marginTop: 0, marginBottom: 10, whiteSpace: 'pre-line', lineHeight: 1.55 }}
+                      >
+                        {item.learnMoreScience}
+                      </p>
+                      {item.learnMore.length > 0 ? (
+                        <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6, fontSize: 14 }}>
+                          {item.learnMore.map((l) => (
+                            <li key={l.href + l.label}>
+                              <a href={l.href} target="_blank" rel="noopener noreferrer">
+                                {l.label}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </article>
@@ -316,7 +350,7 @@ export default function PeptideTherapy() {
         </p>
       </section>
 
-      <section className="peptideSection" aria-labelledby="availability-heading">
+      <section className="peptideSection" id="peptide-availability" aria-labelledby="availability-heading" style={{ scrollMarginTop: 88 }}>
         <h2 id="availability-heading" className="peptideSectionTitle">
           Availability
         </h2>
@@ -327,7 +361,39 @@ export default function PeptideTherapy() {
         </p>
       </section>
 
-      <section className="card cardAccentSoft peptideSection peptideWaitlist" aria-labelledby="waitlist-heading">
+      <section
+        id="peptide-fda-disclaimer"
+        className="peptideSection card peptideFdaDisclaimerCard"
+        aria-labelledby="peptide-fda-disclaimer-heading"
+        style={{ scrollMarginTop: 88 }}
+      >
+        <h2 id="peptide-fda-disclaimer-heading" className="peptideFdaDisclaimerTitle">
+          FDA disclaimer
+        </h2>
+        <div className="peptideFdaDisclaimerBody">
+          <p>
+            <strong>FDA disclaimer:</strong> The statements made within this website have not been evaluated by the
+            U.S. Food and Drug Administration. The statements and content on this site, including those describing{' '}
+            {PRACTICE_PUBLIC_NAME} services, are not intended to diagnose, treat, cure, or prevent any disease.
+          </p>
+          <p>
+            {PRACTICE_PUBLIC_NAME} is a medical and telehealth practice, not a chemical supplier. It is not a
+            compounding pharmacy or a chemical compounding facility as defined under section 503A of the Federal Food, Drug, and
+            Cosmetic Act, nor is it an outsourcing facility as defined under section 503B. This page is for general
+            education. It does not offer research, laboratory, or analytical chemicals for sale, and is not a catalog
+            of unapproved products for human use. Any future care involving prescription medications, including
+            peptide-related protocols where lawful and appropriate, is provided through licensed professionals and
+            compliant pharmacy channels—not as “research use only” consumer products.
+          </p>
+        </div>
+      </section>
+
+      <section
+        id="peptide-waitlist"
+        className="card cardAccentSoft peptideSection peptideWaitlist"
+        aria-labelledby="waitlist-heading"
+        style={{ scrollMarginTop: 88 }}
+      >
         <div className="cardTitle">
           <h2 id="waitlist-heading" style={{ margin: 0 }}>
             Join the waitlist
