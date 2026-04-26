@@ -44,11 +44,15 @@ if not exist "backend\node_modules" (
 echo.
 echo Starting the API in a new window (http://localhost:8080^) — leave it open.
 start "WPH API (port 8080)" cmd /k "cd /d %~dp0backend && npm run dev"
-echo Waiting 2 seconds for the API to start...
-timeout /t 2 /nobreak >nul
 echo.
-echo Starting Vite at http://localhost:5176 — this window is only the website; the other window is the API.
+echo Starting Vite in a new window (http://localhost:5176^) — leave it open.
+start "WPH Web (port 5176)" cmd /k "cd /d %~dp0 && set VITE_MARKETING_ONLY=1 && npm run dev -- --mode marketing --port 5176"
+echo Waiting a moment for Vite to start...
+timeout /t 2 /nobreak >nul
+echo Opening the site in your default browser...
 start "" "http://localhost:5176"
-set VITE_MARKETING_ONLY=1
-npm run dev -- --mode marketing --port 5176
+echo.
+echo Note: Do NOT open dist\index.html directly (file://). Use the URL above.
+echo.
+exit /b 0
 
