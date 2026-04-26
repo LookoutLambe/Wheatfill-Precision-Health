@@ -103,7 +103,7 @@ export default function App() {
           <Route path="/patient" element={<MarketingLeaveToFullApp path="/patient" />} />
           <Route path="/patient/login" element={<MarketingLeaveToFullApp path="/patient/login" />} />
           {/* Staff entry (shared privately) */}
-          <Route path="/staff" element={<Navigate to="/provider/login" replace />} />
+          <Route path="/staff" element={<Navigate to="/provider" replace />} />
         </Route>
 
         <Route path="/provider/login" element={<MarketingProviderLogin />} />
@@ -155,7 +155,7 @@ export default function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/patient/login" element={<PatientBackendLogin />} />
         {/* Staff entry (shared privately) */}
-        <Route path="/staff" element={<Navigate to="/provider/login" replace />} />
+        <Route path="/staff" element={<Navigate to="/provider" replace />} />
         <Route
           path="/patient"
           element={
