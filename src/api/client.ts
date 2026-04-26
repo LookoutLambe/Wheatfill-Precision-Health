@@ -56,11 +56,20 @@ function unreachableApiMessage(): string {
   return `Cannot reach the API at ${base}. If you are testing locally, run: cd backend && npm run dev (port 8080) while the front end is on a dev server. Set VITE_API_URL, or add ?api=<your API base URL> once, if the API is not at ${base}.`
 }
 
-function rethrowIfUnreachable(e: unknown): never {
+function isTimeoutOrNetworkFailure(e: unknown): boolean {
+  if (e instanceof TypeError) return true
   const m = String((e as Error)?.message || e)
-  if (e instanceof TypeError || /failed to fetch|load failed|networkerror/i.test(m)) {
-    throw new Error(unreachableApiMessage())
-  }
+  if (/failed to fetch|load failed|networkerror/i.test(m)) return true
+  // fetchWithTimeout uses AbortController; slow API / cold start surfaces as "aborted" in the UI.
+  if (typeof DOMException !== 'undefined' && e instanceof DOMException && e.name === 'AbortError') return true
+  if (e instanceof Error && e.name === 'AbortError') return true
+  if (/^the user aborted a request\.?$/i.test(m.trim()) || (/\babort/i.test(m) && /\b(fetch|request|signal)\b/i.test(m)))
+    return true
+  return false
+}
+
+function rethrowIfUnreachable(e: unknown): never {
+  if (isTimeoutOrNetworkFailure(e)) throw new Error(unreachableApiMessage())
   throw e as Error
 }
 
@@ -120,9 +129,13 @@ export type ApiSessionSnapshot = { authenticated: boolean; role?: string; ok: bo
 export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
   let res: Response
   try {
-    res = await fetchWithTimeout(`${getApiUrl()}/v1/auth/session`, {
-      credentials: 'include',
-    })
+    res = await fetchWithTimeout(
+      `${getApiUrl()}/v1/auth/session`,
+      {
+        credentials: 'include',
+      },
+      requestTimeoutForPath('/v1/auth/session'),
+    )
   } catch {
     return { authenticated: false, ok: false }
   }
@@ -141,16 +154,28 @@ export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
 
 const WPH_BROWSER_CLIENT = '1'
 
-const DEFAULT_TIMEOUT_MS = 15_000
+/** General API calls (non-auth). */
+const DEFAULT_TIMEOUT_MS = 45_000
+/** Login, logout, session probe, signup — can be slow on mobile or after host cold start. */
+const AUTH_SESSION_TIMEOUT_MS = 120_000
+
+function requestTimeoutForPath(path: string): number {
+  if (path === '/v1/auth/session' || path.startsWith('/auth/')) return AUTH_SESSION_TIMEOUT_MS
+  return DEFAULT_TIMEOUT_MS
+}
 
 export async function apiLogout() {
   try {
-    await fetchWithTimeout(`${getApiUrl()}/auth/logout`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-wph-client': WPH_BROWSER_CLIENT },
-      credentials: 'include',
-      body: '{}',
-    })
+    await fetchWithTimeout(
+      `${getApiUrl()}/auth/logout`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-wph-client': WPH_BROWSER_CLIENT },
+        credentials: 'include',
+        body: '{}',
+      },
+      requestTimeoutForPath('/auth/logout'),
+    )
   } catch {
     // ignore
   }
@@ -162,8 +187,11 @@ export async function apiLogout() {
   clearApiSessionHint()
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Response> {
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<Response> {
   if (typeof AbortController === 'undefined') {
+    return fetch(url, init)
+  }
+  if (init.signal) {
     return fetch(url, init)
   }
   const ctrl = new AbortController()
@@ -179,12 +207,16 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
-      credentials: 'include',
-      headers: {
-        ...(t ? { authorization: `Bearer ${t}` } : {}),
+    res = await fetchWithTimeout(
+      `${getApiUrl()}${path}`,
+      {
+        credentials: 'include',
+        headers: {
+          ...(t ? { authorization: `Bearer ${t}` } : {}),
+        },
       },
-    })
+      requestTimeoutForPath(path),
+    )
   } catch (e) {
     rethrowIfUnreachable(e)
   }
@@ -196,16 +228,20 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-wph-client': WPH_BROWSER_CLIENT,
-        ...(t ? { authorization: `Bearer ${t}` } : {}),
+    res = await fetchWithTimeout(
+      `${getApiUrl()}${path}`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-wph-client': WPH_BROWSER_CLIENT,
+          ...(t ? { authorization: `Bearer ${t}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify(body),
       },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    })
+      requestTimeoutForPath(path),
+    )
   } catch (e) {
     rethrowIfUnreachable(e)
   }
@@ -217,16 +253,20 @@ export async function apiPatch<T>(path: string, body: unknown, token?: string): 
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
-      method: 'PATCH',
-      headers: {
-        'content-type': 'application/json',
-        'x-wph-client': WPH_BROWSER_CLIENT,
-        ...(t ? { authorization: `Bearer ${t}` } : {}),
+    res = await fetchWithTimeout(
+      `${getApiUrl()}${path}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          'x-wph-client': WPH_BROWSER_CLIENT,
+          ...(t ? { authorization: `Bearer ${t}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify(body),
       },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    })
+      requestTimeoutForPath(path),
+    )
   } catch (e) {
     rethrowIfUnreachable(e)
   }
@@ -238,14 +278,18 @@ export async function apiDelete<T>(path: string, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response
   try {
-    res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
-      method: 'DELETE',
-      headers: {
-        'x-wph-client': WPH_BROWSER_CLIENT,
-        ...(t ? { authorization: `Bearer ${t}` } : {}),
+    res = await fetchWithTimeout(
+      `${getApiUrl()}${path}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'x-wph-client': WPH_BROWSER_CLIENT,
+          ...(t ? { authorization: `Bearer ${t}` } : {}),
+        },
+        credentials: 'include',
       },
-      credentials: 'include',
-    })
+      requestTimeoutForPath(path),
+    )
   } catch (e) {
     rethrowIfUnreachable(e)
   }
