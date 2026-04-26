@@ -122,6 +122,7 @@ export default function App() {
         </Route>
 
         <Route path="/storefront" element={<StripeConnectStorefront />} />
+        <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
         <Route path="/storefront/success" element={<StripeConnectStorefront />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -196,6 +197,7 @@ export default function App() {
       </Route>
 
       <Route path="/storefront" element={<StripeConnectStorefront />} />
+      <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
       <Route path="/storefront/success" element={<StripeConnectStorefront />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

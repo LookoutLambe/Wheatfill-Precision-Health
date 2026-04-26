@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { apiGet, apiPost } from '../api/client'
 
 type StorefrontProduct = {
@@ -23,6 +23,11 @@ function money(cents: number | null, currency: string | null) {
 }
 
 export default function StripeConnectStorefront() {
+  // Optional route param: /storefront/:accountId
+  // - empty => show all products grouped by destination
+  // - "platform" => show products with no connected account mapping
+  // - otherwise => show only that destination's products
+  const { accountId: routeAccountId } = useParams()
   const [searchParams] = useSearchParams()
   const [data, setData] = useState<StorefrontResp | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -37,15 +42,23 @@ export default function StripeConnectStorefront() {
   const canceled = searchParams.get('canceled') === '1'
 
   const productsByAccount = useMemo(() => {
+    const sel = (routeAccountId || '').trim()
     const m = new Map<string, StorefrontProduct[]>()
     for (const p of data?.products || []) {
       const k = p.connectedAccountId || 'unmapped'
+      if (sel) {
+        if (sel === 'platform') {
+          if (p.connectedAccountId) continue
+        } else if (p.connectedAccountId !== sel) {
+          continue
+        }
+      }
       const cur = m.get(k)
       if (cur) cur.push(p)
       else m.set(k, [p])
     }
     return m
-  }, [data])
+  }, [data, routeAccountId])
 
   const buy = async (productId: string) => {
     setBusyId(productId)
@@ -65,7 +78,9 @@ export default function StripeConnectStorefront() {
     <div className="page" style={{ maxWidth: 980 }}>
       <div className="pageHeaderRow">
         <div>
-          <h1 style={{ margin: 0 }}>Storefront (sample)</h1>
+          <h1 style={{ margin: 0 }}>
+            {routeAccountId ? (routeAccountId === 'platform' ? 'Platform Products' : `Store ${routeAccountId}`) : 'Storefront (sample)'}
+          </h1>
           <p className="muted pageSubtitle">Products are platform-owned; checkout uses a destination charge + application fee.</p>
         </div>
         <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
