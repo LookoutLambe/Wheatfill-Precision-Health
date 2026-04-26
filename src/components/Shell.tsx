@@ -12,7 +12,7 @@ import {
   isMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
-import { CONTRACTED_PHARMACY_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
+import { PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
 function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
@@ -292,14 +292,6 @@ export default function Shell() {
             )}
             <NavLink to="/ordering" onClick={closeMenu}>
               Order requests
-            </NavLink>
-            <NavLink
-              to="/pharmacy/mountain-view"
-              onClick={closeMenu}
-              style={{ textDecoration: 'none' }}
-              title="Accessible price list"
-            >
-              {CONTRACTED_PHARMACY_NAME}
             </NavLink>
             {MARKETING_ONLY ? (
               <a href={appPatient} style={{ textDecoration: 'none' }} onClick={closeMenu}>
