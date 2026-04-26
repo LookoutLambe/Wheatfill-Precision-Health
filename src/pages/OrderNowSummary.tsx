@@ -164,16 +164,31 @@ export default function OrderNowSummary() {
         }
       })()
     } else {
-      if (!payUrl) {
-        setCheckoutError('Payment link is not configured yet.')
-        return
-      }
-      window.open(payUrl, '_blank', 'noopener,noreferrer')
+      setCheckoutBusy(true)
+      ;(async () => {
+        try {
+          const res = await apiPost<{ ok: true; checkoutUrl: string | null }>(
+            '/v1/public/pharmacy/checkout',
+            {
+              partnerSlug: partner.slug,
+              items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
+              shippingInsurance: insurance,
+            },
+            '',
+          )
+          const url = res?.checkoutUrl || payUrl
+          if (!url) throw new Error('Payment link is not configured yet.')
+          window.location.href = url
+        } catch (e: any) {
+          setCheckoutError(String(e?.message || e))
+        } finally {
+          setCheckoutBusy(false)
+        }
+      })()
     }
   }
 
   const catalogPath = `/order-now/${encodeURIComponent(slug)}`
-  const loginNext = encodeURIComponent(`/order-now/${encodeURIComponent(slug)}/summary`)
   const canCheckOut = agree && contactOk && shipStreet.trim() && shipCity.trim() && shipState && shipZip.trim() && sigName.trim()
   const itemsSummaryText = items.map((it) => `${it.product.name} (x${it.quantity})`).join(', ')
 
@@ -458,8 +473,8 @@ export default function OrderNowSummary() {
                   <span style={{ textAlign: 'right' }}>{moneyCents(total)}</span>
                 </div>
                 <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>
-                  Check out opens PayPal with <strong>this</strong> total. Tax or adjustments may be confirmed by the
-                  office.
+                  Check out opens a secure card payment page with <strong>this</strong> total. Any adjustments are
+                  confirmed by the office.
                 </p>
               </div>
             </div>
@@ -499,22 +514,11 @@ export default function OrderNowSummary() {
                 style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
                 onClick={onCheckout}
               >
-                {checkoutBusy ? 'Saving order…' : 'Check out'}
+                {checkoutBusy ? 'Opening checkout…' : 'Check out'}
               </button>
-              {!getToken() ? (
-                <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
-                  <Link to={`/patient/login?next=${loginNext}`} style={{ fontWeight: 800 }}>
-                    Sign in
-                  </Link>{' '}
-                  on this site so the team can receive your order with this address and signature. You can still open
-                  PayPal now to pay; signing in is needed to file the order on our side.
-                </p>
-              ) : (
-                <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
-                  Signed in: your order is sent to the practice, then PayPal opens with <strong>total due</strong>{' '}
-                  unless your site uses a connected card processor and redirects you instead.
-                </p>
-              )}
+              <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
+                Your checkout opens securely. The practice confirms fulfillment details after payment.
+              </p>
             </div>
           </>
         ) : null}

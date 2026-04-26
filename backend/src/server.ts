@@ -378,6 +378,93 @@ app.post('/v1/public/contact', async (req, reply) => {
   return { ok: true, id: created.id }
 })
 
+// Public checkout (no patient sign-in): create a Stripe Checkout session for the cart total.
+// Note: this does not create an Order row (no PHI / address persistence); it only enables a pay flow.
+const PublicPharmacyCheckoutBody = z.object({
+  partnerSlug: z.string().min(1).max(80),
+  items: z
+    .array(
+      z.object({
+        sku: z.string().min(1).max(120),
+        quantity: z.number().int().min(1).max(99),
+      }),
+    )
+    .min(1)
+    .max(50),
+  shippingInsurance: z.boolean().optional().default(false),
+})
+
+app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
+  const body = PublicPharmacyCheckoutBody.parse(req.body)
+
+  const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
+  if (!partner) return reply.notFound('Pharmacy not found.')
+
+  const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+  if (!provider) return reply.internalServerError('No provider configured.')
+
+  const providerRow = await prisma.user.findUnique({
+    where: { id: provider.id },
+    select: { activePaymentProvider: true, stripeConnectedAccountId: true },
+  })
+
+  if (providerRow?.activePaymentProvider !== 'stripe') return reply.badRequest('Card checkout is not configured.')
+  if (!stripe || !providerRow?.stripeConnectedAccountId) return reply.badRequest('Stripe is not configured.')
+
+  const products = await prisma.pharmacyProduct.findMany({
+    where: { partnerId: partner.id, isActive: true, sku: { in: body.items.map((i) => i.sku) } },
+    select: { sku: true, name: true, priceCents: true, currency: true },
+  })
+  const bySku = new Map(products.map((p) => [p.sku, p]))
+  for (const it of body.items) {
+    if (!bySku.has(it.sku)) return reply.badRequest(`Invalid item sku: ${it.sku}`)
+  }
+
+  const subtotal = body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0)
+  const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
+
+  const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+  const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?paid=1`
+  const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?canceled=1`
+
+  const session = await stripe.checkout.sessions.create(
+    {
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      line_items: [
+        ...body.items.map((it) => {
+          const p = bySku.get(it.sku)!
+          return {
+            price_data: {
+              currency: (p.currency || 'usd').toLowerCase(),
+              unit_amount: p.priceCents,
+              product_data: { name: p.name, metadata: { sku: p.sku, partner: partner.slug } },
+            },
+            quantity: it.quantity,
+          }
+        }),
+        ...(shippingInsuranceCents
+          ? [
+              {
+                price_data: {
+                  currency: 'usd',
+                  unit_amount: shippingInsuranceCents,
+                  product_data: { name: 'Shipping insurance' },
+                },
+                quantity: 1,
+              },
+            ]
+          : []),
+      ],
+      metadata: { partnerSlug: partner.slug, kind: 'public_catalog_checkout' },
+    },
+    { stripeAccount: providerRow.stripeConnectedAccountId },
+  )
+
+  return { ok: true, checkoutUrl: session.url }
+})
+
 const PublicTeamInboxBody = z.object({
   kind: z.enum(['contact', 'online_booking', 'order_request']),
   fromName: z.string().min(1).max(200),
