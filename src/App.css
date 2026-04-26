@@ -1,3 +1,44 @@
+.appShell,
+html,
+body {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Safari fallback: older Safari versions don't support flexbox `gap`, causing layouts to look cramped/different.
+   Use margin-based spacing on common flex rows. */
+@supports (-webkit-touch-callout: none) {
+  .btnRow,
+  .topNavInner,
+  .topNavRight,
+  .brand,
+  .orderRequestPresets,
+  .pharmacyDrawerQtyRow,
+  .pharmacyProductRowTop,
+  .pharmacyProductPriceRow,
+  .orderNowDualCatalogHead,
+  .orderNowAfterBtnRow,
+  .orderNowMiniCartInner,
+  .mobilePatientDock {
+    gap: 0 !important;
+    margin: -6px;
+  }
+
+  .btnRow > *,
+  .topNavInner > *,
+  .topNavRight > *,
+  .brand > *,
+  .orderRequestPresets > *,
+  .pharmacyDrawerQtyRow > *,
+  .pharmacyProductRowTop > *,
+  .pharmacyProductPriceRow > *,
+  .orderNowDualCatalogHead > *,
+  .orderNowAfterBtnRow > *,
+  .orderNowMiniCartInner > *,
+  .mobilePatientDock > * {
+    margin: 6px !important;
+  }
+}
+
 .appShell {
   min-height: 100svh;
   display: flex;
