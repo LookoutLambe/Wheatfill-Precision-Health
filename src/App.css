@@ -639,15 +639,6 @@ html:has(.peptidePage) {
   gap: 12px;
 }
 
-.peptideDisclaimerList {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  line-height: 1.5;
-}
-
 .peptideSection {
   display: flex;
   flex-direction: column;

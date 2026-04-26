@@ -111,9 +111,6 @@ export default function PeptideTherapy() {
 
       <nav className="peptidePageNav" aria-label="On this page" id="peptide-on-page-nav">
         <span className="peptidePageNavLabel">On this page</span>
-        <a href="#peptide-disclaimer-heading" className="peptidePageNavLink">
-          Regulation
-        </a>
         <a href="#what-peptides-heading" className="peptidePageNavLink">
           What are peptides
         </a>
@@ -133,32 +130,6 @@ export default function PeptideTherapy() {
           Waitlist
         </a>
       </nav>
-
-      <section className="card cardAccentRed peptideDisclaimer" aria-labelledby="peptide-disclaimer-heading">
-        <div className="cardTitle">
-          <h2 id="peptide-disclaimer-heading" style={{ margin: 0 }}>
-            Important: regulation and marketing
-          </h2>
-          <span className="pill pillRed">Read first</span>
-        </div>
-        <div className="divider" />
-        <ul className="muted peptideDisclaimerList">
-          <li>
-            Many peptides discussed in popular health media are <strong>not FDA-approved</strong> as drugs for the
-            uses implied online. Some have been placed on federal compounding restriction lists; enforcement priorities
-            can change.
-          </li>
-          <li>
-            Before any program goes live, a practice should confirm <strong>malpractice coverage</strong>,{' '}
-            <strong>state nursing and pharmacy board</strong> alignment, what a <strong>503A partner can lawfully</strong>{' '}
-            prepare and ship, and written guidance from <strong>healthcare counsel</strong> on compliant language.
-          </li>
-          <li>
-            This page uses cautious, educational phrasing. It is <strong>not medical advice</strong> and not a promise
-            of future availability, pricing, or outcomes.
-          </li>
-        </ul>
-      </section>
 
       <section className="peptideSection" aria-labelledby="what-peptides-heading">
         <h2 id="what-peptides-heading" className="peptideSectionTitle">
