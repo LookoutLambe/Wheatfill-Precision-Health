@@ -1,6 +1,8 @@
-export const MARKETING_ONLY = (import.meta.env.VITE_MARKETING_ONLY?.toString().trim() || '') === '1'
+import { vitePublicEnv } from './publicEnv'
 
-export const APP_URL = (import.meta.env.VITE_APP_URL?.toString().trim() || '').replace(/\/$/, '')
+export const MARKETING_ONLY = (vitePublicEnv.VITE_MARKETING_ONLY?.toString().trim() || '') === '1'
+
+export const APP_URL = (vitePublicEnv.VITE_APP_URL?.toString().trim() || '').replace(/\/$/, '')
 
 /**
  * When the public site is opened on the live custom domain, use this public API (convention: api dot domain)

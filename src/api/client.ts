@@ -1,7 +1,8 @@
 import { isWheatfillLiveSite, WHEATFILL_LIVE_DEFAULT_API } from '../config/mode'
+import { vitePublicEnv } from '../config/publicEnv'
 
 function resolveApiUrl() {
-  const fromEnv = import.meta.env.VITE_API_URL?.toString().trim()
+  const fromEnv = vitePublicEnv.VITE_API_URL?.toString().trim()
   if (fromEnv) return fromEnv.replace(/\/$/, '')
 
   // Live site should always prefer the canonical API host unless explicitly overridden via ?api=.

@@ -1,0 +1,45 @@
+name: E2E smoke
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "e2e/**"
+      - "playwright.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "index.html"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "e2e/**"
+      - "playwright.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.ts"
+      - "index.html"
+      - ".github/workflows/e2e.yml"
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E
+        run: npx playwright test

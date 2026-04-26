@@ -1,4 +1,8 @@
 import 'dotenv/config'
+import { loadAndValidateEnv } from './config/env.js'
+import { shippingCentsForPartnerSlug } from './domain/pharmacy-seed.js'
+import { registerHealthRoutes } from './routes/health.js'
+import { registerPharmacyRoutes } from './routes/pharmacies.js'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import sensible from '@fastify/sensible'
@@ -13,6 +17,8 @@ import { prisma } from './db.js'
 import { hashPassword, verifyPassword } from './auth/password.js'
 import { registerAuth, requireRole } from './auth/authz.js'
 import { decryptSecret, encryptSecret } from './crypto/secrets.js'
+
+loadAndValidateEnv()
 
 const PORT = Number(process.env.PORT || 8080)
 // Comma-separated. Include both apex + www for the public site, or the browser will block credentialed API calls.
@@ -299,149 +305,8 @@ await app.register(jwt, {
   verify: { allowedIss: [JWT_ISSUER], allowedAud: [JWT_AUDIENCE] },
 })
 
-app.get('/health', async () => {
-  // quick DB check
-  await prisma.$queryRaw`SELECT 1`
-  return { ok: true }
-})
-
-app.get('/v1/health', async () => {
-  await prisma.$queryRaw`SELECT 1`
-  await ensureProviderSeed()
-  return { ok: true }
-})
-
-async function ensurePharmacySeed() {
-  // Idempotent seed: ensure partners exist, then ensure their products exist.
-  const ensurePartner = async (slug: string, name: string) => {
-    const ex = await prisma.pharmacyPartner.findUnique({ where: { slug } })
-    if (ex) return ex
-    return prisma.pharmacyPartner.create({ data: { slug, name } })
-  }
-
-  // Strive is intentionally disabled (practice does not use them).
-  // Keep this idempotent so existing deployments stop advertising it immediately.
-  try {
-    await prisma.pharmacyPartner.update({ where: { slug: 'strive' }, data: { isActive: false } })
-  } catch {
-    /* ignore if it doesn't exist */
-  }
-
-  const mv = await ensurePartner('mountain-view', 'Mountain View Pharmacy')
-  const hall = await ensurePartner('hallandale', 'Hallandale Pharmacy')
-
-  const mvProducts = [
-    { sku: 'TZ_12_5_2', name: 'Tirzepatide 12.5 mg/mL - 2 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 26000, sortOrder: 10 },
-    { sku: 'TZ_25_2', name: 'Tirzepatide 25 mg/mL - 2 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 43000, sortOrder: 20 },
-    { sku: 'TZ_25_3', name: 'Tirzepatide 25 mg/mL - 3 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 56000, sortOrder: 30 },
-    { sku: 'TZ_25_4', name: 'Tirzepatide 25 mg/mL - 4 mL', subtitle: 'Tirzepatide with Vitamin B6 & Glycine', priceCents: 66000, sortOrder: 40 },
-    { sku: 'SEMA_2_5_2', name: 'Semaglutide 2.5 mg/mL - 2 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 18000, sortOrder: 50 },
-    { sku: 'SEMA_5_2', name: 'Semaglutide 5 mg/mL - 2 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 24500, sortOrder: 60 },
-    { sku: 'SEMA_5_4', name: 'Semaglutide 5 mg/mL - 4 mL', subtitle: 'Semaglutide with Vitamin B6 & Glycine', priceCents: 43000, sortOrder: 70 },
-  ]
-
-  const hallProducts = [
-    // Semaglutide Flex-Dose (note: 3 mL price adjusted to $235.00 as requested)
-    { sku: 'H_SEMA_2_5_1', name: 'Semaglutide 2.5 mg/mL - 1 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 17500, sortOrder: 10 },
-    { sku: 'H_SEMA_2_5_2', name: 'Semaglutide 2.5 mg/mL - 2 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 19500, sortOrder: 20 },
-    { sku: 'H_SEMA_2_5_3', name: 'Semaglutide 2.5 mg/mL - 3 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 23500, sortOrder: 30 },
-    { sku: 'H_SEMA_2_5_4', name: 'Semaglutide 2.5 mg/mL - 4 mL', subtitle: 'Semaglutide Flex-Dose', priceCents: 27000, sortOrder: 40 },
-    // Tirzepatide Flex-Dose
-    { sku: 'H_TZ_10_1', name: 'Tirzepatide 10 mg/mL - 1 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 22000, sortOrder: 50 },
-    { sku: 'H_TZ_10_2', name: 'Tirzepatide 10 mg/mL - 2 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 27000, sortOrder: 60 },
-    { sku: 'H_TZ_10_3', name: 'Tirzepatide 10 mg/mL - 3 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 32000, sortOrder: 70 },
-    { sku: 'H_TZ_10_4', name: 'Tirzepatide 10 mg/mL - 4 mL', subtitle: 'Tirzepatide Flex-Dose', priceCents: 34500, sortOrder: 80 },
-    // Tirzepatide FORTE Flex-Dose
-    { sku: 'H_TZ_15_4', name: 'Tirzepatide 15 mg/mL - 4 mL', subtitle: 'Tirzepatide FORTE Flex-Dose', priceCents: 37000, sortOrder: 90 },
-  ]
-
-  const upsertProducts = async (partnerId: string, products: any[]) => {
-    for (const p of products) {
-      await prisma.pharmacyProduct.upsert({
-        where: { partnerId_sku: { partnerId, sku: p.sku } },
-        create: { ...p, partnerId, currency: 'usd' },
-        update: {
-          name: p.name,
-          subtitle: p.subtitle,
-          priceCents: p.priceCents,
-          sortOrder: p.sortOrder,
-          currency: 'usd',
-          isActive: true,
-        },
-      })
-    }
-  }
-
-  await upsertProducts(mv.id, mvProducts)
-  await upsertProducts(hall.id, hallProducts)
-}
-
-function shippingCentsForPartnerSlug(slug: string): number {
-  // Business rule:
-  // - Hallandale: $25 flat shipping
-  // - Mountain View (default): free shipping
-  return slug === 'hallandale' ? 2500 : 0
-}
-
-app.get('/v1/pharmacies', async () => {
-  await ensurePharmacySeed()
-  await ensureProviderSeed()
-  const partners = await prisma.pharmacyPartner.findMany({
-    where: { isActive: true },
-    orderBy: { name: 'asc' },
-    select: { slug: true, name: true },
-  })
-  return { partners }
-})
-
-app.get('/v1/public/availability', async (req) => {
-  await ensureProviderSeed()
-  const q = req.query as any
-  const start = typeof q.start === 'string' ? q.start : new Date().toISOString().slice(0, 10)
-  const days = Math.min(180, Math.max(1, Number(q.days || 60)))
-  const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
-  if (!provider) return { blackouts: [], booked: [] }
-  const startDt = new Date(start)
-  const endDt = new Date(startDt.getTime() + days * 24 * 60 * 60 * 1000)
-
-  const blackouts = await prisma.blackoutDate.findMany({
-    where: { providerId: provider.id, date: { gte: startDt, lt: endDt } },
-    select: { date: true },
-  })
-  const booked = await prisma.appointment.findMany({
-    where: {
-      providerId: provider.id,
-      deletedAt: null,
-      status: 'scheduled',
-      startTs: { gte: startDt, lt: endDt },
-    },
-    select: { startTs: true },
-  })
-  return {
-    blackouts: blackouts.map((b) => b.date.toISOString().slice(0, 10)),
-    booked: booked.map((b) => (b.startTs ? b.startTs.toISOString() : '')).filter(Boolean),
-  }
-})
-
-app.get('/v1/pharmacies/:slug', async (req, reply) => {
-  await ensurePharmacySeed()
-  const slug = (req.params as any).slug as string
-  const partner = await prisma.pharmacyPartner.findUnique({
-    where: { slug },
-    select: {
-      slug: true,
-      name: true,
-      isActive: true,
-      products: {
-        where: { isActive: true },
-        orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        select: { sku: true, name: true, subtitle: true, priceCents: true, currency: true },
-      },
-    },
-  })
-  if (!partner || !partner.isActive) return reply.notFound('Pharmacy not found.')
-  return { partner }
-})
+await registerHealthRoutes(app, { ensureProviderSeed })
+await registerPharmacyRoutes(app, { ensureProviderSeed })
 
 const PublicContactBody = z.object({
   name: z.string().min(2).max(120),

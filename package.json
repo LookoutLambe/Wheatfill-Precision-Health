@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "build:marketing": "tsc -b && vite build --mode marketing",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@medplum/core": "^5.1.9",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.51.0",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
