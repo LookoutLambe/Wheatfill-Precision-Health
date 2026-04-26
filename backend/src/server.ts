@@ -65,8 +65,6 @@ const SYNC_TEAM_PASSWORDS =
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN).trim() || DEFAULT_JWT_EXPIRES_IN
 const IS_PRODUCTION = (process.env.NODE_ENV || '').toLowerCase() === 'production'
 const TRUST_PROXY_ENABLED = resolveTrustProxy()
-const LOGIN_RATE_MAX = Math.max(5, Number(process.env.LOGIN_RATE_MAX || 30) || 30)
-const LOGIN_RATE_WINDOW_MS = Math.max(60_000, Number(process.env.LOGIN_RATE_WINDOW_MS || 900_000) || 900_000)
 const PUBLIC_POST_RATE_MAX = Math.max(5, Number(process.env.PUBLIC_POST_RATE_MAX || 40) || 40)
 const PUBLIC_POST_RATE_WINDOW_MS = Math.max(60_000, Number(process.env.PUBLIC_POST_RATE_WINDOW_MS || 3_600_000) || 3_600_000)
 const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
@@ -994,8 +992,6 @@ const LoginBody = z.object({
 })
 
 app.post('/auth/login', async (req, reply) => {
-  const lim = rateLimitHit(String(reqIp(req) || 'unknown'), LOGIN_RATE_MAX, LOGIN_RATE_WINDOW_MS)
-  if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many login attempts.')
   const body = LoginBody.parse(req.body)
   const user = await prisma.user.findUnique({ where: { username: body.username } })
   if (!user) return reply.unauthorized('Invalid username or password.')
