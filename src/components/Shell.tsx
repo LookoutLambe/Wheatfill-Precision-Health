@@ -9,9 +9,7 @@ import { APP_URL, MARKETING_ONLY } from '../config/mode'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from '../config/providerAuth'
 import {
   getMarketingIntegrations,
-  getMarketingProviderLoginDisplay,
   isMarketingProviderAuthed,
-  setMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { CONTRACTED_PHARMACY_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
@@ -55,8 +53,7 @@ function headerCatalogSlugForPath(pathname: string): string {
   return DEFAULT_CATALOG_PARTNER_SLUG
 }
 
-const STAFF_REVEAL_KEY = 'wph_staff_reveal'
-const STAFF_REVEAL_TAPS = 2
+const STAFF_FOOTER_TAPS = 3
 
 export default function Shell() {
   const navigate = useNavigate()
@@ -98,14 +95,7 @@ export default function Shell() {
   const integ = MARKETING_ONLY ? getMarketingIntegrations() : null
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
-  const [marketingProviderAuthed, setMarketingProviderAuthedState] = useState(() => isMarketingProviderAuthed())
-  const [staffReveal, setStaffReveal] = useState(() => {
-    try {
-      return localStorage.getItem(STAFF_REVEAL_KEY) === '1'
-    } catch {
-      return false
-    }
-  })
+  const [_marketingProviderAuthed, setMarketingProviderAuthedState] = useState(() => isMarketingProviderAuthed())
   const [, setStaffTapCount] = useState(0)
 
   useEffect(() => {
@@ -147,17 +137,11 @@ export default function Shell() {
     }
   }, [])
 
-  const onStaffEasterEggTap = () => {
-    // Avoid leaking the staff entry point in the DOM until explicitly revealed by staff.
+  const onProviderFooterTap = () => {
     setStaffTapCount((c) => {
       const next = c + 1
-      if (next >= STAFF_REVEAL_TAPS) {
-        try {
-          localStorage.setItem(STAFF_REVEAL_KEY, '1')
-        } catch {
-          // ignore
-        }
-        setStaffReveal(true)
+      if (next >= STAFF_FOOTER_TAPS) {
+        navigate('/staff')
         return 0
       }
       return next
@@ -373,30 +357,6 @@ export default function Shell() {
               Catalog
             </NavLink>
           )}
-          {/* Staff entry stays hidden unless revealed (avoids casual discovery). */}
-          {staffReveal ? (
-            marketingProviderAuthed ? (
-              <NavLink
-                to="/provider"
-                className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
-                style={{ textDecoration: 'none' }}
-                onClick={closeMenu}
-                title="Staff workspace"
-              >
-                Staff
-              </NavLink>
-            ) : (
-              <NavLink
-                to="/staff"
-                className="btn mobilePatientDockBtn mobilePatientDockBtnStaff"
-                style={{ textDecoration: 'none' }}
-                onClick={closeMenu}
-                title="Staff sign-in"
-              >
-                Staff
-              </NavLink>
-            )
-          ) : null}
         </nav>
       ) : null}
 
@@ -404,7 +364,16 @@ export default function Shell() {
         <div className="footerInner">
           <div className="footerContent">
             <div className="footerLine">© {new Date().getFullYear()} Wheatfill Precision Health. All rights reserved.</div>
-            <div className="footerLine">{PROVIDER_DISPLAY_NAME}</div>
+            <div className="footerLine">
+              <button
+                type="button"
+                className="footerStaffLink footerStaffButton"
+                onClick={onProviderFooterTap}
+                aria-label="Provider"
+              >
+                {PROVIDER_DISPLAY_NAME}
+              </button>
+            </div>
             <div className="footerLine">Licensed in: {states}</div>
 
             <div className="footerLinks" aria-label="Legal and policies">
@@ -415,41 +384,7 @@ export default function Shell() {
             </div>
 
             <div className="footerFineprint">Not for emergencies. Call 911 for medical emergencies.</div>
-            <div className="footerFineprint footerStaffGate" aria-label="Staff access">
-              <button
-                type="button"
-                className="footerStaffLink footerStaffButton"
-                onClick={onStaffEasterEggTap}
-                aria-label="Staff access"
-              >
-                {staffReveal ? 'Staff access' : ' '}
-              </button>
-              {staffReveal ? (
-                !USE_MEDPLUM_PROVIDER_PORTAL && marketingProviderAuthed ? (
-                  <span className="footerStaffSession">
-                    <span className="footerStaffMuted">Staff signed in as {getMarketingProviderLoginDisplay() || 'provider'}.</span>{' '}
-                    <NavLink to="/provider" className="footerStaffLink">
-                      Workspace
-                    </NavLink>
-                    <span className="footerStaffMuted"> · </span>
-                    <button
-                      type="button"
-                      className="footerStaffLink footerStaffButton"
-                      onClick={() => {
-                        setMarketingProviderAuthed(false)
-                        navigate('/', { replace: true })
-                      }}
-                    >
-                      Sign out
-                    </button>
-                  </span>
-                ) : (
-                  <NavLink to="/staff" className="footerStaffLink">
-                    Staff sign-in
-                  </NavLink>
-                )
-              ) : null}
-            </div>
+            <div className="footerFineprint footerStaffGate" aria-label="Staff access" />
           </div>
         </div>
       </footer>
