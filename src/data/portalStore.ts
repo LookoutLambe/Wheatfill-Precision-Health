@@ -39,6 +39,9 @@ type PortalState = {
 const STORAGE_KEY = 'wph_portal_state_v1'
 const EVENT_NAME = 'wph_portal_state_changed'
 
+// Public → provider alert (team inbox).
+import { apiPost } from '../api/client'
+
 export type ScheduleConfigV1 = {
   slotMinutes: number
   /** 0=Sun..6=Sat. Times are local HH:MM (24h). */
@@ -220,6 +223,8 @@ export function bookAppointment(input: {
   date: string
   time: string
   notes?: string
+  /** When true, sends an alert to the provider team inbox on the API. */
+  notifyTeam?: boolean
 }) {
   const state = readState()
   const key = slotKey(input.date, input.time)
@@ -248,6 +253,34 @@ export function bookAppointment(input: {
     appointments: [appt, ...state.appointments],
     bookedSlots: [key, ...state.bookedSlots],
   })
+
+  // Fire-and-forget team alert (used by multiple booking UIs; avoids missing inbox notifications).
+  if (input.notifyTeam !== false) {
+    const who = input.patientName.trim()
+    const bodyLines = [
+      `Type: ${input.type}`,
+      `Preferred date: ${input.date}`,
+      `Preferred time: ${input.time}`,
+      input.notes?.trim() ? `Notes: ${input.notes.trim()}` : null,
+    ].filter(Boolean) as string[]
+    apiPost(
+      '/v1/public/team-inbox',
+      {
+        kind: 'online_booking',
+        fromName: who,
+        fromEmail: '',
+        body: bodyLines.join('\n'),
+        meta: {
+          apptType: input.type,
+          date: input.date,
+          time: input.time,
+          notes: (input.notes || '').trim(),
+          source: 'portalStore.bookAppointment',
+        },
+      },
+      '',
+    ).catch(() => {})
+  }
 
   return { ok: true as const, appointment: appt }
 }
