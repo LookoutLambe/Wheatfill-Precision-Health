@@ -1,21 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
-import { apiGet, getApiUrl } from '../api/client'
+import { apiGet } from '../api/client'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 
-type Partner = { slug: string; name: string }
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerWithProducts = { slug: string; name: string; products: Product[] }
 type PartnerResp = { partner: PartnerWithProducts }
-
-function fallbackPartners(): Partner[] {
-  return [{ slug: 'mountain-view', name: resolvedFulfillmentPharmacyName() }]
-}
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(0)}`
@@ -30,8 +25,6 @@ function vialFamilyForSku(sku: string) {
 }
 
 export default function PharmacyOptions() {
-  const [partners, setPartners] = useState<Partner[]>([])
-  const [apiUnavailable, setApiUnavailable] = useState(false)
   const [cartTick, setCartTick] = useState(0)
   const [mvPartner, setMvPartner] = useState<PartnerWithProducts | null>(null)
   const [hallPartner, setHallPartner] = useState<PartnerWithProducts | null>(null)
@@ -39,25 +32,6 @@ export default function PharmacyOptions() {
   // Keep default slug imported for compatibility with older links; hub now shows both catalogs.
   const mvSlug = 'mountain-view'
   const hallSlug = 'hallandale'
-
-  useEffect(() => {
-    let cancelled = false
-    apiGet<{ partners: Partner[] }>('/v1/pharmacies')
-      .then((r) => {
-        if (cancelled) return
-        const list = r.partners?.length ? r.partners : fallbackPartners()
-        setPartners(list)
-        setApiUnavailable(false)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setPartners(fallbackPartners())
-        setApiUnavailable(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -155,19 +129,6 @@ export default function PharmacyOptions() {
           </Link>
         </div>
       </header>
-
-      {apiUnavailable ? (
-        <div className="orderNowOffline" role="status">
-          <span>
-            Showing catalog and cart offline—the server at <code className="orderNowCode">{getApiUrl()}</code>{' '}
-            could not be reached. Set your API URL (see tip below) to load live partners and order workflows.
-          </span>
-          <span className="orderNowOfflineTip">
-            Tip: add <code className="orderNowCode">?api=https://YOUR_BACKEND</code> once, or set{' '}
-            <code className="orderNowCode">VITE_API_URL</code> for builds.
-          </span>
-        </div>
-      ) : null}
 
       <section className="orderNowProductsSection catalogShopRoot" aria-labelledby="order-now-products-heading">
         <div className="orderNowSectionHead">
@@ -274,33 +235,7 @@ export default function PharmacyOptions() {
         </div>
       </section>
 
-      {partners.length > 0 ? (
-        <section className="orderNowPartnersSection card cardAccentSoft" aria-labelledby="order-now-partners-heading">
-          <div className="orderNowSectionHead">
-            <h2 id="order-now-partners-heading">More Catalogs</h2>
-            <span className="pill">Catalogs</span>
-          </div>
-          <p className="muted orderNowSectionSub">
-            If your care team uses another supplier menu, open it here. The default list above matches our
-            standard menu fulfilled through {resolvedFulfillmentPharmacyName()} when prescribed, coordinated by{' '}
-            {PRACTICE_PUBLIC_NAME}.
-          </p>
-          <div className="divider" />
-          <div className="orderNowPartnerChips">
-            {partners.map((p) => (
-              <Link
-                key={p.slug}
-                to={`/order-now/${p.slug}`}
-                className="orderNowPartnerChip"
-                style={{ textDecoration: 'none' }}
-              >
-                <span className="orderNowPartnerChipName">{p.name}</span>
-                <span className="orderNowPartnerChipAction">Open →</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {/* Only show Mountain View + Hallandale catalogs on this hub. */}
 
       {cartCountTotal > 0 ? (
         <div className="orderNowMiniCart" role="region" aria-label="Shopping cart summary">
