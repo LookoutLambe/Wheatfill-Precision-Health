@@ -9,6 +9,8 @@ const envSchema = z
     NODE_ENV: z.string().optional(),
     JWT_SECRET: z.string().optional(),
     DATABASE_URL: z.string().optional(),
+    /** Comma-separated browser origins allowed for credentialed CORS (required in production). */
+    FRONTEND_ORIGIN: z.string().optional(),
   })
   .passthrough()
 
@@ -27,6 +29,12 @@ export function loadAndValidateEnv(): ParsedEnv {
     const db = (env.DATABASE_URL || '').trim()
     if (!db) {
       throw new Error('[env] DATABASE_URL is required in production. Refusing to start.')
+    }
+    const fe = (env.FRONTEND_ORIGIN || process.env.FRONTEND_ORIGIN || '').trim()
+    if (!fe) {
+      throw new Error(
+        '[env] FRONTEND_ORIGIN must be set in production (comma-separated HTTPS origins for the static site). Refusing to start.',
+      )
     }
   }
   return env

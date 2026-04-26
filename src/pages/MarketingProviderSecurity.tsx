@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { apiPost, getToken } from '../api/client'
+import { apiPost, hasApiCredential } from '../api/client'
 import {
   ensureDefaultMarketingProviderUsers,
   getMarketingProviderLoginDisplay,
@@ -40,7 +40,7 @@ export default function MarketingProviderSecurity() {
 
   const loginDisplay = getMarketingProviderLoginDisplay()
   const canChangeUsername = effectiveTarget === 'brett' || effectiveTarget === 'bridgette'
-  const needServerCurrentPassword = effectiveTarget === signedInAs && Boolean(getToken())
+  const needServerCurrentPassword = effectiveTarget === signedInAs && Boolean(hasApiCredential())
 
   useEffect(() => {
     if (!isMarketingProviderAuthed()) navigate('/provider/login', { replace: true })
@@ -211,7 +211,7 @@ export default function MarketingProviderSecurity() {
           </p>
         ) : null}
 
-        {getToken() && effectiveTarget === signedInAs ? (
+        {hasApiCredential() && effectiveTarget === signedInAs ? (
           <label style={{ display: 'block', marginTop: 12 }}>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
               Current password
@@ -280,12 +280,8 @@ export default function MarketingProviderSecurity() {
                     setError('Passwords do not match.')
                     return
                   }
-                  if (getToken() && effectiveTarget === signedInAs) {
-                    await apiPost(
-                      '/v1/provider/password',
-                      { currentPassword: curPw, newPassword: pw1 },
-                      getToken(),
-                    )
+                  if (hasApiCredential() && effectiveTarget === signedInAs) {
+                    await apiPost('/v1/provider/password', { currentPassword: curPw, newPassword: pw1 })
                     await setMarketingProviderPassword(effectiveTarget, pw1)
                     setCurPw('')
                   } else {

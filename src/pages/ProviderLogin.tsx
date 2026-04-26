@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { apiPost } from '../api/client'
+import { apiPost, setApiSessionHint } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import {
   ensureDefaultMarketingProviderUsers,
@@ -43,16 +43,21 @@ export default function ProviderLogin() {
           setError('Invalid username or password.')
           return
         }
-        const res = await apiPost<{ token: string }>(
+        const res = await apiPost<{ user?: { username: string } }>(
           '/auth/login',
           { username: teamApiUsernameForSlot(slot), password },
           '',
         )
-        if (!res?.token) {
+        if (!res?.user) {
           setError('Sign-in failed. Try again.')
           return
         }
-        localStorage.setItem('wph_token_v1', res.token)
+        try {
+          localStorage.removeItem('wph_token_v1')
+        } catch {
+          // ignore
+        }
+        setApiSessionHint()
         await setMarketingProviderPassword(slot, password)
         setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })

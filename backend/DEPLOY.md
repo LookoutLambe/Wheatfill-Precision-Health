@@ -1,22 +1,25 @@
 ## Deploying the API (to enable Inbox / Orders / Payments)
 
 The marketing site (`https://wheatfillprecisionhealth.com`) is static. Provider **Inbox**, **Orders**, and **Payments**
-need the backend API running publicly over HTTPS and returning JWT tokens from `POST /auth/login`.
+need the backend API running publicly over HTTPS. Staff sign-in uses `POST /auth/login`.
 
-### What “API token” means
+### What “API session” means
 
 - The provider login page calls `POST /auth/login` on the API.
-- On success it stores the returned JWT in browser storage as `wph_token_v1`.
-- Requests such as `GET /v1/provider/team-inbox` send `Authorization: Bearer <token>`.
+- On success the API sets an **httpOnly** cookie (`wph_jwt`, `Secure` + `SameSite=None` in production) scoped to the API host. The SPA does **not** store the JWT in `localStorage` (legacy `wph_token_v1` is cleared on sign-in).
+- Authenticated fetches use `credentials: 'include'` and send header **`X-WPH-Client: 1`** on `POST`/`PATCH`/`DELETE`/`PUT` so simple cross-site form posts cannot drive credentialed mutations.
+- `GET /v1/auth/session` returns `{ authenticated, role? }` without exposing the JWT (used by the static site to detect an existing cookie session).
+- `POST /auth/logout` clears the session cookie.
 
 ### Minimal production requirements
 
 - **HTTPS** endpoint (recommended hostname: `https://api.wheatfillprecisionhealth.com`)
 - **Database**: PostgreSQL (e.g. Supabase). `DATABASE_URL` and `DIRECT_URL` in production (use the pooler URL per Supabase for IPv4 hosts; see `.env.example`).
-- **CORS**: `FRONTEND_ORIGIN` must include:
+- **CORS**: `FRONTEND_ORIGIN` must be set in **production** (comma-separated list) and include:
   - `https://wheatfillprecisionhealth.com`
   - `https://www.wheatfillprecisionhealth.com` (if you use it)
 - **JWT secret**: set `JWT_SECRET` (do not use the dev default)
+- **Legacy `/v1/team/inbox`**: accepts either `Bearer <TEAM_INBOX_KEY>` or a normal staff **JWT** (provider/admin). Prefer `/v1/provider/team-inbox` with cookie session for the web app.
 
 ### Environment variables
 

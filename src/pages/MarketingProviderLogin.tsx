@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { apiPost } from '../api/client'
+import { apiPost, setApiSessionHint } from '../api/client'
 import { setMarketingProviderAuthed } from '../marketing/providerStore'
 
 export default function MarketingProviderLogin() {
@@ -32,9 +32,14 @@ export default function MarketingProviderLogin() {
     ;(async () => {
       try {
         const u = username.trim().toLowerCase()
-        const res = await apiPost<{ token: string }>('/auth/login', { username: u, password }, '')
-        if (!res?.token) throw new Error('Sign-in failed.')
-        localStorage.setItem('wph_token_v1', res.token)
+        const res = await apiPost<{ user?: { username: string } }>('/auth/login', { username: u, password }, '')
+        if (!res?.user) throw new Error('Sign-in failed.')
+        try {
+          localStorage.removeItem('wph_token_v1')
+        } catch {
+          // ignore
+        }
+        setApiSessionHint()
         setMarketingProviderAuthed(true, u)
         navigate(redirectTo, { replace: true })
       } catch (e: unknown) {

@@ -1,8 +1,27 @@
 import type { FastifyInstance } from 'fastify'
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { injectJwtFromCookie } from '../security/jwtCookie.js'
+
+const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+/**
+ * Custom header required on mutating requests so simple cross-site form posts cannot
+ * hit credentialed API routes (JWT is SameSite=None in production for cross-origin SPA).
+ */
+function requireBrowserClientHeader(req: FastifyRequest, reply: FastifyReply) {
+  if (!MUTATING.has(req.method.toUpperCase())) return
+  const v = (req.headers['x-wph-client'] || '').toString().trim()
+  if (v !== '1') {
+    return reply.status(403).send('Missing or invalid X-WPH-Client header.')
+  }
+}
 
 export function registerAuth(app: FastifyInstance) {
   app.addHook('preHandler', async (req, reply) => {
+    if (req.method === 'OPTIONS') return
+    const blocked = requireBrowserClientHeader(req, reply)
+    if (blocked) return blocked
+    injectJwtFromCookie(req)
     try {
       await req.jwtVerify()
     } catch {

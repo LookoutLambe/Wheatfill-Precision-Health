@@ -75,11 +75,77 @@ async function readResponseBody<T>(res: Response): Promise<T> {
   }
 }
 
+const SESSION_HINT_KEY = 'wph_api_session_hint_v1'
+
+/** Legacy Bearer token (migrating off localStorage); prefer httpOnly cookie set by POST /auth/login. */
 export function getToken() {
   return localStorage.getItem('wph_token_v1') || ''
 }
 
+export function setApiSessionHint() {
+  try {
+    sessionStorage.setItem(SESSION_HINT_KEY, '1')
+  } catch {
+    // ignore
+  }
+}
+
+export function clearApiSessionHint() {
+  try {
+    sessionStorage.removeItem(SESSION_HINT_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+export function hasApiSessionHint() {
+  try {
+    return sessionStorage.getItem(SESSION_HINT_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** True if the SPA should assume an API session may exist (cookie or legacy token). */
+export function hasApiCredential() {
+  return !!getToken().trim() || hasApiSessionHint()
+}
+
+export async function fetchApiSession(): Promise<{ authenticated: boolean; role?: string }> {
+  let res: Response
+  try {
+    res = await fetchWithTimeout(`${getApiUrl()}/v1/auth/session`, {
+      credentials: 'include',
+    })
+  } catch {
+    return { authenticated: false }
+  }
+  if (!res.ok) return { authenticated: false }
+  return readResponseBody(res)
+}
+
+const WPH_BROWSER_CLIENT = '1'
+
 const DEFAULT_TIMEOUT_MS = 15_000
+
+export async function apiLogout() {
+  try {
+    await fetchWithTimeout(`${getApiUrl()}/auth/logout`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-wph-client': WPH_BROWSER_CLIENT },
+      credentials: 'include',
+      body: '{}',
+    })
+  } catch {
+    // ignore
+  }
+  try {
+    localStorage.removeItem('wph_token_v1')
+  } catch {
+    // ignore
+  }
+  clearApiSessionHint()
+}
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Response> {
   if (typeof AbortController === 'undefined') {
@@ -119,6 +185,7 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
       method: 'POST',
       headers: {
         'content-type': 'application/json',
+        'x-wph-client': WPH_BROWSER_CLIENT,
         ...(t ? { authorization: `Bearer ${t}` } : {}),
       },
       credentials: 'include',
@@ -139,6 +206,7 @@ export async function apiPatch<T>(path: string, body: unknown, token?: string): 
       method: 'PATCH',
       headers: {
         'content-type': 'application/json',
+        'x-wph-client': WPH_BROWSER_CLIENT,
         ...(t ? { authorization: `Bearer ${t}` } : {}),
       },
       credentials: 'include',
@@ -158,6 +226,7 @@ export async function apiDelete<T>(path: string, token?: string): Promise<T> {
     res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
       method: 'DELETE',
       headers: {
+        'x-wph-client': WPH_BROWSER_CLIENT,
         ...(t ? { authorization: `Bearer ${t}` } : {}),
       },
       credentials: 'include',

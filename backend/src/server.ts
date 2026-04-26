@@ -4,7 +4,9 @@ import { shippingCentsForPartnerSlug } from './domain/pharmacy-seed.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
 import Fastify from 'fastify'
+import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
 import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
@@ -17,6 +19,8 @@ import { prisma } from './db.js'
 import { hashPassword, verifyPassword } from './auth/password.js'
 import { registerAuth, requireRole } from './auth/authz.js'
 import { decryptSecret, encryptSecret } from './crypto/secrets.js'
+import { clearJwtCookie, injectJwtFromCookie, JWT_COOKIE_NAME, setJwtCookie } from './security/jwtCookie.js'
+import { rateLimitHit } from './security/simpleRateLimit.js'
 
 loadAndValidateEnv()
 
@@ -53,6 +57,11 @@ const SYNC_TEAM_PASSWORDS =
   (process.env.SYNC_TEAM_PASSWORDS || '0').trim() === '1' ||
   (process.env.SYNC_TEAM_PASSWORDS || '').trim().toLowerCase() === 'true'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '8h').trim() || '8h'
+const IS_PRODUCTION = (process.env.NODE_ENV || '').toLowerCase() === 'production'
+const LOGIN_RATE_MAX = Math.max(5, Number(process.env.LOGIN_RATE_MAX || 30) || 30)
+const LOGIN_RATE_WINDOW_MS = Math.max(60_000, Number(process.env.LOGIN_RATE_WINDOW_MS || 900_000) || 900_000)
+const PUBLIC_POST_RATE_MAX = Math.max(5, Number(process.env.PUBLIC_POST_RATE_MAX || 40) || 40)
+const PUBLIC_POST_RATE_WINDOW_MS = Math.max(60_000, Number(process.env.PUBLIC_POST_RATE_WINDOW_MS || 3_600_000) || 3_600_000)
 const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
 const DEFAULT_PATIENT_PASSWORD = process.env.DEFAULT_PATIENT_PASSWORD || 'wheatfill'
 
@@ -279,14 +288,23 @@ const app = Fastify({
   logger: true,
 })
 
+await app.register(cookie)
+await app.register(helmet, {
+  global: true,
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+})
 await app.register(cors, {
   origin: (origin, cb) => {
     const allow = (FRONTEND_ORIGIN || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
-    // If not configured, allow all origins (dev).
-    if (allow.length === 0) return cb(null, true)
+    if (allow.length === 0) {
+      // Development: permissive when FRONTEND_ORIGIN is unset. Production requires explicit allowlist (see env.ts).
+      if (IS_PRODUCTION) return cb(null, false)
+      return cb(null, true)
+    }
     if (!origin) return cb(null, true)
     if (allow.includes(origin)) return cb(null, true)
     // If FRONTEND_ORIGIN lists only one of apex vs www, browsers on the other hostname still need CORS.
@@ -296,13 +314,31 @@ await app.register(cors, {
   credentials: true,
   // Ensure browser preflight for DELETE / PATCH to team inbox, provider routes, etc.
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['content-type', 'authorization', 'x-requested-with'],
+  allowedHeaders: ['content-type', 'authorization', 'x-requested-with', 'x-wph-client', 'stripe-signature'],
 })
 await app.register(sensible)
 await app.register(jwt, {
   secret: JWT_SECRET,
   sign: { iss: JWT_ISSUER, aud: JWT_AUDIENCE, expiresIn: JWT_EXPIRES_IN },
   verify: { allowedIss: [JWT_ISSUER], allowedAud: [JWT_AUDIENCE] },
+})
+
+/** Public: whether an httpOnly session cookie is present and valid (SPA cannot read the JWT). */
+app.get('/v1/auth/session', async (req) => {
+  const jar = (req as any).cookies as Record<string, string | undefined> | undefined
+  const raw = jar?.[JWT_COOKIE_NAME]
+  if (!raw) return { authenticated: false }
+  try {
+    const payload = (await app.jwt.verify(raw)) as { role?: string }
+    return { authenticated: true, role: payload.role }
+  } catch {
+    return { authenticated: false }
+  }
+})
+
+app.post('/auth/logout', async (_req, reply) => {
+  clearJwtCookie(reply)
+  return { ok: true }
 })
 
 await registerHealthRoutes(app, { ensureProviderSeed })
@@ -318,6 +354,8 @@ const TEAM_INBOX_KEY = (process.env.TEAM_INBOX_KEY || '').trim()
 
 // Public contact form -> stored in DB for team workspace (no Medplum).
 app.post('/v1/public/contact', async (req, reply) => {
+  const lim = rateLimitHit(`contact:${reqIp(req) || 'unknown'}`, PUBLIC_POST_RATE_MAX, PUBLIC_POST_RATE_WINDOW_MS)
+  if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many requests.')
   const body = PublicContactBody.parse(req.body)
   const created = await prisma.teamInboxItem.create({
     data: {
@@ -445,7 +483,9 @@ const PublicTeamInboxBody = z.object({
 })
 
 // Public: contact + online booking requests (same table as /v1/public/contact).
-app.post('/v1/public/team-inbox', async (req) => {
+app.post('/v1/public/team-inbox', async (req, reply) => {
+  const lim = rateLimitHit(`pubinbox:${reqIp(req) || 'unknown'}`, PUBLIC_POST_RATE_MAX, PUBLIC_POST_RATE_WINDOW_MS)
+  if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many requests.')
   const body = PublicTeamInboxBody.parse(req.body)
   const created = await prisma.teamInboxItem.create({
     data: {
@@ -460,24 +500,35 @@ app.post('/v1/public/team-inbox', async (req) => {
   return { ok: true, id: created.id }
 })
 
-/** Optional shared secret for machine-to-machine read of the same inbox (treat as sensitive). */
-function requireTeamInboxKey() {
+/**
+ * Legacy machine inbox read: Bearer TEAM_INBOX_KEY, or a normal staff JWT (provider/admin).
+ * Prefer JWT + `/v1/provider/team-inbox` for new integrations.
+ */
+function requireTeamInboxKeyOrJwt() {
   return async (req: any, reply: any) => {
-    if (!TEAM_INBOX_KEY) {
-      return reply
-        .status(501)
-        .send('Team inbox read is not configured. Set TEAM_INBOX_KEY in the server environment.')
-    }
+    injectJwtFromCookie(req)
     const h = (req.headers?.authorization || '').toString()
     const m = /^Bearer\s+(.+)$/i.exec(h)
-    const key = m?.[1] || ''
-    if (!key || key !== TEAM_INBOX_KEY) {
-      return reply.unauthorized('Invalid or missing team inbox key.')
+    const bearer = m?.[1] || ''
+    if (!bearer) return reply.unauthorized('Missing credentials.')
+    if (TEAM_INBOX_KEY && bearer === TEAM_INBOX_KEY) return
+    try {
+      const payload = (await app.jwt.verify(bearer)) as { role?: string; sub?: string }
+      const role = payload.role
+      if (role !== 'provider' && role !== 'admin') return reply.forbidden('Insufficient role.')
+      ;(req as any).user = payload
+    } catch {
+      if (!TEAM_INBOX_KEY) {
+        return reply
+          .status(501)
+          .send('Team inbox read is not configured. Sign in and use a JWT, or set TEAM_INBOX_KEY for legacy clients.')
+      }
+      return reply.unauthorized('Invalid credentials.')
     }
   }
 }
 
-app.get('/v1/team/inbox', { preHandler: requireTeamInboxKey() }, async () => {
+app.get('/v1/team/inbox', { preHandler: requireTeamInboxKeyOrJwt() }, async () => {
   const items = await prisma.teamInboxItem.findMany({
     orderBy: { createdAt: 'desc' },
     take: 300,
@@ -487,7 +538,7 @@ app.get('/v1/team/inbox', { preHandler: requireTeamInboxKey() }, async () => {
 
 app.patch(
   '/v1/team/inbox/:id',
-  { preHandler: requireTeamInboxKey() },
+  { preHandler: requireTeamInboxKeyOrJwt() },
   async (req) => {
     const id = (req.params as any).id as string
     const body = z
@@ -731,6 +782,8 @@ const StaffRequestBody = z.object({
 
 // Public: staff account request (pending approval by admin)
 app.post('/auth/staff-request', async (req, reply) => {
+  const lim = rateLimitHit(`staffreq:${reqIp(req) || 'unknown'}`, 12, PUBLIC_POST_RATE_WINDOW_MS)
+  if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many requests.')
   const body = StaffRequestBody.parse(req.body)
   const exists = await prisma.user.findUnique({ where: { username: body.username } })
   if (exists) return reply.conflict('That username is already in use.')
@@ -764,6 +817,8 @@ app.post('/auth/staff-request', async (req, reply) => {
 })
 
 app.post('/auth/signup', async (req, reply) => {
+  const lim = rateLimitHit(`signup:${reqIp(req) || 'unknown'}`, 10, PUBLIC_POST_RATE_WINDOW_MS)
+  if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many requests.')
   const body = SignupBody.parse(req.body)
   const exists = await prisma.user.findUnique({ where: { username: body.username } })
   if (exists) return reply.conflict('Username already exists.')
@@ -791,7 +846,8 @@ app.post('/auth/signup', async (req, reply) => {
   })
 
   const token = await reply.jwtSign({ sub: user.id, role: user.role })
-  return { user, token }
+  setJwtCookie(reply, token)
+  return { user }
 })
 
 const LoginBody = z.object({
@@ -800,6 +856,8 @@ const LoginBody = z.object({
 })
 
 app.post('/auth/login', async (req, reply) => {
+  const lim = rateLimitHit(String(reqIp(req) || 'unknown'), LOGIN_RATE_MAX, LOGIN_RATE_WINDOW_MS)
+  if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many login attempts.')
   const body = LoginBody.parse(req.body)
   const user = await prisma.user.findUnique({ where: { username: body.username } })
   if (!user) return reply.unauthorized('Invalid username or password.')
@@ -808,9 +866,9 @@ app.post('/auth/login', async (req, reply) => {
   if (!ok) return reply.unauthorized('Invalid username or password.')
 
   const token = await reply.jwtSign({ sub: user.id, role: user.role })
+  setJwtCookie(reply, token)
   return {
     user: { id: user.id, role: user.role, username: user.username, displayName: user.displayName },
-    token,
   }
 })
 

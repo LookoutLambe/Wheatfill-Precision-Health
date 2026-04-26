@@ -1,3 +1,4 @@
+import { apiLogout, clearApiSessionHint } from '../api/client'
 import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
 
 export type MarketingIntegrations = {
@@ -101,6 +102,8 @@ export function resolveMarketingProviderSlot(loginNormalized: string): Marketing
 export async function ensureDefaultMarketingProviderUsers() {
   const store = readCredentialStore()
   if (store.admin?.pwHash && store.brett?.pwHash && store.bridgette?.pwHash) return
+  // Production builds: never seed client-side demo password hashes (staff must use API accounts).
+  if (import.meta.env.PROD) return
 
   const adminHash = await sha256(DEFAULT_ADMIN_PASSWORD)
   const providerHash = await sha256(DEFAULT_PROVIDER_PASSWORD)
@@ -292,6 +295,8 @@ export function setMarketingProviderAuthed(v: boolean, username?: string) {
     localStorage.removeItem(KEY_SESSION)
     localStorage.removeItem(KEY_SESSION_USER)
     localStorage.removeItem('wph_token_v1')
+    clearApiSessionHint()
+    void apiLogout()
     // Do not remove wph_marketing_workspace_v1 (team preview), wph_portal_state_v1, wph_marketing_integrations_v1, etc.
   }
   window.dispatchEvent(new Event(MARKETING_PROVIDER_AUTH_EVENT))

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { apiPost } from '../api/client'
+import { apiPost, setApiSessionHint } from '../api/client'
 
 export default function PatientBackendLogin() {
   const navigate = useNavigate()
@@ -74,12 +74,17 @@ export default function PatientBackendLogin() {
               setBusy(true)
               ;(async () => {
                 try {
-                  const res = await apiPost<{ token?: string }>('/auth/login', {
+                  const res = await apiPost<{ user?: { username: string } }>('/auth/login', {
                     username: username.trim(),
                     password,
                   })
-                  if (!res?.token) throw new Error('No token returned.')
-                  localStorage.setItem('wph_token_v1', res.token)
+                  if (!res?.user) throw new Error('Sign-in failed.')
+                  try {
+                    localStorage.removeItem('wph_token_v1')
+                  } catch {
+                    // ignore
+                  }
+                  setApiSessionHint()
                   navigate(next, { replace: true })
                 } catch (e: any) {
                   setError(String(e?.message || e))

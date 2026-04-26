@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { apiGet, apiPatch, apiPost, getToken } from '../api/client'
+import { apiGet, apiLogout, apiPatch, apiPost, fetchApiSession, setApiSessionHint } from '../api/client'
 
 type PaymentsStatus = {
   activeProvider: 'stripe' | 'clover' | null
@@ -24,7 +24,7 @@ export default function ProviderPayments() {
   const location = useLocation()
   const qs = useMemo(() => new URLSearchParams(location.search), [location.search])
 
-  const [token, setToken] = useState(getToken())
+  const [paymentsAuthed, setPaymentsAuthed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<PaymentsStatus | null>(null)
@@ -36,39 +36,46 @@ export default function ProviderPayments() {
   const [cloverMerchantId, setCloverMerchantId] = useState('')
   const [cloverPrivateKey, setCloverPrivateKey] = useState('')
 
-  async function load() {
-    if (!token) {
-      setLoading(false)
-      return
-    }
+  async function load(opts?: { silent?: boolean }) {
     setLoading(true)
     setError(null)
     try {
-      const res = await apiGet<PaymentsStatus>('/v1/provider/payments', token)
+      const res = await apiGet<PaymentsStatus>('/v1/provider/payments')
       setStatus(res)
+      setPaymentsAuthed(true)
+      setApiSessionHint()
       setCloverEnv((res.clover.env === 'production' ? 'production' : 'sandbox') as any)
       setCloverMerchantId(res.clover.merchantId || '')
     } catch (e: any) {
-      setError(String(e?.message || e))
+      setPaymentsAuthed(false)
       setStatus(null)
+      if (!opts?.silent) setError(String(e?.message || e))
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    // Helpful after Stripe onboarding redirect
-    if (qs.get('stripe') === 'return' || qs.get('stripe') === 'refresh') {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      apiPost('/v1/provider/payments/stripe/refresh', {}, token || '').catch(() => {})
-    }
+    ;(async () => {
+      const s = await fetchApiSession()
+      if (s.authenticated) {
+        setApiSessionHint()
+        await load({ silent: true })
+        return
+      }
+      setLoading(false)
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    load()
+    // Helpful after Stripe onboarding redirect
+    if (qs.get('stripe') === 'return' || qs.get('stripe') === 'refresh') {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      apiPost('/v1/provider/payments/stripe/refresh', {}).catch(() => {})
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [])
 
   return (
     <div className="page">
@@ -98,7 +105,7 @@ export default function ProviderPayments() {
         </div>
       ) : null}
 
-      {!token ? (
+      {!paymentsAuthed ? (
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Provider login (Payments)</h2>
@@ -130,9 +137,16 @@ export default function ProviderPayments() {
                 ;(async () => {
                   setError(null)
                   try {
-                    const res = await apiPost<{ token: string }>('/auth/login', { username, password })
-                    localStorage.setItem('wph_token_v1', res.token)
-                    setToken(res.token)
+                    const res = await apiPost<{ user?: { username: string } }>('/auth/login', { username, password })
+                    if (!res?.user) throw new Error('Sign-in failed.')
+                    try {
+                      localStorage.removeItem('wph_token_v1')
+                    } catch {
+                      // ignore
+                    }
+                    setApiSessionHint()
+                    setPaymentsAuthed(true)
+                    await load()
                   } catch (e: any) {
                     setError(String(e?.message || e))
                   }
@@ -177,7 +191,7 @@ export default function ProviderPayments() {
                         ;(async () => {
                           setError(null)
                           try {
-                            const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/onboard', {}, token)
+                            const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/onboard', {})
                             window.location.href = res.url
                           } catch (e: any) {
                             setError(String(e?.message || e))
@@ -196,7 +210,7 @@ export default function ProviderPayments() {
                         ;(async () => {
                           setError(null)
                           try {
-                            await apiPost('/v1/provider/payments/stripe/disconnect', {}, token)
+                            await apiPost('/v1/provider/payments/stripe/disconnect', {})
                             await load()
                           } catch (e: any) {
                             setError(String(e?.message || e))
@@ -217,7 +231,7 @@ export default function ProviderPayments() {
                         ;(async () => {
                           setError(null)
                           try {
-                            await apiPatch('/v1/provider/payments/active', { provider: 'stripe' }, token)
+                            await apiPatch('/v1/provider/payments/active', { provider: 'stripe' })
                             await load()
                           } catch (e: any) {
                             setError(String(e?.message || e))
@@ -279,11 +293,11 @@ export default function ProviderPayments() {
                         ;(async () => {
                           setError(null)
                           try {
-                            await apiPost(
-                              '/v1/provider/payments/clover',
-                              { env: cloverEnv, merchantId: cloverMerchantId, privateKey: cloverPrivateKey },
-                              token,
-                            )
+                            await apiPost('/v1/provider/payments/clover', {
+                              env: cloverEnv,
+                              merchantId: cloverMerchantId,
+                              privateKey: cloverPrivateKey,
+                            })
                             setCloverPrivateKey('')
                             await load()
                           } catch (e: any) {
@@ -305,7 +319,7 @@ export default function ProviderPayments() {
                         ;(async () => {
                           setError(null)
                           try {
-                            await apiPatch('/v1/provider/payments/active', { provider: 'clover' }, token)
+                            await apiPatch('/v1/provider/payments/active', { provider: 'clover' })
                             await load()
                           } catch (e: any) {
                             setError(String(e?.message || e))
@@ -326,7 +340,7 @@ export default function ProviderPayments() {
                         ;(async () => {
                           setError(null)
                           try {
-                            await apiPost('/v1/provider/payments/clover/disconnect', {}, token)
+                            await apiPost('/v1/provider/payments/clover/disconnect', {})
                             await load()
                           } catch (e: any) {
                             setError(String(e?.message || e))
@@ -363,8 +377,8 @@ export default function ProviderPayments() {
                 type="button"
                 className="btn"
                 onClick={() => {
-                  localStorage.removeItem('wph_token_v1')
-                  setToken('')
+                  void apiLogout()
+                  setPaymentsAuthed(false)
                   setStatus(null)
                 }}
               >

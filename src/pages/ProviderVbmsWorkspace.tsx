@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { apiDelete, apiGet, apiPatch, getToken } from '../api/client'
+import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   addBlackoutDate,
@@ -306,22 +306,18 @@ export default function ProviderVbmsWorkspace() {
       navigate('/provider/login', { replace: true })
       return
     }
-    // Staff login stores a JWT for the API; inbox/orders need it on every deploy (including static marketing).
-    if (!getToken()) {
-      setMarketingProviderAuthed(false)
-      navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
-    }
+    ;(async () => {
+      const s = await fetchApiSession()
+      if (!s.authenticated) {
+        setMarketingProviderAuthed(false)
+        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
+        return
+      }
+      setApiSessionHint()
+    })()
   }, [navigate])
 
   const loadTeamInbox = useCallback(async () => {
-    const tok = getToken()
-    if (!tok) {
-      setInboxError(
-        'Sign in again to load the inbox. Your team password gives you a session on this site—no separate API key.',
-      )
-      setMsgs([])
-      return
-    }
     setInboxLoading(true)
     setInboxError(null)
     try {
@@ -335,7 +331,7 @@ export default function ProviderVbmsWorkspace() {
           body: string
           createdAt: string
         }>
-      }>('/v1/provider/team-inbox', tok)
+      }>('/v1/provider/team-inbox')
       const next = r.items.map((row) => ({
         id: row.id,
         from: [row.fromName, row.fromEmail && row.fromEmail.trim() ? `<${row.fromEmail}>` : ''].filter(Boolean).join(' '),
@@ -378,7 +374,7 @@ export default function ProviderVbmsWorkspace() {
 
   useEffect(() => {
     const sync = () => {
-      if (getToken()) void loadTeamInbox()
+      void loadTeamInbox()
     }
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'wph_token_v1') sync()
@@ -399,15 +395,10 @@ export default function ProviderVbmsWorkspace() {
   // Payment rails removed.
 
   const loadOrders = useCallback(async () => {
-    const tok = getToken()
-    if (!tok) {
-      setOrders([])
-      return
-    }
     setOrdersLoading(true)
     setOrdersError(null)
     try {
-      const r = await apiGet<{ orders: ProviderOrderRow[] }>('/v1/provider/orders', tok)
+      const r = await apiGet<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
       setOrders(
         (r.orders || []).map((o) => ({
           ...o,
@@ -544,11 +535,9 @@ export default function ProviderVbmsWorkspace() {
     o.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0)
 
   const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed') => {
-    const tok = getToken()
-    if (!tok) return
     setOrdersError(null)
     try {
-      await apiPatch(`/v1/provider/orders/${encodeURIComponent(id)}/status`, { status }, tok)
+      await apiPatch(`/v1/provider/orders/${encodeURIComponent(id)}/status`, { status })
       await loadOrders()
     } catch (e: any) {
       setOrdersError(String(e?.message || e))
@@ -752,7 +741,7 @@ export default function ProviderVbmsWorkspace() {
               type="button"
               className="btn"
               onClick={() => void loadTeamInbox()}
-              disabled={inboxLoading || !getToken()}
+              disabled={inboxLoading || !hasApiCredential()}
             >
               {inboxLoading ? 'Loading…' : 'Refresh'}
             </button>
@@ -766,13 +755,13 @@ export default function ProviderVbmsWorkspace() {
               {inboxError}
             </p>
           ) : null}
-          {getToken() && filteredMsgs.length === 0 && msgs.length === 0 && !inboxError ? (
+          {hasApiCredential() && filteredMsgs.length === 0 && msgs.length === 0 && !inboxError ? (
             <p className="muted">No messages yet. New contact and time-request form alerts will list here.</p>
           ) : null}
-          {getToken() && filteredMsgs.length === 0 && msgs.length > 0 ? (
+          {hasApiCredential() && filteredMsgs.length === 0 && msgs.length > 0 ? (
             <p className="muted">No messages match your search/filter.</p>
           ) : null}
-          {getToken() && filteredMsgs.length > 0 ? (
+          {hasApiCredential() && filteredMsgs.length > 0 ? (
             <div className="teamWidgetScroll">
               <div className="tableWrap">
               <table className="table" aria-label="Inbox">
@@ -820,18 +809,12 @@ export default function ProviderVbmsWorkspace() {
                           <button
                             type="button"
                             className="btn"
-                            disabled={m.status === 'handled' || !getToken()}
+                            disabled={m.status === 'handled' || !hasApiCredential()}
                             style={{ opacity: m.status === 'handled' ? 0.6 : 1 }}
                             onClick={() => {
                               ;(async () => {
-                                const tok = getToken()
-                                if (!tok) return
                                 try {
-                                  await apiPatch(
-                                    `/v1/provider/team-inbox/${encodeURIComponent(m.id)}`,
-                                    { status: 'handled' },
-                                    tok,
-                                  )
+                                  await apiPatch(`/v1/provider/team-inbox/${encodeURIComponent(m.id)}`, { status: 'handled' })
                                   await loadTeamInbox()
                                 } catch {
                                   /* keep UI; user can refresh */
@@ -845,19 +828,14 @@ export default function ProviderVbmsWorkspace() {
                             type="button"
                             className="btn"
                             style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
-                            disabled={!getToken()}
+                            disabled={!hasApiCredential()}
                             onClick={() => {
-                              if (!getToken()) return
+                              if (!hasApiCredential()) return
                               if (!window.confirm('Delete this request from the inbox? This cannot be undone.')) return
                               ;(async () => {
-                                const tok = getToken()
-                                if (!tok) return
                                 try {
                                   setInboxError(null)
-                                  await apiDelete<{ ok: boolean }>(
-                                    `/v1/provider/team-inbox/${encodeURIComponent(m.id)}`,
-                                    tok,
-                                  )
+                                  await apiDelete<{ ok: boolean }>(`/v1/provider/team-inbox/${encodeURIComponent(m.id)}`)
                                   await loadTeamInbox()
                                 } catch (e) {
                                   setInboxError(String((e as Error)?.message || e) || 'Delete failed. Check the API and try again.')
@@ -1280,7 +1258,7 @@ export default function ProviderVbmsWorkspace() {
               <span className="pill pillRed" title="New orders awaiting action">
                 {ordersNewCount > 0 ? `${ordersNewCount} new` : 'Queue clear'}
               </span>
-              <button type="button" className="btn" disabled={ordersLoading || !getToken()} onClick={() => void loadOrders()}>
+              <button type="button" className="btn" disabled={ordersLoading || !hasApiCredential()} onClick={() => void loadOrders()}>
                 {ordersLoading ? 'Loading…' : 'Refresh'}
               </button>
             </div>
@@ -1297,7 +1275,7 @@ export default function ProviderVbmsWorkspace() {
               {ordersError}
             </p>
           ) : null}
-          {getToken() && !ordersLoading && orders.length === 0 ? (
+          {hasApiCredential() && !ordersLoading && orders.length === 0 ? (
             <p className="muted" style={{ margin: 0 }}>
               No patient-submitted orders yet. They appear when a patient completes checkout (with a signed order on the
               site) and you are on the <strong>same</strong> practice user the API assigned to the order.
