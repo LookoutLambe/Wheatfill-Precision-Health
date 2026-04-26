@@ -143,6 +143,8 @@ export async function runPharmacyOrderCheckout(input: {
   const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?canceled=1&order=${order.id}`
 
   if (active === 'stripe') {
+    // When STRIPE_SECRET_KEY is missing in API env, the order is still created; the practice must
+    // configure Stripe + set active payment provider, or use Clover, or follow up off-site.
     if (!stripe) return { ok: true, orderId: order.id, totalCents: total, checkoutUrl: null }
     const sessionCreateParams = {
       mode: 'payment' as const,

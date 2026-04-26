@@ -271,6 +271,19 @@ async function ensureProviderSeed() {
   await ensureMarketingTeamLogins()
 }
 
+/**
+ * Provider user rows used for the practice. Pharmacy catalog orders use `findFirst` among these
+ * for `order.providerId`, so the staff portal must list by team — not `req.user.sub` only.
+ */
+async function teamProviderIdsForPharmacyOrders(fallbackUserId: string): Promise<string[]> {
+  const rows = await prisma.user.findMany({
+    where: { role: 'provider', deletedAt: null },
+    select: { id: true },
+  })
+  const ids = rows.map((r) => r.id)
+  return ids.length > 0 ? ids : [fallbackUserId]
+}
+
 async function ensureDemoPatientSeed() {
   const username = DEFAULT_PATIENT_USERNAME
   const existing = await prisma.user.findUnique({ where: { username } })
@@ -2125,8 +2138,9 @@ await app.register(async (protectedScope) => {
     '/v1/provider/orders',
     { preHandler: requireRole(['provider', 'admin']) },
     async (req) => {
+      const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
       const orders = await prisma.order.findMany({
-        where: { providerId: req.user.sub, deletedAt: null },
+        where: { providerId: { in: teamIds }, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         take: 100,
         include: {
@@ -2190,10 +2204,12 @@ await app.register(async (protectedScope) => {
   protectedScope.patch(
     '/v1/provider/orders/:id/status',
     { preHandler: requireRole(['provider', 'admin']) },
-    async (req) => {
+    async (req, reply) => {
       const id = (req.params as any).id as string
       const body = UpdateOrderStatusBody.parse(req.body)
-      const before = await prisma.order.findUnique({ where: { id } })
+      const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
+      const before = await prisma.order.findFirst({ where: { id, providerId: { in: teamIds }, deletedAt: null } })
+      if (!before) return reply.notFound('Order not found.')
       const order = await prisma.order.update({ where: { id }, data: { status: body.status } })
       await writeAudit({
         actorId: req.user.sub,

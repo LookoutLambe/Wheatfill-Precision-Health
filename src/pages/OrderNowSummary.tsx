@@ -159,11 +159,13 @@ export default function OrderNowSummary() {
             window.location.href = res.checkoutUrl
             return
           }
-          // Static marketing build: if no checkout URL is configured, submit still records the order
-          // and the practice will follow up to coordinate payment + fulfillment.
           writeCartForSlug(slug, {})
           setCheckoutError(null)
-          alert('Order submitted. Your care team will follow up with next steps.')
+          alert(
+            res.orderId
+              ? `Order received (ref ${res.orderId}). No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active payment method. Your care team can still collect payment.`
+              : 'Order submitted. No payment page opened (Stripe may not be configured on the server). Your care team will follow up with next steps.',
+          )
         } catch (e: any) {
           setCheckoutError(String(e?.message || e))
         } finally {
@@ -200,7 +202,7 @@ export default function OrderNowSummary() {
           writeCartForSlug(slug, {})
           setCheckoutError(null)
           alert(
-            `Order received. Reference: ${res.orderId}. Your care team will follow up with payment and next steps if needed.`,
+            `Order received. Reference: ${res.orderId}. No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active method in provider settings. Your care team can still collect payment.`,
           )
         } catch (e: any) {
           setCheckoutError(String(e?.message || e))
