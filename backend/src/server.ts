@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { loadAndValidateEnv } from './config/env.js'
+import { DEFAULT_JWT_EXPIRES_IN, resolveTrustProxy } from './config/session.js'
 import { shippingCentsForPartnerSlug } from './domain/pharmacy-seed.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
@@ -56,8 +57,9 @@ const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'wheatfill'
 const SYNC_TEAM_PASSWORDS =
   (process.env.SYNC_TEAM_PASSWORDS || '0').trim() === '1' ||
   (process.env.SYNC_TEAM_PASSWORDS || '').trim().toLowerCase() === 'true'
-const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || '8h').trim() || '8h'
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN).trim() || DEFAULT_JWT_EXPIRES_IN
 const IS_PRODUCTION = (process.env.NODE_ENV || '').toLowerCase() === 'production'
+const TRUST_PROXY_ENABLED = resolveTrustProxy()
 const LOGIN_RATE_MAX = Math.max(5, Number(process.env.LOGIN_RATE_MAX || 30) || 30)
 const LOGIN_RATE_WINDOW_MS = Math.max(60_000, Number(process.env.LOGIN_RATE_WINDOW_MS || 900_000) || 900_000)
 const PUBLIC_POST_RATE_MAX = Math.max(5, Number(process.env.PUBLIC_POST_RATE_MAX || 40) || 40)
@@ -126,7 +128,14 @@ async function getMedplumAdmin() {
 }
 
 function reqIp(req: any) {
-  return (req?.ip || req?.headers?.['x-forwarded-for'] || '').toString().slice(0, 120) || undefined
+  if (TRUST_PROXY_ENABLED) {
+    const ip = String(req?.ip || '').trim()
+    if (ip) return ip.slice(0, 120)
+  }
+  const raw = String(req?.socket?.remoteAddress || '')
+    .replace(/^::ffff:/, '')
+    .trim()
+  return raw ? raw.slice(0, 120) : undefined
 }
 
 async function writeAudit(input: {
@@ -286,6 +295,7 @@ async function ensureDemoPatientSeed() {
 
 const app = Fastify({
   logger: true,
+  trustProxy: TRUST_PROXY_ENABLED,
 })
 
 await app.register(cookie)
@@ -293,6 +303,9 @@ await app.register(helmet, {
   global: true,
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  strictTransportSecurity: IS_PRODUCTION
+    ? { maxAge: 15552000, includeSubDomains: true, preload: false }
+    : false,
 })
 await app.register(cors, {
   origin: (origin, cb) => {
@@ -2443,5 +2456,9 @@ await app.register(async (protectedScope) => {
   )
 })
 
-app.listen({ port: PORT, host: '0.0.0.0' })
+await app.listen({ port: PORT, host: '0.0.0.0' })
+app.log.info(
+  { trustProxy: TRUST_PROXY_ENABLED, jwtExpiresIn: JWT_EXPIRES_IN },
+  'wph API ready (trustProxy affects req.ip / rate-limit keys behind proxies)',
+)
 

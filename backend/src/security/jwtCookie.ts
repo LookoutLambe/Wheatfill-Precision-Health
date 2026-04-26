@@ -1,19 +1,20 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
+import { DEFAULT_JWT_EXPIRES_IN } from '../config/session.js'
 
 /** HttpOnly cookie name for API JWT (cross-origin SPA + API). */
 export const JWT_COOKIE_NAME = 'wph_jwt'
 
 export function jwtCookieMaxAgeSeconds(): number {
-  const raw = (process.env.JWT_EXPIRES_IN || '8h').trim()
+  const raw = (process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN).trim()
   const m = /^(\d+)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days)$/i.exec(raw)
-  if (!m) return 8 * 3600
+  if (!m) return 30 * 86400
   const n = Number(m[1])
   const u = m[2].toLowerCase()
   if (u.startsWith('s')) return n
   if (u.startsWith('m')) return n * 60
   if (u.startsWith('h')) return n * 3600
   if (u.startsWith('d')) return n * 86400
-  return 8 * 3600
+  return 30 * 86400
 }
 
 export function setJwtCookie(reply: FastifyReply, token: string) {

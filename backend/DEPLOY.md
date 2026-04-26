@@ -19,6 +19,9 @@ need the backend API running publicly over HTTPS. Staff sign-in uses `POST /auth
   - `https://wheatfillprecisionhealth.com`
   - `https://www.wheatfillprecisionhealth.com` (if you use it)
 - **JWT secret**: set `JWT_SECRET` (do not use the dev default)
+- **Sessions (team stays signed in)**: default `JWT_EXPIRES_IN` is **30d** (httpOnly cookie max-age matches the JWT). Set `JWT_EXPIRES_IN=90d` if you want longer; shorter for stricter security.
+- **Reverse proxy**: when the API sits behind Render, Fly, or nginx, **trust proxy** is turned on automatically in production when `RENDER=true` or `FLY_APP_NAME` is set, so **client IP** (rate limits, audit logs) is correct. Set `TRUST_PROXY=0` to disable, or `TRUST_PROXY=1` to force on. Other hosts: set `TRUST_PROXY=1`.
+- **HSTS**: enabled on the API in production via Helmet (browsers remember HTTPS for the API host).
 - **Legacy `/v1/team/inbox`**: accepts either `Bearer <TEAM_INBOX_KEY>` or a normal staff **JWT** (provider/admin). Prefer `/v1/provider/team-inbox` with cookie session for the web app.
 
 ### Environment variables
