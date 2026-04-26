@@ -4,6 +4,7 @@ import { COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE, publicSchedulingUrlForFullApp }
 import { MARKETING_ONLY } from '../config/mode'
 import { getMarketingIntegrations } from '../marketing/providerStore'
 import { getScheduleConfig, bookAppointment, getPortalState, slotsForDate, subscribePortalState, type ScheduleConfigV1 } from '../data/portalStore'
+import { apiPost } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import type { UiApptType } from '../medplum/scheduling'
 
@@ -405,12 +406,39 @@ export default function BookOnline() {
                       const who = guestName.trim()
                       if (!who) throw new Error('Enter your name.')
 
+                      // Alert the provider team inbox (server-side) so the request shows up under /provider.
+                      // If this fails, we still book the slot locally (preview), but we surface the error.
+                      const bodyLines = [
+                        `Type: ${apptType}`,
+                        `Preferred date: ${selected.date}`,
+                        `Preferred time: ${selected.time} (${timeLabel24To12(selected.time)})`,
+                        notes?.trim() ? `Notes: ${notes.trim()}` : null,
+                      ].filter(Boolean) as string[]
+                      try {
+                        await apiPost('/v1/public/team-inbox', {
+                          kind: 'online_booking',
+                          fromName: who,
+                          fromEmail: '',
+                          body: bodyLines.join('\n'),
+                          meta: {
+                            apptType,
+                            date: selected.date,
+                            time: selected.time,
+                            notes: (notes || '').trim(),
+                          },
+                        })
+                      } catch (e: any) {
+                        // Keep going so the user still sees their selection "booked" locally, but call out the failure.
+                        setMessage(`Booked locally, but the team inbox alert failed: ${String(e?.message || e)}`)
+                      }
+
                       const res = bookAppointment({
                         patientName: who,
                         type: apptType,
                         date: selected.date,
                         time: selected.time,
                         notes,
+                        notifyTeam: false,
                       })
                       const createdAt = new Date().toLocaleString()
                       if (!res.ok) {
