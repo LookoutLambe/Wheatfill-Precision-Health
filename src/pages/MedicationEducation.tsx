@@ -270,15 +270,6 @@ export default function MedicationEducation() {
             <strong>Follow-up</strong> — dose adjustments, symptom checks, and expectations should be reviewed over time.
           </li>
         </ul>
-        <div className="divider" />
-        <div className="btnRow">
-          <Link to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
-            Submit an Order Request
-          </Link>
-          <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
-            Ask a question
-          </Link>
-        </div>
       </section>
     </div>
   )

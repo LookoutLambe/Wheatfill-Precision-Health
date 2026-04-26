@@ -111,6 +111,9 @@ export default function PeptideTherapy() {
 
       <nav className="peptidePageNav" aria-label="On this page" id="peptide-on-page-nav">
         <span className="peptidePageNavLabel">On this page</span>
+        <Link to="/peptides/hub" className="peptidePageNavLink">
+          Peptide information hub
+        </Link>
         <a href="#what-peptides-heading" className="peptidePageNavLink">
           What are peptides
         </a>

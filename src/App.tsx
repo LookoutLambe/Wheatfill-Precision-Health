@@ -7,6 +7,7 @@ import ProviderGuard from './components/ProviderGuard'
 import PatientGuard from './components/PatientGuard'
 import Landing from './pages/Landing'
 const PeptideTherapy = lazy(() => import('./pages/PeptideTherapy'))
+const PeptideHub = lazy(() => import('./pages/PeptideHub'))
 import About from './pages/About'
 const Pricing = lazy(() => import('./pages/Pricing'))
 import Contact from './pages/Contact'
@@ -92,6 +93,7 @@ export default function App() {
           <Routes>
         <Route element={<Shell />}>
           <Route path="/" element={<Landing />} />
+          <Route path="/peptides/hub" element={<PeptideHub />} />
           <Route path="/peptides" element={<PeptideTherapy />} />
           <Route path="/about" element={<About />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -151,6 +153,7 @@ export default function App() {
         <Routes>
       <Route element={<Shell />}>
         <Route path="/" element={<Landing />} />
+        <Route path="/peptides/hub" element={<PeptideHub />} />
         <Route path="/peptides" element={<PeptideTherapy />} />
         <Route path="/about" element={<About />} />
         <Route path="/pricing" element={<Pricing />} />

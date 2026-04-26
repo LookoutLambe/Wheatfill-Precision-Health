@@ -77,22 +77,42 @@ h2 {
   color: var(--text-h);
 }
 
+h3 {
+  /* Match heading face without forcing the same weight as h1/h2 (card titles often use bolder 600+). */
+  line-height: 1.32;
+  font-family: var(--heading);
+  color: var(--text-h);
+  @media (max-width: 480px) {
+    line-height: 1.36;
+  }
+}
+
 h1 {
   font-size: 56px;
-  letter-spacing: -1.68px;
+  /* em-based: fixed px was overly tight on smaller mobile sizes and hurt wrapped lines */
+  letter-spacing: -0.03em;
+  line-height: 1.22;
   margin: 32px 0;
   @media (max-width: 1024px) {
     font-size: 36px;
+    line-height: 1.32;
     margin: 20px 0;
+  }
+  @media (max-width: 480px) {
+    line-height: 1.36;
   }
 }
 h2 {
   font-size: 24px;
-  line-height: 118%;
+  line-height: 1.32;
   letter-spacing: -0.24px;
   margin: 0 0 8px;
   @media (max-width: 1024px) {
     font-size: 20px;
+    line-height: 1.35;
+  }
+  @media (max-width: 480px) {
+    line-height: 1.38;
   }
 }
 p {

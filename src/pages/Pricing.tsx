@@ -3,12 +3,14 @@ import { BookVisitCta } from '../components/CharmMarketingCtas'
 
 export default function Pricing() {
   return (
-    <div className="page" style={{ gap: 22 }}>
-      <div>
-        <h1 style={{ margin: 0, scrollMarginTop: 88 }}>Transparent Pricing</h1>
-        <p className="muted" style={{ marginTop: 8, fontSize: 18 }}>
-          Clear, upfront costs with no hidden fees or surprises.
-        </p>
+    <div className="page pricingPage" style={{ gap: 22 }}>
+      <div className="pageHeaderRow">
+        <div>
+          <h1 style={{ margin: 0, scrollMarginTop: 88 }}>Transparent Pricing</h1>
+          <p className="muted pageSubtitle" style={{ marginTop: 8, fontSize: 18 }}>
+            Clear, upfront costs with no hidden fees or surprises.
+          </p>
+        </div>
       </div>
 
       <section className="card">
@@ -97,7 +99,7 @@ export default function Pricing() {
           For <b>current vial SKUs and dollar amounts</b> (including multi-size tiers), open <b>Order Now</b>—pricing
           there matches the catalog you use when ordering through the practice at checkout.
         </p>
-        <div style={{ marginTop: 12 }}>
+        <div className="pricingPageCtaRow" style={{ marginTop: 12 }}>
           <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
             Browse Order Now Catalog
           </Link>
