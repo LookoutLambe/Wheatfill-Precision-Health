@@ -129,11 +129,54 @@ export default function ProviderVbmsWorkspace() {
     const v = raw.trim().toLowerCase()
     return v === 'inbox' || v === 'schedule' || v === 'orders' ? (v as 'inbox' | 'schedule' | 'orders') : null
   }, [location.search])
+
+  // Persist panel + filters for day-to-day efficiency.
+  useEffect(() => {
+    if (!panel) return
+    try {
+      localStorage.setItem('wph_provider_last_panel', panel)
+    } catch {
+      // ignore
+    }
+  }, [panel])
+
+  const readPersisted = useCallback(<T,>(key: string, fallback: T): T => {
+    try {
+      const raw = localStorage.getItem(key)
+      if (!raw) return fallback
+      return JSON.parse(raw) as T
+    } catch {
+      return fallback
+    }
+  }, [])
+
   const who = getMarketingProviderLoginDisplay()
   const signOut = useCallback(() => {
     setMarketingProviderAuthed(false)
     navigate('/', { replace: true })
   }, [navigate])
+
+  const copyText = useCallback(async (text: string) => {
+    const s = String(text || '').trim()
+    if (!s) return
+    try {
+      await navigator.clipboard.writeText(s)
+    } catch {
+      // Fallback: best-effort for older browsers.
+      const ta = document.createElement('textarea')
+      ta.value = s
+      ta.style.position = 'fixed'
+      ta.style.left = '-9999px'
+      document.body.appendChild(ta)
+      ta.focus()
+      ta.select()
+      try {
+        document.execCommand('copy')
+      } finally {
+        ta.remove()
+      }
+    }
+  }, [])
 
   const demoPatients = useMemo(() => seedWorkspacePatients(), [])
   const initialWs = useMemo(() => loadMarketingWorkspaceState(), [])
@@ -160,12 +203,29 @@ export default function ProviderVbmsWorkspace() {
   const [timeOffStart, setTimeOffStart] = useState('12:00')
   const [timeOffEnd, setTimeOffEnd] = useState('13:00')
 
-  const [inboxQuery, setInboxQuery] = useState('')
-  const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>('new')
-  const [orderQuery, setOrderQuery] = useState('')
-  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed'>('new')
-  const [apptQuery, setApptQuery] = useState('')
-  const [apptFilter, setApptFilter] = useState<'all' | 'Scheduled' | 'Completed' | 'Cancelled'>('Scheduled')
+  const [inboxQuery, setInboxQuery] = useState(() => readPersisted('wph_provider_inbox_query', ''))
+  const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>(() => readPersisted('wph_provider_inbox_filter', 'new'))
+  const [orderQuery, setOrderQuery] = useState(() => readPersisted('wph_provider_orders_query', ''))
+  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed'>(() =>
+    readPersisted('wph_provider_orders_filter', 'new'),
+  )
+  const [apptQuery, setApptQuery] = useState(() => readPersisted('wph_provider_appt_query', ''))
+  const [apptFilter, setApptFilter] = useState<'all' | 'Scheduled' | 'Completed' | 'Cancelled'>(() =>
+    readPersisted('wph_provider_appt_filter', 'Scheduled'),
+  )
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('wph_provider_inbox_query', JSON.stringify(inboxQuery))
+      localStorage.setItem('wph_provider_inbox_filter', JSON.stringify(inboxFilter))
+      localStorage.setItem('wph_provider_orders_query', JSON.stringify(orderQuery))
+      localStorage.setItem('wph_provider_orders_filter', JSON.stringify(orderFilter))
+      localStorage.setItem('wph_provider_appt_query', JSON.stringify(apptQuery))
+      localStorage.setItem('wph_provider_appt_filter', JSON.stringify(apptFilter))
+    } catch {
+      // ignore
+    }
+  }, [apptFilter, apptQuery, inboxFilter, inboxQuery, orderFilter, orderQuery])
 
   const [qsPatient, setQsPatient] = useState(initialWs.qsPatient)
   const [qsCustomName, setQsCustomName] = useState(initialWs.qsCustomName)
@@ -173,6 +233,12 @@ export default function ProviderVbmsWorkspace() {
   const [qsWhen, setQsWhen] = useState(initialWs.qsWhen)
   const [qsDate, setQsDate] = useState(() => (initialWs.qsWhen || '').slice(0, 10) || new Date().toISOString().slice(0, 10))
   const [qsTime, setQsTime] = useState('09:00')
+
+  const inboxSearchRef = useRef<HTMLInputElement | null>(null)
+  const ordersSearchRef = useRef<HTMLInputElement | null>(null)
+  const scheduleSearchRef = useRef<HTMLInputElement | null>(null)
+
+  // Keyboard shortcuts are wired after loadOrders/loadTeamInbox declarations (see below).
 
   const workspacePersistRef = useRef({ appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache })
   workspacePersistRef.current = { appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache }
@@ -229,6 +295,11 @@ export default function ProviderVbmsWorkspace() {
     return subscribePortalState(sync)
   }, [])
 
+  const loginUrlForPanel = useMemo(() => {
+    const next = panel ? `/provider?panel=${encodeURIComponent(panel)}` : '/provider'
+    return `/provider/login?next=${encodeURIComponent(next)}`
+  }, [panel])
+
   useEffect(() => {
     if (!isMarketingProviderAuthed()) {
       navigate('/provider/login', { replace: true })
@@ -237,9 +308,9 @@ export default function ProviderVbmsWorkspace() {
     // Staff login stores a JWT for the API; inbox/orders need it on every deploy (including static marketing).
     if (!getToken()) {
       setMarketingProviderAuthed(false)
-      navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
+      navigate(loginUrlForPanel, { replace: true })
     }
-  }, [navigate])
+  }, [loginUrlForPanel, navigate])
 
   const loadTeamInbox = useCallback(async () => {
     const tok = getToken()
@@ -286,9 +357,9 @@ export default function ProviderVbmsWorkspace() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setInboxError('Session expired. Sign in again on the provider login page.')
+        setInboxError('Session expired. Sign in again to continue.')
         setMarketingProviderAuthed(false)
-        navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
+        navigate(loginUrlForPanel, { replace: true })
       } else {
         setInboxError(msg)
       }
@@ -345,9 +416,9 @@ export default function ProviderVbmsWorkspace() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setOrdersError('Session expired. Sign in again.')
+        setOrdersError('Session expired. Sign in again to continue.')
         setMarketingProviderAuthed(false)
-        navigate('/provider/login?next=' + encodeURIComponent('/provider'), { replace: true })
+        navigate(loginUrlForPanel, { replace: true })
       } else {
         setOrdersError(msg)
         setOrders([])
@@ -355,7 +426,7 @@ export default function ProviderVbmsWorkspace() {
     } finally {
       setOrdersLoading(false)
     }
-  }, [navigate])
+  }, [loginUrlForPanel, navigate])
 
   useEffect(() => {
     if (isMarketingProviderAuthed()) void loadOrders()
@@ -628,20 +699,12 @@ export default function ProviderVbmsWorkspace() {
           </p>
           <div className="divider" />
           <div className="btnRow">
-            <button
-              type="button"
-              className="btn btnPrimary"
-              onClick={() => document.getElementById('wph-orders')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            >
+            <Link to="/provider?panel=orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
               View order requests
-            </button>
-            <button
-              type="button"
-              className="btn"
-              onClick={() => document.getElementById('wph-inbox')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            >
+            </Link>
+            <Link to="/provider?panel=inbox" className="btn" style={{ textDecoration: 'none' }}>
               View inbox
-            </button>
+            </Link>
             <Link to="/provider/schedule" className="btn" style={{ textDecoration: 'none' }}>
               Weekly schedule
             </Link>
@@ -676,6 +739,7 @@ export default function ProviderVbmsWorkspace() {
                 value={inboxQuery}
                 onChange={(e) => setInboxQuery(e.target.value)}
                 placeholder="Name, email, keyword…"
+                ref={inboxSearchRef}
               />
             </label>
             <label>
@@ -848,6 +912,7 @@ export default function ProviderVbmsWorkspace() {
                 value={apptQuery}
                 onChange={(e) => setApptQuery(e.target.value)}
                 placeholder="Name, type, date/time…"
+                ref={scheduleSearchRef}
               />
             </label>
             <label>
@@ -1266,6 +1331,7 @@ export default function ProviderVbmsWorkspace() {
                     value={orderQuery}
                     onChange={(e) => setOrderQuery(e.target.value)}
                     placeholder="Patient, address, SKU, keyword…"
+                    ref={ordersSearchRef}
                   />
                 </label>
                 <label>
@@ -1306,6 +1372,26 @@ export default function ProviderVbmsWorkspace() {
                       <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
                         {new Date(o.createdAt).toLocaleString()} · {o.pharmacyPartner ? o.pharmacyPartner.name : o.request}
                       </div>
+                    </div>
+                    <div className="btnRow" style={{ margin: 0, gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <button type="button" className="btn" onClick={() => void copyText(orderLineItemsSummary(o))}>
+                        Copy items
+                      </button>
+                      <button type="button" className="btn" onClick={() => void copyText(formatShipTo(o))}>
+                        Copy ship-to
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => {
+                          const bits = [formatOrderPatient(o), o.patient?.email || '', o.patient?.phone || '']
+                            .map((x) => String(x || '').trim())
+                            .filter(Boolean)
+                          void copyText(bits.join(' · '))
+                        }}
+                      >
+                        Copy patient
+                      </button>
                     </div>
                     <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                       Status

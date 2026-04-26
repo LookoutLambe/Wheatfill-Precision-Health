@@ -49,6 +49,10 @@ enum BillingItemType {
 enum PaymentMethod {
   stripe
   clover
+  /// Deprecated (kept for DB compatibility; app no longer uses these rails).
+  manual_venmo
+  /// Deprecated (kept for DB compatibility; app no longer uses these rails).
+  manual_paypal
 }
 
 enum ProviderPaymentProvider {

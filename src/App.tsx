@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Shell from './components/Shell'
@@ -6,42 +6,42 @@ import ProviderShell from './components/ProviderShell'
 import ProviderGuard from './components/ProviderGuard'
 import PatientGuard from './components/PatientGuard'
 import Landing from './pages/Landing'
-import PeptideTherapy from './pages/PeptideTherapy'
+const PeptideTherapy = lazy(() => import('./pages/PeptideTherapy'))
 import About from './pages/About'
-import Pricing from './pages/Pricing'
+const Pricing = lazy(() => import('./pages/Pricing'))
 import Contact from './pages/Contact'
 import NoticeOfPrivacyPractices from './pages/NoticeOfPrivacyPractices'
 import Privacy from './pages/Privacy'
 import TermsOfService from './pages/TermsOfService'
-import BookOnline from './pages/BookOnline'
-import OrderingPortal from './pages/OrderingPortal'
-import MedicationEducation from './pages/MedicationEducation'
-import PharmacyOptions from './pages/PharmacyOptions'
-import PharmacyPartner from './pages/PharmacyPartner'
-import MountainViewPharmacy from './pages/MountainViewPharmacy'
-import HallandalePharmacy from './pages/HallandalePharmacy'
-import OrderNowSummary from './pages/OrderNowSummary'
-import PatientBackendLogin from './pages/PatientBackendLogin'
-import PatientPortal from './pages/PatientPortal'
-import PatientPortalInfo from './pages/PatientPortalInfo'
-import ProviderPortal from './pages/ProviderPortal'
+const BookOnline = lazy(() => import('./pages/BookOnline'))
+const OrderingPortal = lazy(() => import('./pages/OrderingPortal'))
+const MedicationEducation = lazy(() => import('./pages/MedicationEducation'))
+const PharmacyOptions = lazy(() => import('./pages/PharmacyOptions'))
+const PharmacyPartner = lazy(() => import('./pages/PharmacyPartner'))
+const MountainViewPharmacy = lazy(() => import('./pages/MountainViewPharmacy'))
+const HallandalePharmacy = lazy(() => import('./pages/HallandalePharmacy'))
+const OrderNowSummary = lazy(() => import('./pages/OrderNowSummary'))
+const PatientBackendLogin = lazy(() => import('./pages/PatientBackendLogin'))
+const PatientPortal = lazy(() => import('./pages/PatientPortal'))
+const PatientPortalInfo = lazy(() => import('./pages/PatientPortalInfo'))
+const ProviderPortal = lazy(() => import('./pages/ProviderPortal'))
 import SignIn from './pages/SignIn'
-import ProviderLogin from './pages/ProviderLogin'
-import ProviderOrderingTest from './pages/ProviderOrderingTest'
-import ProviderPayments from './pages/ProviderPayments'
-import ProviderIntegrations from './pages/ProviderIntegrations'
+const ProviderLogin = lazy(() => import('./pages/ProviderLogin'))
+const ProviderOrderingTest = lazy(() => import('./pages/ProviderOrderingTest'))
+const ProviderPayments = lazy(() => import('./pages/ProviderPayments'))
+const ProviderIntegrations = lazy(() => import('./pages/ProviderIntegrations'))
 import { APP_URL, MARKETING_ONLY } from './config/mode'
 import { PATIENT_USES_MEDPLUM } from './config/patientFeatures'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from './config/providerAuth'
-import MarketingProviderLogin from './pages/MarketingProviderLogin'
-import MarketingProviderAdmin from './pages/MarketingProviderAdmin'
-import MarketingProviderSecurity from './pages/MarketingProviderSecurity'
-import ProviderVbmsWorkspace from './pages/ProviderVbmsWorkspace'
-import ProviderSchedule from './pages/ProviderSchedule'
-import ProviderStaffUsers from './pages/ProviderStaffUsers'
-import ProviderStripeConnectDemo from './pages/ProviderStripeConnectDemo'
-import ProviderStripeConnectProducts from './pages/ProviderStripeConnectProducts'
-import StripeConnectStorefront from './pages/StripeConnectStorefront'
+const MarketingProviderLogin = lazy(() => import('./pages/MarketingProviderLogin'))
+const MarketingProviderAdmin = lazy(() => import('./pages/MarketingProviderAdmin'))
+const MarketingProviderSecurity = lazy(() => import('./pages/MarketingProviderSecurity'))
+const ProviderVbmsWorkspace = lazy(() => import('./pages/ProviderVbmsWorkspace'))
+const ProviderSchedule = lazy(() => import('./pages/ProviderSchedule'))
+const ProviderStaffUsers = lazy(() => import('./pages/ProviderStaffUsers'))
+const ProviderStripeConnectDemo = lazy(() => import('./pages/ProviderStripeConnectDemo'))
+const ProviderStripeConnectProducts = lazy(() => import('./pages/ProviderStripeConnectProducts'))
+const StripeConnectStorefront = lazy(() => import('./pages/StripeConnectStorefront'))
 
 /** React Router `Navigate` must not receive a full `https://…` string — it breaks routing (white screen). */
 function MarketingLeaveToFullApp({ path }: { path: string }) {
@@ -73,10 +73,18 @@ function MarketingLeaveToFullApp({ path }: { path: string }) {
 }
 
 export default function App() {
+  const fallback = (
+    <div className="page">
+      <p className="muted" style={{ padding: 24 }}>
+        Loading…
+      </p>
+    </div>
+  )
   if (MARKETING_ONLY) {
     // Marketing-only build: no PHI routes on GitHub Pages.
     // Allow a local "provider admin" (links only) with a test login.
     return (
+      <Suspense fallback={fallback}>
       <Routes>
         <Route element={<Shell />}>
           <Route path="/" element={<Landing />} />
@@ -128,9 +136,11 @@ export default function App() {
         <Route path="/storefront/success" element={<StripeConnectStorefront />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     )
   }
   return (
+    <Suspense fallback={fallback}>
     <Routes>
       <Route element={<Shell />}>
         <Route path="/" element={<Landing />} />
@@ -205,5 +215,6 @@ export default function App() {
       <Route path="/storefront/success" element={<StripeConnectStorefront />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }
