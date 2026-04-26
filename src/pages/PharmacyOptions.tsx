@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
-import VenmoPayToHint from '../components/VenmoPayToHint'
 import { apiGet, getApiUrl } from '../api/client'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
@@ -137,10 +136,8 @@ export default function PharmacyOptions() {
               You are ordering through {PRACTICE_PUBLIC_NAME}: browse products and prices here, build your
               bag, then open <b>View Cart</b> for a full summary. We coordinate fulfillment with{' '}
               {resolvedFulfillmentPharmacyName()} when medication is prescribed, and your care team can step in if
-              your order needs attention. Payment happens on a secure checkout link after you submit your order from the
-              summary page—the practice sends amount and pay-to details.
+              your order needs attention.
             </p>
-            <VenmoPayToHint style={{ marginTop: 12 }} />
             <p className="muted" style={{ marginTop: 14, fontSize: 14, marginBottom: 0 }}>
               Browse an accessible, table-style price list:{' '}
               <Link to="/pharmacy/mountain-view" style={{ fontWeight: 800 }}>
@@ -272,8 +269,7 @@ export default function PharmacyOptions() {
             </Link>
           </div>
           <p className="muted orderNowFineprint">
-            Use <b>View Cart & Summary</b> when you are ready to review lines, acknowledgments, and submit for payment
-            instructions.
+            Use <b>View Cart & Summary</b> when you are ready to review lines, acknowledgments, and submit.
           </p>
         </div>
       </section>

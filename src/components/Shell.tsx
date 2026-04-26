@@ -17,6 +17,20 @@ import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../co
 import { CONTRACTED_PHARMACY_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 
+function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
+  // Safari < 14 uses addListener/removeListener instead of addEventListener/removeEventListener.
+  const anyMq = mq as any
+  if (typeof anyMq.addEventListener === 'function') {
+    anyMq.addEventListener('change', cb)
+    return () => anyMq.removeEventListener('change', cb)
+  }
+  if (typeof anyMq.addListener === 'function') {
+    anyMq.addListener(cb)
+    return () => anyMq.removeListener(cb)
+  }
+  return () => {}
+}
+
 function mapCatalogHighlightToCart(): CartLineProduct[] {
   return CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
     sku: p.sku,
@@ -92,20 +106,18 @@ export default function Shell() {
   }, [])
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 721px)')
+    const mq = window.matchMedia('(min-width: 901px)')
     const onChange = () => {
       if (mq.matches) setMenuOpen(false)
     }
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    return onMediaQueryChange(mq, onChange)
   }, [])
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 720px)')
+    const mq = window.matchMedia('(max-width: 900px)')
     const sync = () => setMobileUi(mq.matches)
     sync()
-    mq.addEventListener('change', sync)
-    return () => mq.removeEventListener('change', sync)
+    return onMediaQueryChange(mq, sync)
   }, [])
 
   useEffect(() => {

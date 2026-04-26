@@ -6,6 +6,20 @@ import brandMarkImg from '../assets/wheatfill-mark.png'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from '../config/providerAuth'
 
+function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
+  // Safari < 14 uses addListener/removeListener instead of addEventListener/removeEventListener.
+  const anyMq = mq as any
+  if (typeof anyMq.addEventListener === 'function') {
+    anyMq.addEventListener('change', cb)
+    return () => anyMq.removeEventListener('change', cb)
+  }
+  if (typeof anyMq.addListener === 'function') {
+    anyMq.addListener(cb)
+    return () => anyMq.removeListener(cb)
+  }
+  return () => {}
+}
+
 export default function ProviderShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
@@ -19,12 +33,11 @@ export default function ProviderShell() {
   }, [])
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 721px)')
+    const mq = window.matchMedia('(min-width: 901px)')
     const onChange = () => {
       if (mq.matches) setMenuOpen(false)
     }
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
+    return onMediaQueryChange(mq, onChange)
   }, [])
 
   useEffect(() => {

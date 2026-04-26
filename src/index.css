@@ -2,7 +2,7 @@ html {
   scroll-padding-top: 112px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   html {
     scroll-padding-top: 124px;
   }

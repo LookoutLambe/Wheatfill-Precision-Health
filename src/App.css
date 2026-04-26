@@ -4,9 +4,9 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Safari fallback: older Safari versions don't support flexbox `gap`, causing layouts to look cramped/different.
+/* Fallback for browsers that don't support flexbox `gap` (older Safari).
    Use margin-based spacing on common flex rows. */
-@supports (-webkit-touch-callout: none) {
+@supports not (gap: 1rem) {
   .btnRow,
   .topNavInner,
   .topNavRight,
@@ -286,7 +286,7 @@ html.pharmacyCartOpen body {
   text-align: center;
 }
 
-@media (min-width: 721px) {
+@media (min-width: 901px) {
   .brandPrimary {
     font-size: 28px;
     line-height: 1.04;
@@ -1377,7 +1377,7 @@ html.pharmacyCartOpen body {
   -webkit-overflow-scrolling: touch;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .navMenuToggle {
     display: inline-flex;
   }
@@ -1538,7 +1538,7 @@ html.pharmacyCartOpen body {
   }
 }
 
-@media (min-width: 721px) {
+@media (min-width: 901px) {
   .topNavShell {
     flex-direction: row;
     flex-wrap: nowrap;
@@ -1597,7 +1597,7 @@ html.pharmacyCartOpen body {
   display: inline-flex !important;
 }
 
-@media (min-width: 721px) {
+@media (min-width: 901px) {
   .topNavShell--alwaysDrawer .topNav {
     flex: 1 1 auto;
     min-width: 0;
@@ -3768,7 +3768,7 @@ html.pharmacyCartOpen body {
   border-color: rgba(10, 30, 63, 0.22);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   html.hasMobilePatientDock .main {
     /* Dock may wrap to two rows on small devices. */
     padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
