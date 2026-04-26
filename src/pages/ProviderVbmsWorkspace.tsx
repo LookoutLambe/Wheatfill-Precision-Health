@@ -330,12 +330,14 @@ export default function ProviderVbmsWorkspace() {
     }
     ;(async () => {
       const s = await fetchApiSession()
-      if (!s.authenticated) {
+      // Only sign out when the API explicitly says there is no session. Network/CORS/timeouts
+      // return `ok: false` and would otherwise create a spurious "sign in again" loop.
+      if (s.ok && !s.authenticated) {
         setMarketingProviderAuthed(false)
         navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
         return
       }
-      setApiSessionHint()
+      if (s.ok && s.authenticated) setApiSessionHint()
     })()
   }, [navigate])
 

@@ -111,17 +111,32 @@ export function hasApiCredential() {
   return !!getToken().trim() || hasApiSessionHint()
 }
 
-export async function fetchApiSession(): Promise<{ authenticated: boolean; role?: string }> {
+/**
+ * Session probe against GET /v1/auth/session. When `ok` is false, the result is inconclusive
+ * (network, CORS, timeout, or non-200) — callers must not treat that as a definitive sign-out.
+ */
+export type ApiSessionSnapshot = { authenticated: boolean; role?: string; ok: boolean }
+
+export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
   let res: Response
   try {
     res = await fetchWithTimeout(`${getApiUrl()}/v1/auth/session`, {
       credentials: 'include',
     })
   } catch {
-    return { authenticated: false }
+    return { authenticated: false, ok: false }
   }
-  if (!res.ok) return { authenticated: false }
-  return readResponseBody(res)
+  if (!res.ok) return { authenticated: false, ok: false }
+  try {
+    const data = (await readResponseBody(res)) as { authenticated?: boolean; role?: string }
+    return {
+      authenticated: data.authenticated === true,
+      role: data.role,
+      ok: true,
+    }
+  } catch {
+    return { authenticated: false, ok: false }
+  }
 }
 
 const WPH_BROWSER_CLIENT = '1'

@@ -58,7 +58,7 @@ export default function ProviderPayments() {
   useEffect(() => {
     ;(async () => {
       const s = await fetchApiSession()
-      if (s.authenticated) {
+      if (s.ok && s.authenticated) {
         setApiSessionHint()
         await load({ silent: true })
         return

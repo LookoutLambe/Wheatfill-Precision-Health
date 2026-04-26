@@ -75,12 +75,12 @@ export default function ProviderTeamInbox() {
     }
     ;(async () => {
       const s = await fetchApiSession()
-      if (!s.authenticated) {
+      if (s.ok && !s.authenticated) {
         setMarketingProviderAuthed(false)
         navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
         return
       }
-      setApiSessionHint()
+      if (s.ok && s.authenticated) setApiSessionHint()
     })()
   }, [navigate])
 
