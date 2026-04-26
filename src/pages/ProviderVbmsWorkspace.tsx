@@ -1,13 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  apiDelete,
-  apiGetWithSessionWarmup,
-  apiPatch,
-  fetchApiSessionForProviderGate,
-  hasApiCredential,
-  setApiSessionHint,
-} from '../api/client'
+import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import {
   addBlackoutDate,
   addBlackoutBlock,
@@ -126,9 +119,6 @@ function parseInboxBodyForQuickSchedule(body: string) {
       : null
   return { visitType, whenText }
 }
-
-const PROVIDER_WORKSPACE_PATH = '/provider'
-const PROVIDER_LOGIN_RETURN_URL = `/provider/login?next=${encodeURIComponent(PROVIDER_WORKSPACE_PATH)}`
 
 export default function ProviderVbmsWorkspace() {
   const location = useLocation()
@@ -336,14 +326,9 @@ export default function ProviderVbmsWorkspace() {
       return
     }
     ;(async () => {
-      const s = await fetchApiSessionForProviderGate()
-      // Only sign out when the API explicitly says there is no session. Network/CORS
-      // return `ok: false` and would otherwise create a spurious "sign in again" loop.
-      if (s.ok && !s.authenticated) {
-        setMarketingProviderAuthed(false)
-        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
-        return
-      }
+      // Staff sign-in is local (username/password); we never auto-logout from a session probe.
+      // iOS / mobile may not send httpOnly API cookies; inbox/orders will show an error but stay in the app.
+      const s = await fetchApiSession()
       if (s.ok && s.authenticated) setApiSessionHint()
     })()
   }, [navigate])
@@ -377,7 +362,7 @@ export default function ProviderVbmsWorkspace() {
     setInboxLoading(true)
     setInboxError(null)
     try {
-      const r = await apiGetWithSessionWarmup<{
+      const r = await apiGet<{
         items: Array<{
           id: string
           kind: string
@@ -410,9 +395,7 @@ export default function ProviderVbmsWorkspace() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setInboxError('Session expired. Sign in again to continue.')
-        setMarketingProviderAuthed(false)
-        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
+        setInboxError('Could not load inbox (the API did not accept the session in this browser). You are still signed in—try again or use another device; we do not log you out here.')
       } else {
         setInboxError(msg)
       }
@@ -454,7 +437,7 @@ export default function ProviderVbmsWorkspace() {
     setOrdersLoading(true)
     setOrdersError(null)
     try {
-      const r = await apiGetWithSessionWarmup<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
+      const r = await apiGet<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
       setOrders(
         (r.orders || []).map((o) => ({
           ...o,
@@ -464,9 +447,7 @@ export default function ProviderVbmsWorkspace() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setOrdersError('Session expired. Sign in again to continue.')
-        setMarketingProviderAuthed(false)
-        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
+        setOrdersError('Could not load orders. You stay signed in—try pulling to refresh. The API may not have sent a session in this browser.')
       } else {
         setOrdersError(msg)
         setOrders([])

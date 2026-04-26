@@ -1,18 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import {
-  apiDelete,
-  apiGetWithSessionWarmup,
-  apiPatch,
-  fetchApiSessionForProviderGate,
-  hasApiCredential,
-  setApiSessionHint,
-} from '../api/client'
+import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import {
   getMarketingProviderLoginDisplay,
   isMarketingProviderAuthed,
   MARKETING_PROVIDER_AUTH_EVENT,
-  setMarketingProviderAuthed,
 } from '../marketing/providerStore'
 
 type DemoMsg = {
@@ -36,9 +28,6 @@ function includesAll(haystack: string, tokens: string[]) {
   const h = norm(haystack)
   return tokens.every((t) => h.includes(t))
 }
-
-const PROVIDER_HOME = '/provider'
-const PROVIDER_LOGIN_RETURN_URL = `/provider/login?next=${encodeURIComponent(PROVIDER_HOME)}`
 
 export default function ProviderTeamInbox() {
   const navigate = useNavigate()
@@ -81,12 +70,7 @@ export default function ProviderTeamInbox() {
       return
     }
     ;(async () => {
-      const s = await fetchApiSessionForProviderGate()
-      if (s.ok && !s.authenticated) {
-        setMarketingProviderAuthed(false)
-        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
-        return
-      }
+      const s = await fetchApiSession()
       if (s.ok && s.authenticated) setApiSessionHint()
     })()
   }, [navigate])
@@ -95,7 +79,7 @@ export default function ProviderTeamInbox() {
     setInboxLoading(true)
     setInboxError(null)
     try {
-      const r = await apiGetWithSessionWarmup<{
+      const r = await apiGet<{
         items: Array<{
           id: string
           kind: string
@@ -119,9 +103,7 @@ export default function ProviderTeamInbox() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setInboxError('Session expired. Sign in again to continue.')
-        setMarketingProviderAuthed(false)
-        navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
+        setInboxError('Could not load inbox. You stay signed in—try again or refresh. (We do not sign you out when the API is unavailable.)')
       } else {
         setInboxError(msg)
       }
