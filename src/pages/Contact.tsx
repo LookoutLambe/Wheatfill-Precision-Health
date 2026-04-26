@@ -96,7 +96,7 @@ export default function Contact() {
       <div>
         <h1 style={{ margin: 0 }}>Contact</h1>
         <p className="muted pageSubtitle">
-          Fill this out on the website, then we’ll open an email draft addressed to {CONTACT_TO_EMAIL} for you to send.
+          Fill this out on the website, then we’ll open an email draft for you to send.
           For privacy, don’t send sensitive medical details over email. {TYPICAL_INBOX_REPLY_LINE}
         </p>
       </div>
@@ -234,8 +234,7 @@ export default function Contact() {
                 <span className="pill">Copy</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                If your email app didn’t open automatically, you can copy/paste the details below into an email to{' '}
-                <strong>{CONTACT_TO_EMAIL}</strong>.
+                If your email app didn’t open automatically, you can copy/paste the details below into an email.
               </p>
               <div className="divider" />
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
