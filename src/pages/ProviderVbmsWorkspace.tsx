@@ -1,7 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
-import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   addBlackoutDate,
   addBlackoutBlock,
@@ -617,18 +616,6 @@ export default function ProviderVbmsWorkspace() {
               Sign out
             </button>
           </div>
-        </div>
-        <div className="teamWorkspaceIntro">
-          <p>
-            {PROVIDER_TEAM_LABEL} — tools for the public marketing site, not a full clinical or ops app. Open the
-            inbox below to see who reached out from the contact and booking pages.
-          </p>
-          <p>
-            <strong>Inbox</strong> messages live on the <strong>API</strong> (database). <strong>Quick schedule</strong>{' '}
-            and the rows you add there are stored in <strong>this browser</strong>. New <strong>Book Online</strong>{' '}
-            requests also appear in <strong>Scheduled &amp; completed</strong> as &ldquo;Request received&rdquo; until you
-            add the same person from the inbox via Quick schedule or mark the inbox row handled.
-          </p>
         </div>
         <div className="teamWorkspaceToolbar" style={{ paddingTop: 0 }}>
           <span className="pill" title="Inbox messages from the public site">
