@@ -491,11 +491,14 @@ html.pharmacyCartOpen body {
   margin-top: 10px;
 }
 
-/* Keep table headers visible inside scrollable widgets. */
-.teamWorkspacePage .cardGrid > .card thead th {
+/* Sticky table headers only inside scroll regions — not on short tables (e.g. Availability / Time off),
+   or thead will overlap the first tbody row when the page scrolls. */
+.teamWorkspacePage .teamWidgetScroll thead th {
   position: sticky;
-  top: 58px; /* below sticky cardTitle */
+  top: 0;
   z-index: 4;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 0 rgba(10, 30, 63, 0.08);
 }
 
 /* Team Workspace mobile scroll fixes:
