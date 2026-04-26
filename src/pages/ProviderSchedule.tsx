@@ -4,6 +4,7 @@ import {
   getPortalState,
   getScheduleConfig,
   isDateBlackout,
+  isSlotClosed,
   isSlotBooked,
   removeAppointment,
   removeBlackoutDate,
@@ -331,7 +332,7 @@ export default function ProviderSchedule() {
                     {dayKeys.map((dateKey) => {
                       const slotKey = `${dateKey}T${t}`
                       const appt = apptsBySlot.get(slotKey)
-                      const closed = isDateBlackout(dateKey)
+                      const closed = isDateBlackout(dateKey) || isSlotClosed(dateKey, t)
                       const booked = isSlotBooked(dateKey, t)
                       return (
                         <td key={slotKey}>

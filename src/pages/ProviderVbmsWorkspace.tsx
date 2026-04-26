@@ -6,9 +6,11 @@ import { CATALOG_PAYPAL, STRIPE_CHECKOUT_URL } from '../config/provider'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
 import {
   addBlackoutDate,
+  addBlackoutBlock,
   getPortalState,
   removeAppointment,
   removeBlackoutDate,
+  removeBlackoutBlock,
   scheduleAppointment,
   subscribePortalState,
   updateAppointmentStatus,
@@ -162,6 +164,13 @@ export default function ProviderVbmsWorkspace() {
   const [p2pMemo, setP2pMemo] = useState('')
   const [p2pRecording, setP2pRecording] = useState(false)
   const [blackouts, setBlackouts] = useState<string[]>(() => getPortalState().blackoutDates || [])
+  const [blackoutBlocks, setBlackoutBlocks] = useState<Array<{ date: string; start: string; end: string }>>(
+    () => (getPortalState() as any).blackoutBlocks || [],
+  )
+  const [timeOffDate, setTimeOffDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [timeOffAllDay, setTimeOffAllDay] = useState(true)
+  const [timeOffStart, setTimeOffStart] = useState('12:00')
+  const [timeOffEnd, setTimeOffEnd] = useState('13:00')
 
   const [inboxQuery, setInboxQuery] = useState('')
   const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>('new')
@@ -223,7 +232,11 @@ export default function ProviderVbmsWorkspace() {
 
   // Keep this page in sync with the shared blackout list.
   useEffect(() => {
-    const sync = () => setBlackouts(getPortalState().blackoutDates || [])
+    const sync = () => {
+      const s = getPortalState() as any
+      setBlackouts(s.blackoutDates || [])
+      setBlackoutBlocks(s.blackoutBlocks || [])
+    }
     sync()
     return subscribePortalState(sync)
   }, [])
@@ -1092,31 +1105,70 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Close dates (preview). In production these remove slots from the booking calendar.
+            Close full days or a specific time window. These remove slots from the booking calendar and weekly schedule.
           </p>
           <div className="divider" />
-          <div className="btnRow">
+          <div className="formRow" style={{ gridTemplateColumns: '1fr 0.9fr 0.9fr', alignItems: 'end' }}>
+            <label>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Date
+              </div>
+              <input className="input" type="date" value={timeOffDate} onChange={(e) => setTimeOffDate(e.target.value)} />
+            </label>
+            <label style={{ opacity: timeOffAllDay ? 0.55 : 1 }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Start
+              </div>
+              <input
+                className="input"
+                type="time"
+                value={timeOffStart}
+                disabled={timeOffAllDay}
+                onChange={(e) => setTimeOffStart(e.target.value)}
+              />
+            </label>
+            <label style={{ opacity: timeOffAllDay ? 0.55 : 1 }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                End
+              </div>
+              <input
+                className="input"
+                type="time"
+                value={timeOffEnd}
+                disabled={timeOffAllDay}
+                onChange={(e) => setTimeOffEnd(e.target.value)}
+              />
+            </label>
+          </div>
+          <div className="btnRow" style={{ marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <label className="muted" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+              <input type="checkbox" checked={timeOffAllDay} onChange={(e) => setTimeOffAllDay(e.target.checked)} />
+              All day
+            </label>
             <button
               type="button"
               className="btn btnAccent"
               onClick={() => {
-                const d = new Date()
-                const iso = new Date(d.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-                addBlackoutDate(iso)
+                const date = timeOffDate.trim()
+                if (!date) return
+                if (timeOffAllDay) {
+                  addBlackoutDate(date)
+                } else {
+                  addBlackoutBlock({ date, start: (timeOffStart || '').slice(0, 5), end: (timeOffEnd || '').slice(0, 5) })
+                }
               }}
             >
-              Add blackout (preview)
+              Add time off
             </button>
           </div>
           <div className="divider" />
-          {blackouts.length === 0 ? (
-            <p className="muted">No closed dates yet.</p>
-          ) : (
+          {blackouts.length === 0 && blackoutBlocks.length === 0 ? <p className="muted">No time off yet.</p> : null}
+          {blackouts.length > 0 ? (
             <div className="tableWrap">
-              <table className="table" aria-label="Blackout dates">
+              <table className="table" aria-label="Closed full days">
                 <thead>
                   <tr>
-                    <th>Date</th>
+                    <th>Day closed</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -1134,7 +1186,35 @@ export default function ProviderVbmsWorkspace() {
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
+          {blackoutBlocks.length > 0 ? (
+            <div className="tableWrap" style={{ marginTop: 12 }}>
+              <table className="table" aria-label="Closed hours">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Hours closed</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {blackoutBlocks.map((b) => (
+                    <tr key={`${b.date}_${b.start}_${b.end}`}>
+                      <td className="muted">{b.date}</td>
+                      <td className="muted">
+                        {b.start}–{b.end}
+                      </td>
+                      <td>
+                        <button type="button" className="btn" onClick={() => removeBlackoutBlock(b)}>
+                          Re-open
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </section>
 
         <section className="card cardAccentSoft">

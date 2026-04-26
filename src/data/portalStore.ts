@@ -33,6 +33,8 @@ type PortalState = {
   orders: OrderRequest[]
   bookedSlots: string[]
   blackoutDates: string[]
+  /** Partial-day closures. Times are local HH:MM (24h). */
+  blackoutBlocks?: Array<{ date: string; start: string; end: string }>
   scheduleConfig?: ScheduleConfigV1
 }
 
@@ -112,7 +114,9 @@ export function slotsForDate(dateYmd: string): Array<{ date: string; time: strin
   for (let t = startMin; t + slot <= endMin; t += slot) {
     const hh = String(Math.floor(t / 60)).padStart(2, '0')
     const mm = String(t % 60).padStart(2, '0')
-    out.push({ date: dateYmd, time: `${hh}:${mm}` })
+    const time = `${hh}:${mm}`
+    if (isSlotClosed(dateYmd, time)) continue
+    out.push({ date: dateYmd, time })
   }
   return out
 }
@@ -133,17 +137,28 @@ function uid(prefix: string) {
 function readState(): PortalState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [], scheduleConfig: undefined }
+    if (!raw) return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [], blackoutBlocks: [], scheduleConfig: undefined }
     const parsed = JSON.parse(raw) as PortalState
+    const blocksRaw = (parsed as any).blackoutBlocks
+    const blackoutBlocks: Array<{ date: string; start: string; end: string }> = Array.isArray(blocksRaw)
+      ? blocksRaw
+          .map((b: any) => ({
+            date: String(b?.date || '').slice(0, 10),
+            start: String(b?.start || '').slice(0, 5),
+            end: String(b?.end || '').slice(0, 5),
+          }))
+          .filter((b: any) => /^\d{4}-\d{2}-\d{2}$/.test(b.date) && /^\d{2}:\d{2}$/.test(b.start) && /^\d{2}:\d{2}$/.test(b.end))
+      : []
     return {
       appointments: Array.isArray(parsed.appointments) ? parsed.appointments : [],
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
       bookedSlots: Array.isArray(parsed.bookedSlots) ? parsed.bookedSlots : [],
       blackoutDates: Array.isArray(parsed.blackoutDates) ? parsed.blackoutDates : [],
+      blackoutBlocks,
       scheduleConfig: (parsed as any).scheduleConfig,
     }
   } catch {
-    return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [], scheduleConfig: undefined }
+    return { appointments: [], orders: [], bookedSlots: [], blackoutDates: [], blackoutBlocks: [], scheduleConfig: undefined }
   }
 }
 
@@ -202,7 +217,10 @@ export function isSlotBooked(date: string, time: string) {
 
 export function isDateBlackout(date: string) {
   const state = readState()
-  return state.blackoutDates.includes(date)
+  if (state.blackoutDates.includes(date)) return true
+  const blocks = state.blackoutBlocks || []
+  // Treat an all-day block as a blackout day.
+  return blocks.some((b) => b.date === date && b.start === '00:00' && (b.end === '23:59' || b.end === '24:00'))
 }
 
 export function addBlackoutDate(date: string) {
@@ -215,6 +233,51 @@ export function addBlackoutDate(date: string) {
 export function removeBlackoutDate(date: string) {
   const state = readState()
   writeState({ ...state, blackoutDates: state.blackoutDates.filter((d) => d !== date) })
+}
+
+function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number) {
+  return aStart < bEnd && bStart < aEnd
+}
+
+export function isSlotClosed(date: string, time: string) {
+  const state = readState()
+  if (state.blackoutDates.includes(date)) return true
+  const cfg = getScheduleConfig()
+  const slot = Math.max(10, Math.min(120, cfg.slotMinutes | 0))
+  const t0 = minutesSinceMidnight(time)
+  const t1 = t0 + slot
+  for (const b of state.blackoutBlocks || []) {
+    if (b.date !== date) continue
+    const b0 = minutesSinceMidnight(b.start)
+    const b1 = minutesSinceMidnight(b.end)
+    if (b1 <= b0) continue
+    if (overlaps(t0, t1, b0, b1)) return true
+  }
+  return false
+}
+
+export function addBlackoutBlock(input: { date: string; start: string; end: string }) {
+  const date = String(input.date || '').slice(0, 10)
+  const start = String(input.start || '').slice(0, 5)
+  const end = String(input.end || '').slice(0, 5)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return
+  if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) return
+  const sMin = minutesSinceMidnight(start)
+  const eMin = minutesSinceMidnight(end)
+  if (eMin <= sMin) return
+  const state = readState()
+  const cur = state.blackoutBlocks || []
+  const next = [{ date, start, end }, ...cur].filter((b, i, arr) => arr.findIndex((x) => x.date === b.date && x.start === b.start && x.end === b.end) === i)
+  writeState({ ...state, blackoutBlocks: next })
+}
+
+export function removeBlackoutBlock(input: { date: string; start: string; end: string }) {
+  const date = String(input.date || '').slice(0, 10)
+  const start = String(input.start || '').slice(0, 5)
+  const end = String(input.end || '').slice(0, 5)
+  const state = readState()
+  const cur = state.blackoutBlocks || []
+  writeState({ ...state, blackoutBlocks: cur.filter((b) => !(b.date === date && b.start === start && b.end === end)) })
 }
 
 export function bookAppointment(input: {
@@ -378,6 +441,6 @@ export function updateOrderStatus(orderId: string, status: OrderStatus) {
 }
 
 export function clearPortalState() {
-  writeState({ appointments: [], orders: [], bookedSlots: [], blackoutDates: [] })
+  writeState({ appointments: [], orders: [], bookedSlots: [], blackoutDates: [], blackoutBlocks: [] })
 }
 
