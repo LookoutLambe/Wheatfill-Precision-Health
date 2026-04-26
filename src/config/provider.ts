@@ -19,28 +19,13 @@ export const CATALOG_VENMO = {
   payUrl: 'https://venmo.com/wheaty27',
 } as const
 
-/**
- * Default PayPal link: **Website Payments “Buy Now”** to an email (`cmd=_xclick`), not `paypal.com/donate`.
- * Donation links only work for accounts enrolled in PayPal’s charity program; others see
- * “This organization can’t accept donations right now.”
- */
-const CATALOG_PAYPAL_XCLICK = `https://www.paypal.com/cgi-bin/webscr?${new URLSearchParams({
-  cmd: '_xclick',
-  business: 'brett.wheatfill@gmail.com',
-  item_name: 'Payment (Wheatfill Precision Health, as instructed)',
-  currency_code: 'USD',
-  no_shipping: '1',
-  no_note: '0',
-}).toString()}`
-
-/** Set in `.env` to use e.g. `https://paypal.me/YourName` if Buy Now is blocked; overrides the default. */
+/** Optional: set to a PayPal checkout link (e.g. `paypal.me/...`) if you want PayPal offered as a payment rail. */
 const CATALOG_PAYPAL_URL_OVERRIDE = (import.meta.env.VITE_PAYPAL_PAY_URL?.toString() || '').trim()
 
-/** PayPal: same use case as catalog Venmo—only after the practice confirms amount. */
-export const CATALOG_PAYPAL: { readonly email: string; readonly payUrl: string } = {
-  email: 'brett.wheatfill@gmail.com',
-  payUrl: CATALOG_PAYPAL_URL_OVERRIDE || CATALOG_PAYPAL_XCLICK,
-}
+/** PayPal: only shown when explicitly configured. */
+export const CATALOG_PAYPAL: { readonly label: string; readonly payUrl: string } | null = CATALOG_PAYPAL_URL_OVERRIDE
+  ? { label: 'PayPal', payUrl: CATALOG_PAYPAL_URL_OVERRIDE }
+  : null
 
 /** Shown in the back-office UI — consumer / brand tone (not a clinical EHR). */
 export const PROVIDER_TEAM_LABEL = 'Brett & Bridget — team'

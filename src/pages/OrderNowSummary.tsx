@@ -155,6 +155,7 @@ export default function OrderNowSummary() {
             window.location.href = res.checkoutUrl
             return
           }
+          if (!payUrl) throw new Error('Payment link is not configured yet.')
           window.open(payUrl, '_blank', 'noopener,noreferrer')
         } catch (e: any) {
           setCheckoutError(String(e?.message || e))
@@ -163,6 +164,10 @@ export default function OrderNowSummary() {
         }
       })()
     } else {
+      if (!payUrl) {
+        setCheckoutError('Payment link is not configured yet.')
+        return
+      }
       window.open(payUrl, '_blank', 'noopener,noreferrer')
     }
   }
@@ -202,8 +207,8 @@ export default function OrderNowSummary() {
             <p className="orderNowCheckoutLead">
               {items.length > 0 ? (
                 <>
-                  Enter shipping and signature below, then use <strong>Check out</strong> to pay in PayPal. Your
-                  order total is sent to PayPal automatically.
+                  Enter shipping and signature below, then use <strong>Check out</strong> to open the payment link.
+                  If you sign in, checkout can redirect you directly to a secure processor session.
                 </>
               ) : (
                 <>

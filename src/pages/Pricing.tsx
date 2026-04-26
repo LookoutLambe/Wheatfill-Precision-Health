@@ -169,17 +169,29 @@ export default function Pricing() {
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
               For catalog-style orders (after the team confirms amount), use{' '}
-              <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
-                Check out
-              </a>{' '}
-              (PayPal, {CATALOG_PAYPAL.email}). You can also use <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
               {STRIPE_CHECKOUT_URL ? (
                 <>
-                  , and <strong>cards</strong> (
                   <a href={STRIPE_CHECKOUT_URL} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
-                    Stripe
-                  </a>
-                  )
+                    Pay by card
+                  </a>{' '}
+                  (Stripe)
+                </>
+              ) : CATALOG_PAYPAL ? (
+                <>
+                  <a href={CATALOG_PAYPAL.payUrl} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 800 }}>
+                    Check out
+                  </a>{' '}
+                  ({CATALOG_PAYPAL.label})
+                </>
+              ) : (
+                <>
+                  a payment link (shared by the team)
+                </>
+              )}
+              . You can also use <strong>Zelle</strong> to {CATALOG_ZELLE_EMAIL}
+              {STRIPE_CHECKOUT_URL ? (
+                <>
+                  .
                 </>
               ) : null}
               . Cash App and other cards may apply for visits and programs.
