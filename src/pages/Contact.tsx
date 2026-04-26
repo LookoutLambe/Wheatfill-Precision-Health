@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { apiPost } from '../api/client'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
-import { APP_URL, MARKETING_ONLY } from '../config/mode'
+import { MARKETING_ONLY } from '../config/mode'
 
-const CONTACT_DRAFT_KEY = 'wph_contact_draft_v1'
+const CONTACT_DRAFT_KEY = 'wph_contact_draft_v2'
+const CONTACT_TO_EMAIL = 'brett.wheatfill@gmail.com'
 
-type ContactDraftV1 = {
-  v: 1
+type ContactDraftV2 = {
+  v: 2
   name: string
   email: string
+  subject: string
   message: string
   savedAt: string
 }
@@ -17,22 +18,23 @@ type ContactReceipt = {
   createdAt: string
   name: string
   email: string
+  subject: string
   message: string
 }
 
-function readContactDraft(): ContactDraftV1 | null {
+function readContactDraft(): ContactDraftV2 | null {
   try {
     const raw = localStorage.getItem(CONTACT_DRAFT_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as ContactDraftV1
-    if (!parsed || parsed.v !== 1) return null
+    const parsed = JSON.parse(raw) as ContactDraftV2
+    if (!parsed || parsed.v !== 2) return null
     return parsed
   } catch {
     return null
   }
 }
 
-function writeContactDraft(draft: ContactDraftV1) {
+function writeContactDraft(draft: ContactDraftV2) {
   localStorage.setItem(CONTACT_DRAFT_KEY, JSON.stringify(draft))
 }
 
@@ -43,6 +45,7 @@ function clearContactDraft() {
 export default function Contact() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [receipt, setReceipt] = useState<ContactReceipt | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -54,18 +57,20 @@ export default function Contact() {
     if (!d) return
     setName(d.name || '')
     setEmail(d.email || '')
+    setSubject(d.subject || '')
     setMessage(d.message || '')
   }, [])
 
   const draftPayload = useMemo(() => {
     return {
-      v: 1 as const,
+      v: 2 as const,
       name,
       email,
+      subject,
       message,
       savedAt: new Date().toISOString(),
     }
-  }, [email, message, name])
+  }, [email, message, name, subject])
 
   useEffect(() => {
     if (MARKETING_ONLY) return
@@ -86,59 +91,21 @@ export default function Contact() {
     }
   }, [draftPayload])
 
-  if (MARKETING_ONLY) {
-    return (
-      <div className="page">
-        <div>
-          <h1 style={{ margin: 0 }}>Contact</h1>
-          <p className="muted pageSubtitle">
-            For privacy, don’t send medical details in this form. Urgent or clinical questions—use the paths on the For
-            patients page or the contact options your practice provides. {TYPICAL_INBOX_REPLY_LINE}
-          </p>
-        </div>
-
-        <section className="card cardAccentNavy" style={{ maxWidth: 920 }}>
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>On this website</h2>
-            <span className="pill">Patients</span>
-          </div>
-          <div className="divider" />
-          <p className="muted" style={{ marginTop: 0 }}>
-            Book a visit, see pricing, and browse the order catalog from this site. The For patients page pulls those
-            links together in one place.
-          </p>
-          <div className="btnRow" style={{ marginTop: 12 }}>
-            {APP_URL ? (
-              <a
-                className="btn btnPrimary"
-                style={{ textDecoration: 'none', width: '100%', textAlign: 'center' }}
-                href={`${String(APP_URL).replace(/\/$/, '')}/patient`}
-              >
-                For patients
-              </a>
-            ) : (
-              <span className="muted">Set <code>VITE_APP_URL</code> so this button can open the full site.</span>
-            )}
-          </div>
-        </section>
-      </div>
-    )
-  }
-
   return (
     <div className="page">
       <div>
         <h1 style={{ margin: 0 }}>Contact</h1>
         <p className="muted pageSubtitle">
-          Send a message or question. Messages go to the provider inbox. {TYPICAL_INBOX_REPLY_LINE}
+          Fill this out on the website, then we’ll open an email draft addressed to {CONTACT_TO_EMAIL} for you to send.
+          For privacy, don’t send sensitive medical details over email. {TYPICAL_INBOX_REPLY_LINE}
         </p>
       </div>
 
       <div className="cardGrid" style={{ gridTemplateColumns: '1fr' }}>
         <section className="card cardAccentNavy" style={{ maxWidth: 920 }}>
           <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Message</h2>
-            <span className="pill">Secure</span>
+            <h2 style={{ margin: 0 }}>Email</h2>
+            <span className="pill">{MARKETING_ONLY ? 'Marketing' : 'Patients'}</span>
           </div>
           <div className="divider" />
 
@@ -162,6 +129,18 @@ export default function Contact() {
               />
             </label>
           </div>
+
+          <label style={{ display: 'block', marginTop: 12 }}>
+            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+              Subject
+            </div>
+            <input
+              className="input"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="How can we help?"
+            />
+          </label>
 
           <label style={{ display: 'block', marginTop: 12 }}>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
@@ -197,27 +176,39 @@ export default function Contact() {
                   setError(null)
                   setReceipt(null)
                   try {
-                    await apiPost('/v1/public/contact', { name, email, message })
                     const snapName = name.trim()
                     const snapEmail = email.trim()
+                    const snapSubject = (subject || '').trim() || `Website contact: ${snapName}`
                     const snapMessage = message.trim()
-                    setName('')
-                    setEmail('')
-                    setMessage('')
-                    clearContactDraft()
                     setReceipt({
                       createdAt: new Date().toLocaleString(),
                       name: snapName,
                       email: snapEmail,
+                      subject: snapSubject,
                       message: snapMessage,
                     })
+                    const body = [
+                      `Name: ${snapName}`,
+                      `Email: ${snapEmail}`,
+                      '',
+                      snapMessage,
+                    ].join('\n')
+                    const mailto = `mailto:${encodeURIComponent(CONTACT_TO_EMAIL)}?subject=${encodeURIComponent(
+                      snapSubject,
+                    )}&body=${encodeURIComponent(body)}`
+                    window.location.href = mailto
+                    setName('')
+                    setEmail('')
+                    setSubject('')
+                    setMessage('')
+                    clearContactDraft()
                   } catch (e: any) {
                     setError(String(e?.message || e))
                   }
                 })()
               }}
             >
-              Send
+              Open email draft
             </button>
             <button
               type="button"
@@ -225,6 +216,7 @@ export default function Contact() {
               onClick={() => {
                 setName('')
                 setEmail('')
+                setSubject('')
                 setMessage('')
                 clearContactDraft()
                 setReceipt(null)
@@ -238,12 +230,12 @@ export default function Contact() {
           {receipt ? (
             <section className="card cardAccentSoft bookingReceipt" style={{ marginTop: 12 }}>
               <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Message sent</h2>
-                <span className="pill">Receipt</span>
+                <h2 style={{ margin: 0 }}>Email draft opened</h2>
+                <span className="pill">Copy</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                What happens next: the practice typically replies within one business day. If this is urgent, call your
-                clinician’s office phone (if you have it) or seek emergency care for emergencies.
+                If your email app didn’t open automatically, you can copy/paste the details below into an email to{' '}
+                <strong>{CONTACT_TO_EMAIL}</strong>.
               </p>
               <div className="divider" />
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
@@ -255,6 +247,9 @@ export default function Contact() {
                 </div>
                 <div style={{ marginTop: 8 }}>
                   <strong>Email</strong>: {receipt.email}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <strong>Subject</strong>: {receipt.subject}
                 </div>
                 <div style={{ marginTop: 8 }}>
                   <strong>Message</strong>: {receipt.message}
