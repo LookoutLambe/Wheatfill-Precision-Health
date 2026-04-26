@@ -143,28 +143,6 @@ export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
   }
 }
 
-const PROVIDER_SESSION_PROBE_MAX = 6
-const PROVIDER_SESSION_PROBE_BASE_MS = 150
-
-/**
- * For provider routes after sign-in: mobile WebKit (especially iOS) may not attach the
- * httpOnly session cookie to the first GET /v1/auth/session. Briefly retry "not authenticated"
- * so we do not clear local staff session and send the user back to login.
- */
-export async function fetchApiSessionForProviderGate(): Promise<ApiSessionSnapshot> {
-  let last: ApiSessionSnapshot = { authenticated: false, ok: false }
-  for (let i = 0; i < PROVIDER_SESSION_PROBE_MAX; i++) {
-    const s = await fetchApiSession()
-    last = s
-    if (!s.ok) return s
-    if (s.authenticated) return s
-    if (i < PROVIDER_SESSION_PROBE_MAX - 1) {
-      await new Promise((r) => setTimeout(r, PROVIDER_SESSION_PROBE_BASE_MS * (i + 1)))
-    }
-  }
-  return last
-}
-
 const WPH_BROWSER_CLIENT = '1'
 
 /** No client-side duration limit — requests use the browser's built-in fetch (waits for the server or failure). */
@@ -208,26 +186,27 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
   return readResponseBody<T>(res)
 }
 
-function is401ApiError(e: unknown): boolean {
+function is401ResponseError(e: unknown): boolean {
   return /401|unauthorized|Unauthorized|statuscode.:401|status code 401/i.test(String((e as Error)?.message || e))
 }
 
-const PROVIDER_WARM_401_RETRIES = 3
-const PROVIDER_WARM_401_BASE_MS = 400
+const PROVIDER_GET_401_RETRIES = 3
+const PROVIDER_GET_401_BACKOFF_MS = 400
 
 /**
- * After sign-in, credentialed GETs to the API can 401 once on iOS before the session cookie
- * is applied. Retry a few times with short delays before surfacing 401 to the UI.
+ * Some browsers (incl. mobile) omit the httpOnly session cookie on the first credentialed GET
+ * right after sign-in. Retry 401s a few times (same as before) — this is not a “security” logout;
+ * it is how inbox/orders reliably load. No auto sign-out; failures surface as an error in the page.
  */
 export async function apiGetWithSessionWarmup<T>(path: string, token?: string): Promise<T> {
   let last: unknown
-  for (let i = 0; i < PROVIDER_WARM_401_RETRIES; i++) {
+  for (let i = 0; i < PROVIDER_GET_401_RETRIES; i++) {
     try {
       return await apiGet<T>(path, token)
     } catch (e) {
       last = e
-      if (!is401ApiError(e) || i === PROVIDER_WARM_401_RETRIES - 1) throw e
-      await new Promise((r) => setTimeout(r, PROVIDER_WARM_401_BASE_MS * (i + 1)))
+      if (!is401ResponseError(e) || i === PROVIDER_GET_401_RETRIES - 1) throw e
+      await new Promise((r) => setTimeout(r, PROVIDER_GET_401_BACKOFF_MS * (i + 1)))
     }
   }
   throw last

@@ -1,6 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
+import {
+  apiDelete,
+  apiGetWithSessionWarmup,
+  apiPatch,
+  fetchApiSession,
+  hasApiCredential,
+  setApiSessionHint,
+} from '../api/client'
 import {
   addBlackoutDate,
   addBlackoutBlock,
@@ -362,7 +369,7 @@ export default function ProviderVbmsWorkspace() {
     setInboxLoading(true)
     setInboxError(null)
     try {
-      const r = await apiGet<{
+      const r = await apiGetWithSessionWarmup<{
         items: Array<{
           id: string
           kind: string
@@ -437,7 +444,7 @@ export default function ProviderVbmsWorkspace() {
     setOrdersLoading(true)
     setOrdersError(null)
     try {
-      const r = await apiGet<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
+      const r = await apiGetWithSessionWarmup<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
       setOrders(
         (r.orders || []).map((o) => ({
           ...o,
