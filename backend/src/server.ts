@@ -2,6 +2,11 @@ import 'dotenv/config'
 import { loadAndValidateEnv } from './config/env.js'
 import { DEFAULT_JWT_EXPIRES_IN, resolveTrustProxy } from './config/session.js'
 import { shippingCentsForPartnerSlug } from './domain/pharmacy-seed.js'
+import {
+  CreatePharmacyOrderBody,
+  runPharmacyOrderCheckout,
+  type PharmacyPatientForOrder,
+} from './domain/pharmacyOrderCheckout.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
 import Fastify from 'fastify'
@@ -19,7 +24,7 @@ import Stripe from 'stripe'
 import { prisma } from './db.js'
 import { hashPassword, verifyPassword } from './auth/password.js'
 import { registerAuth, requireRole } from './auth/authz.js'
-import { decryptSecret, encryptSecret } from './crypto/secrets.js'
+import { encryptSecret } from './crypto/secrets.js'
 import { clearJwtCookie, injectJwtFromCookie, JWT_COOKIE_NAME, setJwtCookie } from './security/jwtCookie.js'
 import { rateLimitHit } from './security/simpleRateLimit.js'
 
@@ -485,6 +490,126 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
     : await stripe.checkout.sessions.create(sessionCreateParams)
 
   return { ok: true, checkoutUrl: session.url }
+})
+
+const GUEST_USER_PREFIX = 'guest_'
+
+/** Website checkout without a portal login: reuses a lightweight patient row keyed by email for FK + staff visibility. */
+async function getOrCreateGuestPharmacyPatient(input: {
+  contactEmail: string
+  displayName: string
+  shippingAddress1: string
+  shippingCity: string
+  shippingState: string
+  shippingPostalCode: string
+}): Promise<PharmacyPatientForOrder> {
+  const email = input.contactEmail.trim().toLowerCase()
+  const found = await prisma.user.findFirst({
+    where: { role: 'patient', email, username: { startsWith: GUEST_USER_PREFIX } },
+  })
+  const address = {
+    address1: input.shippingAddress1.trim().slice(0, 200),
+    city: input.shippingCity.trim().slice(0, 120),
+    state: input.shippingState.trim().slice(0, 32),
+    postalCode: input.shippingPostalCode.trim().slice(0, 20),
+    country: 'US' as const,
+  }
+  if (found) {
+    const u = await prisma.user.update({
+      where: { id: found.id },
+      data: {
+        displayName: input.displayName.trim().slice(0, 200) || found.displayName,
+        email,
+        ...address,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address1: true,
+        address2: true,
+        city: true,
+        state: true,
+        postalCode: true,
+        country: true,
+      },
+    })
+    return u
+  }
+  const passwordHash = await hashPassword(crypto.randomBytes(32).toString('base64url'))
+  const parts = input.displayName.trim().split(/\s+/)
+  const u = await prisma.user.create({
+    data: {
+      role: 'patient',
+      username: `${GUEST_USER_PREFIX}${crypto.randomUUID().replace(/-/g, '')}`,
+      passwordHash,
+      displayName: input.displayName.trim().slice(0, 200) || 'Guest',
+      email,
+      firstName: (parts[0] || '').slice(0, 100) || null,
+      lastName: parts.slice(1).join(' ').slice(0, 100) || null,
+      ...address,
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      address1: true,
+      address2: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      country: true,
+    },
+  })
+  return u
+}
+
+const PublicPharmacyOrderBody = CreatePharmacyOrderBody.extend({
+  contactEmail: z.string().email(),
+})
+
+// Full catalog order + consents (website, no sign-in). Creates User + Order + payment session when payment is configured.
+app.post('/v1/public/orders/pharmacy', async (req, reply) => {
+  const lim = rateLimitHit(`pubord:${reqIp(req) || 'unknown'}`, 20, 3_600_000)
+  if (!lim.ok) {
+    return reply
+      .status(429)
+      .header('Retry-After', String(lim.retryAfterSec))
+      .send('Too many order submissions from this network. Try again later.')
+  }
+  const raw = PublicPharmacyOrderBody.parse(req.body)
+  const { contactEmail, ...rest } = raw
+  const body = CreatePharmacyOrderBody.parse(rest)
+  if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
+  if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
+    return reply.badRequest('Shipping address is required for this order.')
+  }
+
+  const guest = await getOrCreateGuestPharmacyPatient({
+    contactEmail,
+    displayName: body.signatureName,
+    shippingAddress1: body.shippingAddress1!,
+    shippingCity: body.shippingCity!,
+    shippingState: body.shippingState!,
+    shippingPostalCode: body.shippingPostalCode!,
+  })
+
+  const r = await runPharmacyOrderCheckout({
+    body,
+    patient: guest,
+    guestContactEmail: contactEmail.trim(),
+    stripe,
+    frontendOrigin: FRONTEND_ORIGIN,
+    cloverEnv: CLOVER_ENV,
+    cloverMerchantIdFallback: CLOVER_MERCHANT_ID,
+    cloverPrivateKeyFallback: CLOVER_PRIVATE_KEY,
+  })
+  if (!r.ok) return reply.status(r.status).send(r.message)
+  return { orderId: r.orderId, totalCents: r.totalCents, checkoutUrl: r.checkoutUrl }
 })
 
 const PublicTeamInboxBody = z.object({
@@ -2178,36 +2303,14 @@ await app.register(async (protectedScope) => {
     },
   )
 
-  const CreateOrderBody = z.object({
-    partnerSlug: z.string().min(2).max(80),
-    items: z
-      .array(
-        z.object({
-          sku: z.string().min(1).max(80),
-          quantity: z.number().int().min(1).max(20),
-        }),
-      )
-      .min(1),
-    agreedToShippingTerms: z.boolean(),
-    contactPermission: z.boolean(),
-    signatureName: z.string().min(2).max(120),
-    signatureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    shippingInsurance: z.boolean().default(false),
-    /** Optional: checkout form override; if all set, used as order ship-to instead of the patient profile. */
-    shippingAddress1: z.string().min(1).max(200).optional(),
-    shippingCity: z.string().min(1).max(120).optional(),
-    shippingState: z.string().min(1).max(32).optional(),
-    shippingPostalCode: z.string().min(1).max(20).optional(),
-  })
-
   protectedScope.post(
     '/v1/patient/orders/pharmacy',
     { preHandler: requireRole(['patient']) },
     async (req, reply) => {
-      const body = CreateOrderBody.parse(req.body)
+      const body = CreatePharmacyOrderBody.parse(req.body)
       if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
 
-      const patient = await prisma.user.findUnique({
+      const patient = (await prisma.user.findUnique({
         where: { id: req.user.sub },
         select: {
           id: true,
@@ -2222,236 +2325,20 @@ await app.register(async (protectedScope) => {
           postalCode: true,
           country: true,
         },
-      })
+      })) as PharmacyPatientForOrder | null
       if (!patient) return reply.unauthorized('Invalid user.')
 
-      const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
-      if (!partner) return reply.notFound('Pharmacy not found.')
-
-      const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
-      if (!provider) return reply.internalServerError('No provider configured.')
-
-      const products = await prisma.pharmacyProduct.findMany({
-        where: { partnerId: partner.id, isActive: true, sku: { in: body.items.map((i) => i.sku) } },
-        select: { sku: true, name: true, priceCents: true, currency: true },
+      const r = await runPharmacyOrderCheckout({
+        body,
+        patient,
+        stripe,
+        frontendOrigin: FRONTEND_ORIGIN,
+        cloverEnv: CLOVER_ENV,
+        cloverMerchantIdFallback: CLOVER_MERCHANT_ID,
+        cloverPrivateKeyFallback: CLOVER_PRIVATE_KEY,
       })
-      const bySku = new Map(products.map((p) => [p.sku, p]))
-      for (const it of body.items) {
-        if (!bySku.has(it.sku)) return reply.badRequest(`Invalid item sku: ${it.sku}`)
-      }
-
-      const subtotal = body.items.reduce((sum, it) => sum + (bySku.get(it.sku)!.priceCents * it.quantity), 0)
-      const shippingCents = shippingCentsForPartnerSlug(partner.slug)
-      const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
-      const total = subtotal + shippingCents + shippingInsuranceCents
-
-      const hasShip =
-        (body.shippingAddress1 && body.shippingCity && body.shippingState && body.shippingPostalCode) || null
-      const order = await prisma.order.create({
-        data: {
-          category: 'glp1',
-          item: 'Pharmacy',
-          request: `Pharmacy order: ${partner.name}`,
-          status: 'new',
-          pharmacyPartnerId: partner.id,
-          patientId: patient.id,
-          providerId: provider.id,
-          shippingAddress1: hasShip ? body.shippingAddress1!.trim() : patient.address1 || '',
-          shippingAddress2: patient.address2 || '',
-          shippingCity: hasShip ? body.shippingCity!.trim() : patient.city || '',
-          shippingState: hasShip ? body.shippingState!.trim() : patient.state || '',
-          shippingPostalCode: hasShip ? body.shippingPostalCode!.trim() : patient.postalCode || '',
-          shippingCountry: patient.country || 'US',
-          shippingCents,
-          shippingInsuranceCents,
-          agreedToShippingTerms: body.agreedToShippingTerms,
-          contactPermission: body.contactPermission,
-          signatureName: body.signatureName.trim(),
-          signatureDate: new Date(body.signatureDate),
-          items: {
-            create: body.items.map((it) => {
-              const p = bySku.get(it.sku)!
-              return {
-                partnerSlug: partner.slug,
-                productSku: p.sku,
-                name: p.name,
-                unitPriceCents: p.priceCents,
-                quantity: it.quantity,
-              }
-            }),
-          },
-        },
-        include: { items: true },
-      })
-
-      // Create Hosted Checkout session (redirect) using provider's active processor
-      const providerRow = await prisma.user.findUnique({
-        where: { id: provider.id },
-        select: {
-          activePaymentProvider: true,
-          stripeConnectedAccountId: true,
-          cloverEnv: true,
-          cloverMerchantId: true,
-          cloverPrivateKeyEnc: true,
-          cloverPrivateKeyIv: true,
-          cloverPrivateKeyTag: true,
-        },
-      })
-
-      const active = providerRow?.activePaymentProvider || null
-      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}?paid=1&order=${order.id}`
-      const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}?canceled=1&order=${order.id}`
-
-      if (active === 'stripe') {
-        if (!stripe) return { orderId: order.id, totalCents: total, checkoutUrl: null }
-        const sessionCreateParams = {
-          mode: 'payment' as const,
-          success_url: successUrl,
-          cancel_url: cancelUrl,
-          line_items: [
-            ...order.items.map((it) => ({
-              price_data: {
-                currency: 'usd',
-                unit_amount: it.unitPriceCents,
-                product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug } },
-              },
-              quantity: it.quantity,
-            })),
-            ...(shippingInsuranceCents
-              ? [
-                  {
-                    price_data: {
-                      currency: 'usd',
-                      unit_amount: shippingInsuranceCents,
-                      product_data: { name: 'Shipping insurance' },
-                    },
-                    quantity: 1,
-                  },
-                ]
-              : []),
-            ...(shippingCents
-              ? [
-                  {
-                    price_data: {
-                      currency: 'usd',
-                      unit_amount: shippingCents,
-                      product_data: { name: 'Shipping' },
-                    },
-                    quantity: 1,
-                  },
-                ]
-              : []),
-          ],
-          metadata: { orderId: order.id },
-        }
-        const session = providerRow?.stripeConnectedAccountId
-          ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
-          : await stripe.checkout.sessions.create(sessionCreateParams)
-        await prisma.payment.create({
-          data: {
-            method: 'stripe',
-            status: 'pending',
-            amountCents: total,
-            currency: 'usd',
-            itemType: 'order',
-            itemId: order.id,
-            orderId: order.id,
-            patientId: patient.id,
-            providerId: provider.id,
-            stripeCheckoutSessionId: session.id,
-          },
-        })
-        return { orderId: order.id, totalCents: total, checkoutUrl: session.url }
-      }
-
-      // Default to Clover if active is clover OR unset (for backwards compatibility)
-      const cloverEnv = (providerRow?.cloverEnv || CLOVER_ENV || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox'
-      const cloverApiBase = cloverEnv === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
-      const cloverMerchantId = providerRow?.cloverMerchantId || CLOVER_MERCHANT_ID
-      let cloverPrivateKey = CLOVER_PRIVATE_KEY
-      if (providerRow?.cloverPrivateKeyEnc && providerRow?.cloverPrivateKeyIv && providerRow?.cloverPrivateKeyTag) {
-        cloverPrivateKey = decryptSecret({
-          enc: providerRow.cloverPrivateKeyEnc,
-          iv: providerRow.cloverPrivateKeyIv,
-          tag: providerRow.cloverPrivateKeyTag,
-        })
-      }
-
-      if (!cloverMerchantId || !cloverPrivateKey) return { orderId: order.id, totalCents: total, checkoutUrl: null }
-
-      const cloverPayload = {
-        customer: {
-          firstName: patient.firstName || undefined,
-          lastName: patient.lastName || undefined,
-          email: patient.email || undefined,
-          phoneNumber: patient.phone || undefined,
-        },
-        shoppingCart: {
-          lineItems: [
-            ...order.items.map((it) => ({
-              name: it.name,
-              note: `${it.partnerSlug}:${it.productSku}`,
-              price: it.unitPriceCents,
-              unitQty: it.quantity,
-            })),
-            ...(shippingInsuranceCents
-              ? [
-                  {
-                    name: 'Shipping insurance',
-                    note: '2% of subtotal',
-                    price: shippingInsuranceCents,
-                    unitQty: 1,
-                  },
-                ]
-              : []),
-            ...(shippingCents
-              ? [
-                  {
-                    name: 'Shipping',
-                    note: 'Flat',
-                    price: shippingCents,
-                    unitQty: 1,
-                  },
-                ]
-              : []),
-          ],
-        },
-      }
-
-      const cloverRes = await fetch(`${cloverApiBase}/invoicingcheckoutservice/v1/checkouts`, {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          'content-type': 'application/json',
-          authorization: `Bearer ${cloverPrivateKey}`,
-          'X-Clover-Merchant-Id': cloverMerchantId,
-        },
-        body: JSON.stringify(cloverPayload),
-      })
-      if (!cloverRes.ok) {
-        const text = await cloverRes.text()
-        return reply.internalServerError(`Clover checkout failed: ${text}`)
-      }
-      const created = (await cloverRes.json()) as { href: string; checkoutSessionId: string }
-
-      await prisma.payment.create({
-        data: {
-          method: 'clover',
-          status: 'pending',
-          amountCents: total,
-          currency: 'usd',
-          itemType: 'order',
-          itemId: order.id,
-          orderId: order.id,
-          patientId: patient.id,
-          providerId: provider.id,
-          cloverCheckoutSessionId: created.checkoutSessionId,
-          cloverCheckoutHref: created.href,
-        },
-      })
-
-      return { orderId: order.id, totalCents: total, checkoutUrl: created.href }
+      if (!r.ok) return reply.status(r.status).send(r.message)
+      return { orderId: r.orderId, totalCents: r.totalCents, checkoutUrl: r.checkoutUrl }
     },
   )
 })

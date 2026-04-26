@@ -244,7 +244,6 @@ export default function PeptideTherapy() {
           <h2 id="portfolio-heading" className="peptideSectionTitle" style={{ margin: 0 }}>
             Our peptide portfolio
           </h2>
-          <span className="pill">Coming soon</span>
         </div>
         <p className="muted peptideSectionLead">
           Below is a reference list of compounds sometimes discussed in precision medicine contexts. Tap a row to read

@@ -31,6 +31,7 @@ const ProviderOrderingTest = lazy(() => import('./pages/ProviderOrderingTest'))
 const ProviderPayments = lazy(() => import('./pages/ProviderPayments'))
 const ProviderIntegrations = lazy(() => import('./pages/ProviderIntegrations'))
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
+import NotFound from './pages/NotFound'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
 import { PATIENT_USES_MEDPLUM } from './config/patientFeatures'
 import { USE_MEDPLUM_PROVIDER_PORTAL } from './config/providerAuth'
@@ -115,6 +116,7 @@ export default function App() {
           <Route path="/patient/login" element={<MarketingLeaveToFullApp path="/patient/login" />} />
           {/* Staff entry (shared privately) */}
           <Route path="/staff" element={<Navigate to="/provider" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         <Route path="/provider/login" element={<MarketingProviderLogin />} />
@@ -138,7 +140,6 @@ export default function App() {
         <Route path="/storefront" element={<StripeConnectStorefront />} />
         <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
         <Route path="/storefront/success" element={<StripeConnectStorefront />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </RouteErrorBoundary>
@@ -184,6 +185,7 @@ export default function App() {
             )
           }
         />
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* Provider area is intentionally separate from the public shell */}
@@ -220,7 +222,6 @@ export default function App() {
       <Route path="/storefront" element={<StripeConnectStorefront />} />
       <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
       <Route path="/storefront/success" element={<StripeConnectStorefront />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </RouteErrorBoundary>

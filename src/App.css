@@ -1,3 +1,21 @@
+.skipToMain {
+  position: absolute;
+  left: -9999px;
+  z-index: 10000;
+  padding: 8px 14px;
+  background: var(--navy, #0a1e3f);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+}
+.skipToMain:focus {
+  left: 8px;
+  top: 8px;
+  outline: 2px solid var(--accent, #c4a574);
+  outline-offset: 2px;
+}
+
 .appShell,
 html,
 body {

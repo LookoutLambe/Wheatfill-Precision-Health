@@ -40,6 +40,10 @@ export default function OrderNowSummary() {
   const [shipCity, setShipCity] = useState('')
   const [shipState, setShipState] = useState('')
   const [shipZip, setShipZip] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+
+  const hasLegacyToken = Boolean(getToken()?.trim())
+  const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 
   useEffect(() => {
     if (!slug) return
@@ -122,6 +126,10 @@ export default function OrderNowSummary() {
       setCheckoutError('Please type your name as a signature to continue.')
       return
     }
+    if (!hasLegacyToken && !emailOk(contactEmail)) {
+      setCheckoutError('Please enter a valid email so we can confirm your order and reach you if needed.')
+      return
+    }
 
     const tok = getToken()
 
@@ -166,20 +174,34 @@ export default function OrderNowSummary() {
       setCheckoutBusy(true)
       ;(async () => {
         try {
-          const res = await apiPost<{ ok: true; checkoutUrl: string | null }>(
-            '/v1/public/pharmacy/checkout',
-            {
-              partnerSlug: partner.slug,
-              items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-              shippingInsurance: insurance,
-            },
+          const common = {
+            partnerSlug: partner.slug,
+            items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
+            agreedToShippingTerms: agree,
+            contactPermission: contactOk,
+            signatureName: sigName.trim(),
+            signatureDate: sigDate,
+            shippingInsurance: insurance,
+            shippingAddress1: shipStreet.trim(),
+            shippingCity: shipCity.trim(),
+            shippingState: shipState.trim(),
+            shippingPostalCode: shipZip.trim(),
+            contactEmail: contactEmail.trim(),
+          }
+          const res = await apiPost<{ orderId: string; totalCents: number; checkoutUrl: string | null }>(
+            '/v1/public/orders/pharmacy',
+            common,
             '',
           )
-          if (res?.checkoutUrl) {
+          if (res.checkoutUrl) {
             window.location.href = res.checkoutUrl
             return
           }
-          throw new Error('Please sign in to submit your order.')
+          writeCartForSlug(slug, {})
+          setCheckoutError(null)
+          alert(
+            `Order received. Reference: ${res.orderId}. Your care team will follow up with payment and next steps if needed.`,
+          )
         } catch (e: any) {
           setCheckoutError(String(e?.message || e))
         } finally {
@@ -190,7 +212,15 @@ export default function OrderNowSummary() {
   }
 
   const catalogPath = `/order-now/${encodeURIComponent(slug)}`
-  const canCheckOut = agree && contactOk && shipStreet.trim() && shipCity.trim() && shipState && shipZip.trim() && sigName.trim()
+  const canCheckOut =
+    agree &&
+    contactOk &&
+    shipStreet.trim() &&
+    shipCity.trim() &&
+    shipState &&
+    shipZip.trim() &&
+    sigName.trim() &&
+    (hasLegacyToken || emailOk(contactEmail))
   const itemsSummaryText = items.map((it) => `${it.product.name} (x${it.quantity})`).join(', ')
 
   return (
@@ -357,6 +387,21 @@ export default function OrderNowSummary() {
                 <p className="muted" style={{ fontSize: 13, margin: '0 0 12px' }}>
                   Where to ship — used when your order is processed.
                 </p>
+                {hasLegacyToken ? null : (
+                  <label>
+                    <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                      Email <span style={{ color: 'var(--accent-rose)' }}>*</span>
+                    </div>
+                    <input
+                      className="input"
+                      type="email"
+                      autoComplete="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </label>
+                )}
                 <label>
                   <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                     Street address <span style={{ color: 'var(--accent-rose)' }}>*</span>
