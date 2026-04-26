@@ -130,20 +130,8 @@ export default function ProviderVbmsWorkspace() {
     return v === 'inbox' || v === 'schedule' || v === 'orders' ? (v as 'inbox' | 'schedule' | 'orders') : null
   }, [location.search])
 
-  // Auto-open last panel for returning staff (when landing on /provider with no panel).
-  useEffect(() => {
-    if (panel) return
-    try {
-      const last = (localStorage.getItem('wph_provider_last_panel') || '').trim().toLowerCase()
-      if (last === 'inbox' || last === 'schedule' || last === 'orders') {
-        navigate(`/provider?panel=${encodeURIComponent(last)}`, { replace: true })
-      }
-    } catch {
-      // ignore
-    }
-  }, [navigate, panel])
-
-  // Persist panel + filters for day-to-day efficiency.
+  // Persist panel when staff explicitly opens ?panel=inbox|schedule|orders (jump links / bookmarks).
+  // We do not auto-redirect bare /provider → ?panel=… anymore: that hid inbox/orders and felt like widgets were “missing”.
   useEffect(() => {
     if (!panel) return
     try {
