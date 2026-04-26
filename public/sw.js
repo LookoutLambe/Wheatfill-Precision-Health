@@ -3,8 +3,8 @@
 // Minimal PWA service worker (prototype).
 // Cache static assets for offline use; use network-first for navigations.
 
-// Bump when asset paths or hosting root change (e.g. GitHub Pages repo URL → custom domain).
-const CACHE = 'wph-cache-v4-pwa';
+// Bump to flush stale app shells that can blank-screen after deploys.
+const CACHE = 'wph-cache-v5-pwa';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -28,7 +28,14 @@ self.addEventListener('activate', (event) => {
     Promise.all([
       self.clients.claim(),
       caches.keys().then((keys) =>
-        Promise.all(keys.map((k) => (k === CACHE ? Promise.resolve() : caches.delete(k)))),
+        Promise.all(
+          keys.map((k) => {
+            // Remove older WPH caches (and anything not matching the current one).
+            if (k === CACHE) return Promise.resolve();
+            if (String(k).startsWith('wph-cache-')) return caches.delete(k);
+            return Promise.resolve();
+          }),
+        ),
       ),
     ]),
   );
@@ -45,7 +52,9 @@ self.addEventListener('fetch', (event) => {
   // Network-first for SPA navigations so routes stay fresh.
   if (isNavigationRequest(request)) {
     event.respondWith(
-      fetch(request)
+      // Force a real network revalidation for the app shell. This avoids blank screens where
+      // an older cached index.html references JS chunks that no longer exist after deploy.
+      fetch(request, { cache: 'no-store' })
         .then((resp) => {
           const copy = resp.clone();
           // Always cache the SPA shell, not the specific route URL.
