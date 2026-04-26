@@ -223,7 +223,6 @@ export default function OrderNowSummary() {
               {items.length > 0 ? (
                 <>
                   Enter shipping and signature below, then use <strong>Check out</strong> to open the payment link.
-                  If you sign in, checkout can redirect you directly to a secure processor session.
                 </>
               ) : (
                 <>
