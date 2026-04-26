@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import {
   getMarketingProviderLoginDisplay,
@@ -35,6 +35,7 @@ const PROVIDER_LOGIN_RETURN_URL = `/provider/login?next=${encodeURIComponent(PRO
 
 export default function ProviderTeamInbox() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const who = getMarketingProviderLoginDisplay()
 
   const readPersisted = useCallback(<T,>(key: string, fallback: T): T => {
@@ -61,6 +62,11 @@ export default function ProviderTeamInbox() {
       // ignore
     }
   }, [inboxFilter, inboxQuery])
+
+  useEffect(() => {
+    const iff = searchParams.get('inboxFilter')
+    if (iff === 'new' || iff === 'handled' || iff === 'all') setInboxFilter(iff)
+  }, [searchParams])
 
   useEffect(() => {
     if (!isMarketingProviderAuthed()) {
@@ -140,14 +146,18 @@ export default function ProviderTeamInbox() {
   }, [loadTeamInbox])
 
   const inboxTokens = useMemo(() => norm(inboxQuery).split(' ').filter(Boolean), [inboxQuery])
+  const categoryParam = searchParams.get('category')
   const filteredMsgs = useMemo(() => {
-    const base =
+    let base =
       inboxFilter === 'all' ? msgs : msgs.filter((m) => (inboxFilter === 'new' ? m.status === 'new' : m.status === 'handled'))
+    if (categoryParam === 'online_booking') {
+      base = base.filter((m) => m.category === 'online_booking')
+    }
     if (inboxTokens.length === 0) return base
     return base.filter((m) =>
       includesAll([m.from, m.category, m.when, m.body].filter(Boolean).join(' | '), inboxTokens),
     )
-  }, [inboxFilter, inboxTokens, msgs])
+  }, [categoryParam, inboxFilter, inboxTokens, msgs])
 
   const newCount = msgs.filter((m) => m.status === 'new').length
 
@@ -183,6 +193,11 @@ export default function ProviderTeamInbox() {
           </span>
         </div>
         <div className="divider" />
+        {categoryParam === 'online_booking' ? (
+          <p className="muted" style={{ marginTop: 0, fontSize: 13 }}>
+            Showing <strong>Book Online</strong> requests only.
+          </p>
+        ) : null}
         <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
           <label>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>

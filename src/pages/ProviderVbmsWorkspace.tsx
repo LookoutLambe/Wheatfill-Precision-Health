@@ -219,6 +219,29 @@ export default function ProviderVbmsWorkspace() {
     readPersisted('wph_provider_appt_filter', 'Scheduled'),
   )
 
+  // Deep links from header stat pills (?apptFilter= / ?orderFilter= / ?inboxFilter=)
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search)
+    const af = sp.get('apptFilter')
+    if (af === 'Scheduled' || af === 'Completed' || af === 'Cancelled' || af === 'all') setApptFilter(af as typeof apptFilter)
+    const of = sp.get('orderFilter')
+    if (of === 'new' || of === 'in_review' || of === 'ordered' || of === 'closed' || of === 'all')
+      setOrderFilter(of as typeof orderFilter)
+    const iff = sp.get('inboxFilter')
+    if (iff === 'new' || iff === 'handled' || iff === 'all') setInboxFilter(iff as typeof inboxFilter)
+  }, [location.search])
+
+  useEffect(() => {
+    const raw = (location.hash || '').replace(/^#/, '').trim()
+    if (!raw) return
+    const id = decodeURIComponent(raw)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
+  }, [location.hash, location.pathname])
+
   useEffect(() => {
     try {
       localStorage.setItem('wph_provider_inbox_query', JSON.stringify(inboxQuery))
@@ -643,18 +666,55 @@ export default function ProviderVbmsWorkspace() {
           </div>
         </div>
         <div className="teamWorkspaceToolbar" style={{ paddingTop: 0 }}>
-          <span className="pill" title="Inbox messages from the public site">
-            Inbox: <b>{newCount}</b> new · <span className="muted">{handledCount} handled</span>
-          </span>
-          <span className="pill" title="Booking requests (from Book Online)">
-            Booking requests: <b>{bookingNewCount}</b> new · <span className="muted">{bookingHandledCount} handled</span>
-          </span>
-          <span className="pill" title="Preview schedule rows (this browser)">
-            Visits: <b>{scheduledCount}</b> scheduled · <span className="muted">{completedCount} completed</span>
-          </span>
-          <span className="pill" title="Order Now checkouts (API)">
-            Orders: <b>{ordersNewCount}</b> new · <span className="muted">{ordersInReviewCount} in review</span>
-          </span>
+          <div className="pill teamWorkspaceStatPill" title="Open full inbox">
+            <Link to="/provider/inbox" className="teamWorkspaceStatPillLink">
+              Inbox:
+            </Link>
+            <Link to="/provider/inbox?inboxFilter=new" className="teamWorkspaceStatPillLink">
+              {' '}
+              <b>{newCount}</b> new
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider/inbox?inboxFilter=handled" className="teamWorkspaceStatPillLink">
+              {handledCount} handled
+            </Link>
+          </div>
+          <div className="pill teamWorkspaceStatPill" title="Book Online requests in inbox">
+            <Link to="/provider/inbox?category=online_booking" className="teamWorkspaceStatPillLink">
+              Booking requests:
+            </Link>
+            <Link to="/provider/inbox?category=online_booking&inboxFilter=new" className="teamWorkspaceStatPillLink">
+              {' '}
+              <b>{bookingNewCount}</b> new
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider/inbox?category=online_booking&inboxFilter=handled" className="teamWorkspaceStatPillLink">
+              {bookingHandledCount} handled
+            </Link>
+          </div>
+          <div className="pill teamWorkspaceStatPill" title="Scheduled & completed on this workspace">
+            <span style={{ fontWeight: 700 }}>Visits: </span>
+            <Link to="/provider?apptFilter=Scheduled#wph-schedule" className="teamWorkspaceStatPillLink">
+              <b>{scheduledCount}</b> scheduled
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider?apptFilter=Completed#wph-schedule" className="teamWorkspaceStatPillLink">
+              {completedCount} completed
+            </Link>
+          </div>
+          <div className="pill teamWorkspaceStatPill" title="Patient orders (API)">
+            <Link to="/provider?orderFilter=all#wph-orders" className="teamWorkspaceStatPillLink">
+              Orders:
+            </Link>
+            <Link to="/provider?orderFilter=new#wph-orders" className="teamWorkspaceStatPillLink">
+              {' '}
+              <b>{ordersNewCount}</b> new
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider?orderFilter=in_review#wph-orders" className="teamWorkspaceStatPillLink">
+              {ordersInReviewCount} in review
+            </Link>
+          </div>
         </div>
         <p className="muted" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.4 }}>
           Tip: press <b>/</b> to focus search · <b>r</b> to refresh (inbox/orders)
@@ -873,7 +933,7 @@ export default function ProviderVbmsWorkspace() {
           ) : null}
         </section>
 
-        <section className="card cardAccentSoft">
+        <section className="card cardAccentSoft" id="wph-schedule">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
             <Link to="/provider/schedule" className="pill pillRed" style={{ textDecoration: 'none' }} title="Open calendar">
