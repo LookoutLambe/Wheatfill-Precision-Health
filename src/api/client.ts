@@ -4,6 +4,20 @@ function resolveApiUrl() {
   const fromEnv = import.meta.env.VITE_API_URL?.toString().trim()
   if (fromEnv) return fromEnv.replace(/\/$/, '')
 
+  // Live site should always prefer the canonical API host unless explicitly overridden via ?api=.
+  // This avoids a stale `wph_api_url_v1` from pointing a real user at an old/staging backend.
+  if (isWheatfillLiveSite()) {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      const qp = url.searchParams.get('api')?.trim()
+      if (qp) {
+        localStorage.setItem('wph_api_url_v1', qp)
+        return qp.replace(/\/$/, '')
+      }
+    }
+    return WHEATFILL_LIVE_DEFAULT_API
+  }
+
   // Allow overriding at runtime without rebuilding (useful for GitHub Pages).
   if (typeof window !== 'undefined') {
     const fromStorage = localStorage.getItem('wph_api_url_v1')?.toString().trim()
@@ -15,10 +29,6 @@ function resolveApiUrl() {
       localStorage.setItem('wph_api_url_v1', qp)
       return qp.replace(/\/$/, '')
     }
-  }
-
-  if (isWheatfillLiveSite()) {
-    return WHEATFILL_LIVE_DEFAULT_API
   }
 
   // Default for local dev.
