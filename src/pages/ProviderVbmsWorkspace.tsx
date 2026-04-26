@@ -130,6 +130,19 @@ export default function ProviderVbmsWorkspace() {
     return v === 'inbox' || v === 'schedule' || v === 'orders' ? (v as 'inbox' | 'schedule' | 'orders') : null
   }, [location.search])
 
+  // Auto-open last panel for returning staff (when landing on /provider with no panel).
+  useEffect(() => {
+    if (panel) return
+    try {
+      const last = (localStorage.getItem('wph_provider_last_panel') || '').trim().toLowerCase()
+      if (last === 'inbox' || last === 'schedule' || last === 'orders') {
+        navigate(`/provider?panel=${encodeURIComponent(last)}`, { replace: true })
+      }
+    } catch {
+      // ignore
+    }
+  }, [navigate, panel])
+
   // Persist panel + filters for day-to-day efficiency.
   useEffect(() => {
     if (!panel) return
@@ -156,11 +169,19 @@ export default function ProviderVbmsWorkspace() {
     navigate('/', { replace: true })
   }, [navigate])
 
+  const [toast, setToast] = useState<string | null>(null)
+  useEffect(() => {
+    if (!toast) return
+    const t = window.setTimeout(() => setToast(null), 1400)
+    return () => window.clearTimeout(t)
+  }, [toast])
+
   const copyText = useCallback(async (text: string) => {
     const s = String(text || '').trim()
     if (!s) return
     try {
       await navigator.clipboard.writeText(s)
+      setToast('Copied.')
     } catch {
       // Fallback: best-effort for older browsers.
       const ta = document.createElement('textarea')
@@ -172,6 +193,7 @@ export default function ProviderVbmsWorkspace() {
       ta.select()
       try {
         document.execCommand('copy')
+        setToast('Copied.')
       } finally {
         ta.remove()
       }
@@ -656,6 +678,9 @@ export default function ProviderVbmsWorkspace() {
             Orders: <b>{ordersNewCount}</b> new · <span className="muted">{ordersInReviewCount} in review</span>
           </span>
         </div>
+        <p className="muted" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.4 }}>
+          Tip: press <b>/</b> to focus search · <b>r</b> to refresh (inbox/orders)
+        </p>
         <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
           {panel ? (
             <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
@@ -686,6 +711,12 @@ export default function ProviderVbmsWorkspace() {
           </Link>
         </div>
       </header>
+
+      {toast ? (
+        <div style={{ position: 'sticky', top: 86, zIndex: 20, alignSelf: 'flex-end' }}>
+          <span className="pill pillGreen">{toast}</span>
+        </div>
+      ) : null}
 
       <div className="cardGrid">
         {!panel ? (
