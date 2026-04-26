@@ -117,7 +117,7 @@ export function hasApiCredential() {
 
 /**
  * Session probe against GET /v1/auth/session. When `ok` is false, the result is inconclusive
- * (network, CORS, timeout, or non-200) — callers must not treat that as a definitive sign-out.
+ * (network, CORS, or non-200) — callers must not treat that as a definitive sign-out.
  */
 export type ApiSessionSnapshot = { authenticated: boolean; role?: string; ok: boolean }
 
@@ -141,6 +141,28 @@ export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
   } catch {
     return { authenticated: false, ok: false }
   }
+}
+
+const PROVIDER_SESSION_PROBE_MAX = 6
+const PROVIDER_SESSION_PROBE_BASE_MS = 150
+
+/**
+ * For provider routes after sign-in: mobile WebKit (especially iOS) may not attach the
+ * httpOnly session cookie to the first GET /v1/auth/session. Briefly retry "not authenticated"
+ * so we do not clear local staff session and send the user back to login.
+ */
+export async function fetchApiSessionForProviderGate(): Promise<ApiSessionSnapshot> {
+  let last: ApiSessionSnapshot = { authenticated: false, ok: false }
+  for (let i = 0; i < PROVIDER_SESSION_PROBE_MAX; i++) {
+    const s = await fetchApiSession()
+    last = s
+    if (!s.ok) return s
+    if (s.authenticated) return s
+    if (i < PROVIDER_SESSION_PROBE_MAX - 1) {
+      await new Promise((r) => setTimeout(r, PROVIDER_SESSION_PROBE_BASE_MS * (i + 1)))
+    }
+  }
+  return last
 }
 
 const WPH_BROWSER_CLIENT = '1'
@@ -184,6 +206,31 @@ export async function apiGet<T>(path: string, token?: string): Promise<T> {
   }
   if (!res.ok) throw new Error(await res.text())
   return readResponseBody<T>(res)
+}
+
+function is401ApiError(e: unknown): boolean {
+  return /401|unauthorized|Unauthorized|statuscode.:401|status code 401/i.test(String((e as Error)?.message || e))
+}
+
+const PROVIDER_WARM_401_RETRIES = 3
+const PROVIDER_WARM_401_BASE_MS = 400
+
+/**
+ * After sign-in, credentialed GETs to the API can 401 once on iOS before the session cookie
+ * is applied. Retry a few times with short delays before surfacing 401 to the UI.
+ */
+export async function apiGetWithSessionWarmup<T>(path: string, token?: string): Promise<T> {
+  let last: unknown
+  for (let i = 0; i < PROVIDER_WARM_401_RETRIES; i++) {
+    try {
+      return await apiGet<T>(path, token)
+    } catch (e) {
+      last = e
+      if (!is401ApiError(e) || i === PROVIDER_WARM_401_RETRIES - 1) throw e
+      await new Promise((r) => setTimeout(r, PROVIDER_WARM_401_BASE_MS * (i + 1)))
+    }
+  }
+  throw last
 }
 
 export async function apiPost<T>(path: string, body: unknown, token?: string): Promise<T> {

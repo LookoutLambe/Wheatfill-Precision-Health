@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
+import {
+  apiDelete,
+  apiGetWithSessionWarmup,
+  apiPatch,
+  fetchApiSessionForProviderGate,
+  hasApiCredential,
+  setApiSessionHint,
+} from '../api/client'
 import {
   getMarketingProviderLoginDisplay,
   isMarketingProviderAuthed,
@@ -74,7 +81,7 @@ export default function ProviderTeamInbox() {
       return
     }
     ;(async () => {
-      const s = await fetchApiSession()
+      const s = await fetchApiSessionForProviderGate()
       if (s.ok && !s.authenticated) {
         setMarketingProviderAuthed(false)
         navigate(PROVIDER_LOGIN_RETURN_URL, { replace: true })
@@ -88,7 +95,7 @@ export default function ProviderTeamInbox() {
     setInboxLoading(true)
     setInboxError(null)
     try {
-      const r = await apiGet<{
+      const r = await apiGetWithSessionWarmup<{
         items: Array<{
           id: string
           kind: string

@@ -1,6 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { apiDelete, apiGet, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
+import {
+  apiDelete,
+  apiGetWithSessionWarmup,
+  apiPatch,
+  fetchApiSessionForProviderGate,
+  hasApiCredential,
+  setApiSessionHint,
+} from '../api/client'
 import {
   addBlackoutDate,
   addBlackoutBlock,
@@ -329,8 +336,8 @@ export default function ProviderVbmsWorkspace() {
       return
     }
     ;(async () => {
-      const s = await fetchApiSession()
-      // Only sign out when the API explicitly says there is no session. Network/CORS/timeouts
+      const s = await fetchApiSessionForProviderGate()
+      // Only sign out when the API explicitly says there is no session. Network/CORS
       // return `ok: false` and would otherwise create a spurious "sign in again" loop.
       if (s.ok && !s.authenticated) {
         setMarketingProviderAuthed(false)
@@ -370,7 +377,7 @@ export default function ProviderVbmsWorkspace() {
     setInboxLoading(true)
     setInboxError(null)
     try {
-      const r = await apiGet<{
+      const r = await apiGetWithSessionWarmup<{
         items: Array<{
           id: string
           kind: string
@@ -447,7 +454,7 @@ export default function ProviderVbmsWorkspace() {
     setOrdersLoading(true)
     setOrdersError(null)
     try {
-      const r = await apiGet<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
+      const r = await apiGetWithSessionWarmup<{ orders: ProviderOrderRow[] }>('/v1/provider/orders')
       setOrders(
         (r.orders || []).map((o) => ({
           ...o,
