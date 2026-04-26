@@ -369,6 +369,13 @@ async function ensurePharmacySeed() {
   await upsertProducts(hall.id, hallProducts)
 }
 
+function shippingCentsForPartnerSlug(slug: string): number {
+  // Business rule:
+  // - Hallandale: $25 flat shipping
+  // - Mountain View (default): free shipping
+  return slug === 'hallandale' ? 2500 : 0
+}
+
 app.get('/v1/pharmacies', async () => {
   await ensurePharmacySeed()
   await ensureProviderSeed()
@@ -496,7 +503,7 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
   }
 
   const subtotal = body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0)
-  const shippingCents = 3000
+  const shippingCents = shippingCentsForPartnerSlug(partner.slug)
   const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
 
   const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
@@ -532,14 +539,18 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
               },
             ]
           : []),
-        {
-          price_data: {
-            currency: 'usd',
-            unit_amount: shippingCents,
-            product_data: { name: 'Shipping' },
-          },
-          quantity: 1,
-        },
+        ...(shippingCents
+          ? [
+              {
+                price_data: {
+                  currency: 'usd',
+                  unit_amount: shippingCents,
+                  product_data: { name: 'Shipping' },
+                },
+                quantity: 1,
+              },
+            ]
+          : []),
       ],
       metadata: { partnerSlug: partner.slug, kind: 'public_catalog_checkout' },
     },
@@ -2347,7 +2358,7 @@ await app.register(async (protectedScope) => {
       }
 
       const subtotal = body.items.reduce((sum, it) => sum + (bySku.get(it.sku)!.priceCents * it.quantity), 0)
-      const shippingCents = 3000
+      const shippingCents = shippingCentsForPartnerSlug(partner.slug)
       const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
       const total = subtotal + shippingCents + shippingInsuranceCents
 

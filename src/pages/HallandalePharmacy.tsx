@@ -99,7 +99,7 @@ export default function HallandalePharmacy() {
           </Link>
         </div>
         <p className="muted" style={{ fontSize: 14, marginTop: 10, marginBottom: 0, maxWidth: 720 }}>
-          Shipping is a flat <strong>$30</strong> on checkout.
+          Shipping is a flat <strong>$25</strong> on checkout.
         </p>
         {cartCount > 0 ? (
           <p className="muted" style={{ fontSize: 14, marginTop: 8, marginBottom: 0, maxWidth: 720 }} aria-live="polite">

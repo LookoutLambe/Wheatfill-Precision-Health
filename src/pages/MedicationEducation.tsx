@@ -47,7 +47,7 @@ export default function MedicationEducation() {
           on <em>your</em> medication and what your clinician tells you.
         </p>
         <div className="cardGrid" style={{ alignItems: 'start' }}>
-          <div className="card cardAccentSoft" style={{ margin: 0, gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ margin: 0 }}>
             <div className="cardTitle">
               <h3 style={{ margin: 0 }}>Semaglutide (example: Wegovy)</h3>
               <span className="pill">Weekly</span>
@@ -66,7 +66,7 @@ export default function MedicationEducation() {
               {ext('https://medlineplus.gov/druginfo/meds/a619057.html')}
             </p>
           </div>
-          <div className="card cardAccentSoft" style={{ margin: 0, gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft" style={{ margin: 0 }}>
             <div className="cardTitle">
               <h3 style={{ margin: 0 }}>Tirzepatide (example: Zepbound)</h3>
               <span className="pill">Weekly</span>

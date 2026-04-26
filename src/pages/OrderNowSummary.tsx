@@ -100,7 +100,7 @@ export default function OrderNowSummary() {
     [items],
   )
   const insuranceCents = useMemo(() => (insurance ? Math.round(subtotal * 0.02) : 0), [insurance, subtotal])
-  const shippingCents = 3000
+  const shippingCents = slug === 'hallandale' ? 2500 : 0
   const total = subtotal + insuranceCents + shippingCents
 
   const onCheckout = () => {
