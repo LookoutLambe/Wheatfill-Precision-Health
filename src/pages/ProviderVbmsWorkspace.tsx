@@ -493,8 +493,10 @@ export default function ProviderVbmsWorkspace() {
   const ordersInReviewCount = orders.filter((o) => o.status === 'in_review').length
 
   /**
-   * Inbox rows plus cached names for messages that were deleted on the server but are still
-   * referenced in the preview schedule or Quick schedule.
+   * Inbox rows for Quick schedule patient picker.
+   *
+   * Important: do NOT re-add deleted inbox rows from local cache. If one user deletes
+   * an inbox message, it should disappear for everyone.
    */
   const inboxRequestPatients = useMemo((): DemoPatient[] => {
     const fromMsgs: DemoPatient[] = msgs
@@ -506,11 +508,7 @@ export default function ProviderVbmsWorkspace() {
           label: shortDate ? `${m.fromName} (${shortDate})` : m.fromName,
         }
       })
-    const activeIds = new Set(msgs.map((m) => m.id))
-    const fromCache: DemoPatient[] = Object.keys(inboxNameCache)
-      .filter((id) => !activeIds.has(id) && (inboxNameCache[id] || '').trim().length > 0)
-      .map((id) => ({ id: `inbox:${id}`, label: inboxNameCache[id] }))
-    return [...fromMsgs, ...fromCache]
+    return fromMsgs
   }, [msgs, inboxNameCache])
 
   const allPatientOptions = useMemo((): DemoPatient[] => {
@@ -810,7 +808,8 @@ export default function ProviderVbmsWorkspace() {
             <p className="muted">No messages match your search/filter.</p>
           ) : null}
           {getToken() && filteredMsgs.length > 0 ? (
-            <div className="tableWrap">
+            <div className="teamWidgetScroll">
+              <div className="tableWrap">
               <table className="table" aria-label="Inbox">
                 <thead>
                   <tr>
@@ -909,6 +908,7 @@ export default function ProviderVbmsWorkspace() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           ) : null}
           </section>
@@ -918,13 +918,8 @@ export default function ProviderVbmsWorkspace() {
           <section className={`card cardAccentSoft ${panel ? 'cardSpan12' : ''}`}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
-            <Link
-              to={panel ? '/provider' : '/provider?panel=schedule'}
-              className="pill pillRed"
-              style={{ textDecoration: 'none' }}
-              title={panel ? 'Back to workspace' : 'Open full list'}
-            >
-              {panel ? 'Back' : 'Open'}
+            <Link to="/provider/schedule" className="pill pillRed" style={{ textDecoration: 'none' }} title="Open calendar">
+              Calendar
             </Link>
           </div>
           <div className="divider" />
@@ -967,7 +962,8 @@ export default function ProviderVbmsWorkspace() {
           {filteredAppts.length === 0 ? (
             <p className="muted">No scheduled visits yet.</p>
           ) : (
-            <div className="tableWrap">
+            <div className="teamWidgetScroll">
+              <div className="tableWrap">
               <table className="table" aria-label="Scheduled visits sample queue">
                 <thead>
                   <tr>
@@ -1040,6 +1036,7 @@ export default function ProviderVbmsWorkspace() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
           </section>

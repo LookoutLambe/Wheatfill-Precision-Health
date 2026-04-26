@@ -461,14 +461,12 @@ html.pharmacyCartOpen body {
 .teamWorkspacePage .cardGrid > .card:not(.cardSpan12) {
   /* Cap height so long tables don't make the whole page enormous. */
   max-height: min(72svh, 760px);
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
 }
 
 .teamWorkspacePage--panel .cardGrid > .card {
   max-height: min(78svh, 860px);
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
 }
 
 /* Keep widget headers visible while scrolling. */
@@ -498,6 +496,28 @@ html.pharmacyCartOpen body {
   position: sticky;
   top: 58px; /* below sticky cardTitle */
   z-index: 4;
+}
+
+/* Team Workspace mobile scroll fixes:
+   - Prevent horizontal scroll on the page
+   - Allow vertical swipe to bubble unless user is inside a widget list */
+.teamWorkspacePage {
+  overflow-x: hidden;
+}
+
+.teamWorkspacePage .teamWidgetScroll {
+  max-height: min(44svh, 520px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+@media (max-width: 900px) {
+  .teamWorkspacePage .teamWidgetScroll {
+    max-height: min(52svh, 620px);
+  }
 }
 
 @media (max-width: 640px) {
