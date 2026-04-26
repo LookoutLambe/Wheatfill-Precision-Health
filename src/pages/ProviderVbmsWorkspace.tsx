@@ -316,6 +316,31 @@ export default function ProviderVbmsWorkspace() {
     })()
   }, [navigate])
 
+  /** From `/provider/inbox`: Preselect jumps back here and fills Quick schedule from `location.state.inboxQuickPick`. */
+  useEffect(() => {
+    const pick = (
+      location.state as {
+        inboxQuickPick?: { id: string; fromName: string; category: string; body: string; when: string }
+      } | null
+    )?.inboxQuickPick
+    if (!pick?.id) return
+    if (pick.fromName?.trim()) {
+      const shortDate = pick.when.split(',')[0]?.trim() || ''
+      const label = shortDate ? `${pick.fromName.trim()} (${shortDate})` : pick.fromName.trim()
+      setInboxNameCache((prev) => ({ ...prev, [pick.id]: label }))
+    }
+    setQsPatient(`inbox:${pick.id}`)
+    if (pick.category === 'online_booking') {
+      const { visitType, whenText } = parseInboxBodyForQuickSchedule(pick.body)
+      setQsType(visitType)
+      if (whenText) setQsWhen(whenText)
+    }
+    navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: {} })
+    requestAnimationFrame(() => {
+      document.getElementById('wph-quick-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [location.state, location.pathname, location.search, location.hash, navigate])
+
   const loadTeamInbox = useCallback(async () => {
     setInboxLoading(true)
     setInboxError(null)
@@ -679,7 +704,7 @@ export default function ProviderVbmsWorkspace() {
             <Link to="/provider#wph-orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
               View order requests
             </Link>
-            <Link to="/provider#wph-inbox" className="btn" style={{ textDecoration: 'none' }}>
+            <Link to="/provider/inbox" className="btn" style={{ textDecoration: 'none' }}>
               View inbox
             </Link>
             <Link to="/provider/schedule" className="btn" style={{ textDecoration: 'none' }}>
@@ -694,9 +719,14 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentSoft" id="wph-inbox">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Inbox</h2>
-            <span className={`pill ${newCount > 0 ? 'pillRed' : ''}`} title="New messages in this inbox">
+            <Link
+              to="/provider/inbox"
+              className={`pill ${newCount > 0 ? 'pillRed' : ''}`}
+              style={{ textDecoration: 'none' }}
+              title="Open full inbox"
+            >
               {newCount > 0 ? `${newCount} new` : 'Up to date'}
-            </span>
+            </Link>
           </div>
           <div className="divider" />
           <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
