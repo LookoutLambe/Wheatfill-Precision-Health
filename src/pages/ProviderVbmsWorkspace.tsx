@@ -5,6 +5,9 @@ import {
   apiGetWithSessionWarmup,
   apiPatch,
   fetchApiSession,
+  getApiUrl,
+  getToken,
+  hasApiSessionHint,
   hasApiCredential,
   setApiSessionHint,
 } from '../api/client'
@@ -454,7 +457,15 @@ export default function ProviderVbmsWorkspace() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setOrdersError('Could not load orders. You stay signed in—try pulling to refresh. The API may not have sent a session in this browser.')
+        const tok = (getToken() || '').trim()
+        const authBits = [
+          `api=${getApiUrl()}`,
+          `token=${tok ? `${tok.slice(0, 12)}…` : 'none'}`,
+          `sessionHint=${hasApiSessionHint() ? '1' : '0'}`,
+        ].join(' · ')
+        setOrdersError(
+          `Could not load orders (401). This iPhone PWA likely blocked cookies; the app should fall back to a bearer token. ${authBits}`,
+        )
       } else {
         setOrdersError(msg)
         setOrders([])
