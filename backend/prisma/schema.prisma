@@ -38,6 +38,7 @@ enum OrderStatus {
   in_review
   ordered
   closed
+  declined
 }
 
 enum BillingItemType {

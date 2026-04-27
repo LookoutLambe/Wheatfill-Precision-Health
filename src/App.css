@@ -3044,7 +3044,7 @@ html:has(.peptidePage) {
   margin: 10px 0 18px;
   font-size: 14px;
   line-height: 1.5;
-  max-width: 62ch;
+  max-width: 100%;
 }
 
 .orderNowProductList {

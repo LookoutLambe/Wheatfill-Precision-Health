@@ -215,7 +215,7 @@ export default function ProviderVbmsWorkspace() {
   const [inboxQuery, setInboxQuery] = useState(() => readPersisted('wph_provider_inbox_query', ''))
   const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>(() => readPersisted('wph_provider_inbox_filter', 'new'))
   const [orderQuery, setOrderQuery] = useState(() => readPersisted('wph_provider_orders_query', ''))
-  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed'>(() =>
+  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed' | 'declined'>(() =>
     readPersisted('wph_provider_orders_filter', 'new'),
   )
   const [apptQuery, setApptQuery] = useState(() => readPersisted('wph_provider_appt_query', ''))
@@ -229,7 +229,7 @@ export default function ProviderVbmsWorkspace() {
     const af = sp.get('apptFilter')
     if (af === 'Scheduled' || af === 'Completed' || af === 'Cancelled' || af === 'all') setApptFilter(af as typeof apptFilter)
     const of = sp.get('orderFilter')
-    if (of === 'new' || of === 'in_review' || of === 'ordered' || of === 'closed' || of === 'all')
+    if (of === 'new' || of === 'in_review' || of === 'ordered' || of === 'closed' || of === 'declined' || of === 'all')
       setOrderFilter(of as typeof orderFilter)
     const iff = sp.get('inboxFilter')
     if (iff === 'new' || iff === 'handled' || iff === 'all') setInboxFilter(iff as typeof inboxFilter)
@@ -505,6 +505,7 @@ export default function ProviderVbmsWorkspace() {
   const cancelledCount = appts.filter((a) => a.status === 'Cancelled').length
   const ordersNewCount = orders.filter((o) => o.status === 'new').length
   const ordersInReviewCount = orders.filter((o) => o.status === 'in_review').length
+  const ordersDeclinedCount = orders.filter((o) => o.status === 'declined').length
 
   /**
    * Inbox rows for Quick schedule patient picker.
@@ -578,7 +579,7 @@ export default function ProviderVbmsWorkspace() {
   const orderSubtotalCents = (o: ProviderOrderRow) =>
     o.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0)
 
-  const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed') => {
+  const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed' | 'declined') => {
     setOrdersError(null)
     try {
       await apiPatch(`/v1/provider/orders/${encodeURIComponent(id)}/status`, { status })
@@ -710,6 +711,10 @@ export default function ProviderVbmsWorkspace() {
             <span className="teamWorkspaceStatPillSep"> · </span>
             <Link to="/provider?orderFilter=in_review#wph-orders" className="teamWorkspaceStatPillLink">
               {ordersInReviewCount} in review
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider?orderFilter=declined#wph-orders" className="teamWorkspaceStatPillLink">
+              {ordersDeclinedCount} declined
             </Link>
           </div>
         </div>
@@ -1328,10 +1333,13 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentRed" id="wph-orders">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
-            <div className="btnRow" style={{ margin: 0 }}>
+            <div className="btnRow" style={{ margin: 0, flexWrap: 'wrap' }}>
               <span className="pill pillRed" title="New orders awaiting action">
                 {ordersNewCount > 0 ? `${ordersNewCount} new` : 'Queue clear'}
               </span>
+              <Link to="/provider/orders" className="btn" style={{ textDecoration: 'none' }}>
+                All order history
+              </Link>
               <button type="button" className="btn" disabled={ordersLoading || !hasApiCredential()} onClick={() => void loadOrders()}>
                 {ordersLoading ? 'Loading…' : 'Refresh'}
               </button>
@@ -1373,6 +1381,7 @@ export default function ProviderVbmsWorkspace() {
                     <option value="in_review">in review</option>
                     <option value="ordered">ordered</option>
                     <option value="closed">closed</option>
+                    <option value="declined">declined</option>
                     <option value="all">all</option>
                   </select>
                 </label>
@@ -1422,6 +1431,15 @@ export default function ProviderVbmsWorkspace() {
                       >
                         Copy patient
                       </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        title="Mark this order as declined (not fulfilled)"
+                        disabled={o.status === 'declined' || o.status === 'closed' || ordersLoading}
+                        onClick={() => void updateOrderStatus(o.id, 'declined')}
+                      >
+                        Decline
+                      </button>
                     </div>
                     <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                       Status
@@ -1429,7 +1447,10 @@ export default function ProviderVbmsWorkspace() {
                         className="select"
                         value={o.status}
                         onChange={(e) =>
-                          void updateOrderStatus(o.id, e.target.value as 'new' | 'in_review' | 'ordered' | 'closed')
+                          void updateOrderStatus(
+                            o.id,
+                            e.target.value as 'new' | 'in_review' | 'ordered' | 'closed' | 'declined',
+                          )
                         }
                         aria-label={`Status for order ${o.id}`}
                       >
@@ -1437,6 +1458,7 @@ export default function ProviderVbmsWorkspace() {
                         <option value="in_review">in review</option>
                         <option value="ordered">ordered</option>
                         <option value="closed">closed</option>
+                        <option value="declined">declined</option>
                       </select>
                     </label>
                   </div>

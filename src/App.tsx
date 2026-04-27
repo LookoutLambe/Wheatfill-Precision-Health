@@ -42,6 +42,7 @@ const MarketingProviderSecurity = lazy(() => import('./pages/MarketingProviderSe
 const ProviderVbmsWorkspace = lazy(() => import('./pages/ProviderVbmsWorkspace'))
 const ProviderSchedule = lazy(() => import('./pages/ProviderSchedule'))
 const ProviderTeamInbox = lazy(() => import('./pages/ProviderTeamInbox'))
+const ProviderOrderHistory = lazy(() => import('./pages/ProviderOrderHistory'))
 const ProviderStaffUsers = lazy(() => import('./pages/ProviderStaffUsers'))
 const ProviderStripeConnectDemo = lazy(() => import('./pages/ProviderStripeConnectDemo'))
 const ProviderStripeConnectProducts = lazy(() => import('./pages/ProviderStripeConnectProducts'))
@@ -131,6 +132,7 @@ export default function App() {
         >
           <Route path="/provider" element={<ProviderVbmsWorkspace />} />
           <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
+          <Route path="/provider/orders" element={<ProviderOrderHistory />} />
           <Route path="/provider/schedule" element={<ProviderSchedule />} />
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
@@ -211,6 +213,7 @@ export default function App() {
           <>
             <Route path="/provider" element={<ProviderVbmsWorkspace />} />
             <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
+            <Route path="/provider/orders" element={<ProviderOrderHistory />} />
             <Route path="/provider/schedule" element={<ProviderSchedule />} />
             <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
             <Route path="/provider/security" element={<MarketingProviderSecurity />} />

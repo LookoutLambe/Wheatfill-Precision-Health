@@ -89,6 +89,9 @@ export default function ProviderShell() {
               <NavLink to="/provider" onClick={closeMenu}>
                 Dashboard
               </NavLink>
+              <NavLink to="/provider/orders" onClick={closeMenu}>
+                All orders
+              </NavLink>
               <NavLink to="/provider/integrations" onClick={closeMenu}>
                 Integrations
               </NavLink>
@@ -100,6 +103,9 @@ export default function ProviderShell() {
             <>
               <NavLink to="/provider" onClick={closeMenu}>
                 Workspace
+              </NavLink>
+              <NavLink to="/provider/orders" onClick={closeMenu}>
+                All orders
               </NavLink>
               <NavLink to="/provider/integrations" onClick={closeMenu}>
                 Integrations

@@ -43,7 +43,7 @@ export default function ProviderLogin() {
           setError('Invalid username or password.')
           return
         }
-        const res = await apiPost<{ user?: { username: string } }>(
+        const res = await apiPost<{ user?: { username: string }; token?: string }>(
           '/auth/login',
           { username: teamApiUsernameForSlot(slot), password },
           '',
@@ -53,7 +53,8 @@ export default function ProviderLogin() {
           return
         }
         try {
-          localStorage.removeItem('wph_token_v1')
+          if (res.token) localStorage.setItem('wph_token_v1', res.token)
+          else localStorage.removeItem('wph_token_v1')
         } catch {
           // ignore
         }

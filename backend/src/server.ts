@@ -996,7 +996,7 @@ app.post('/auth/signup', async (req, reply) => {
 
   const token = await reply.jwtSign({ sub: user.id, role: user.role })
   setJwtCookie(reply, token)
-  return { user }
+  return { user, token }
 })
 
 const LoginBody = z.object({
@@ -1016,6 +1016,7 @@ app.post('/auth/login', async (req, reply) => {
   setJwtCookie(reply, token)
   return {
     user: { id: user.id, role: user.role, username: user.username, displayName: user.displayName },
+    token,
   }
 })
 
@@ -2199,7 +2200,7 @@ await app.register(async (protectedScope) => {
   )
 
   const UpdateOrderStatusBody = z.object({
-    status: z.enum(['new', 'in_review', 'ordered', 'closed']),
+    status: z.enum(['new', 'in_review', 'ordered', 'closed', 'declined']),
   })
   protectedScope.patch(
     '/v1/provider/orders/:id/status',

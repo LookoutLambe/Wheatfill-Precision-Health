@@ -32,10 +32,11 @@ export default function MarketingProviderLogin() {
     ;(async () => {
       try {
         const u = username.trim().toLowerCase()
-        const res = await apiPost<{ user?: { username: string } }>('/auth/login', { username: u, password }, '')
+        const res = await apiPost<{ user?: { username: string }; token?: string }>('/auth/login', { username: u, password }, '')
         if (!res?.user) throw new Error('Sign-in failed.')
         try {
-          localStorage.removeItem('wph_token_v1')
+          if (res.token) localStorage.setItem('wph_token_v1', res.token)
+          else localStorage.removeItem('wph_token_v1')
         } catch {
           // ignore
         }

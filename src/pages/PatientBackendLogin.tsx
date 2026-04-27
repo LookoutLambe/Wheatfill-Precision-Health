@@ -74,13 +74,14 @@ export default function PatientBackendLogin() {
               setBusy(true)
               ;(async () => {
                 try {
-                  const res = await apiPost<{ user?: { username: string } }>('/auth/login', {
+                  const res = await apiPost<{ user?: { username: string }; token?: string }>('/auth/login', {
                     username: username.trim(),
                     password,
                   })
                   if (!res?.user) throw new Error('Sign-in failed.')
                   try {
-                    localStorage.removeItem('wph_token_v1')
+                    if (res.token) localStorage.setItem('wph_token_v1', res.token)
+                    else localStorage.removeItem('wph_token_v1')
                   } catch {
                     // ignore
                   }

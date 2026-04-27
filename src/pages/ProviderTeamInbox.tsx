@@ -6,6 +6,9 @@ import {
   apiPatch,
   fetchApiSession,
   hasApiCredential,
+  getApiUrl,
+  getToken,
+  hasApiSessionHint,
   setApiSessionHint,
 } from '../api/client'
 import {
@@ -110,7 +113,15 @@ export default function ProviderTeamInbox() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setInboxError('Could not load inbox. You stay signed in—try again or refresh. (We do not sign you out when the API is unavailable.)')
+        const tok = (getToken() || '').trim()
+        const authBits = [
+          `api=${getApiUrl()}`,
+          `token=${tok ? `${tok.slice(0, 12)}…` : 'none'}`,
+          `sessionHint=${hasApiSessionHint() ? '1' : '0'}`,
+        ].join(' · ')
+        setInboxError(
+          `Could not load inbox (401). This iPhone PWA likely blocked cookies; the app should fall back to a bearer token. ${authBits}`,
+        )
       } else {
         setInboxError(msg)
       }
