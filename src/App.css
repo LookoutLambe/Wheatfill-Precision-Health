@@ -101,6 +101,30 @@ body {
   position: relative;
 }
 
+/* Shown on /provider/* sub-routes: return to the team workspace hub (/provider). */
+.providerShellWorkspaceBack {
+  width: 100%;
+  flex-basis: 100%;
+  box-sizing: border-box;
+  padding: 6px 16px 10px;
+  border-top: 1px solid rgba(10, 30, 63, 0.1);
+  background: rgba(10, 30, 63, 0.04);
+}
+
+.providerShellWorkspaceBackLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 750;
+  color: var(--navy, #0a1e3f);
+  text-decoration: none;
+}
+
+.providerShellWorkspaceBackLink:hover {
+  text-decoration: underline;
+}
+
 .topNavRight {
   display: flex;
   align-items: center;

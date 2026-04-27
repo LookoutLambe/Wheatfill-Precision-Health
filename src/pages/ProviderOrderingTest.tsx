@@ -64,11 +64,8 @@ export default function ProviderOrderingTest() {
           <p className="muted pageSubtitle">Test flow: creates medication request records. No payment.</p>
         </div>
         <div className="pageActions">
-          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back to Provider
-          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
         </div>
       </div>

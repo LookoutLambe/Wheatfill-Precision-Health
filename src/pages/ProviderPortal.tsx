@@ -111,7 +111,7 @@ export default function ProviderPortal() {
         </div>
         <div className="pageActions">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
           <span className="pill pillRed">Provider</span>
         </div>

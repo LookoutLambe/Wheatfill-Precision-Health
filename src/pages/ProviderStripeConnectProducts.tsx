@@ -60,9 +60,14 @@ export default function ProviderStripeConnectProducts() {
           <h1 style={{ margin: 0 }}>Create products (sample)</h1>
           <p className="muted pageSubtitle">Platform products mapped to a connected account via metadata.</p>
         </div>
-        <Link to="/provider/connect-demo" className="btn" style={{ textDecoration: 'none' }}>
-          Back
-        </Link>
+        <div className="pageActions" style={{ justifyContent: 'center' }}>
+          <Link to="/provider/connect-demo" className="btn" style={{ textDecoration: 'none' }}>
+            Connect demo
+          </Link>
+          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            Public site
+          </Link>
+        </div>
       </div>
 
       {error ? (

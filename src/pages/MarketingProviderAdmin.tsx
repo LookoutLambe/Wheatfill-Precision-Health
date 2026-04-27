@@ -31,14 +31,11 @@ export default function MarketingProviderAdmin() {
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
         <div className="pageActions">
-          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back
-          </Link>
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
           </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
           <button
             type="button"

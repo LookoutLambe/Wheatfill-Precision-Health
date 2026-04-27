@@ -773,7 +773,7 @@ export default function ProviderVbmsWorkspace() {
         </p>
         <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
           {staffCalendarUrl ? (
             <a

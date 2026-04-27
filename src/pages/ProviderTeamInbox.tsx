@@ -176,11 +176,8 @@ export default function ProviderTeamInbox() {
           <p className="muted pageSubtitle">Contact, booking, and site requests from the API.</p>
         </div>
         <div className="pageActions">
-          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back to workspace
-          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
           <span className="pill pillRed">Team</span>
         </div>

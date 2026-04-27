@@ -149,11 +149,8 @@ export default function ProviderSchedule() {
           <p className="muted pageSubtitle">Slots are generated from your hours (slot size: {slotMinutes} min).</p>
         </div>
         <div className="pageActions">
-          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back
-          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
           <span className="pill pillRed">Provider</span>
         </div>

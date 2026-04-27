@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import brandMarkImg from '../assets/wheatfill-mark.png'
@@ -21,8 +21,14 @@ function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
 }
 
 export default function ProviderShell() {
+  const { pathname } = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
+
+  const pathNorm = pathname.replace(/\/$/, '') || '/'
+  const isProviderLogin = pathNorm.startsWith('/provider/login')
+  const isTeamWorkspaceRoot = pathNorm === '/provider'
+  const showBackToTeamWorkspace = pathNorm.startsWith('/provider') && !isProviderLogin && !isTeamWorkspaceRoot
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -76,13 +82,25 @@ export default function ProviderShell() {
           </div>
         </header>
 
+        {showBackToTeamWorkspace ? (
+          <div className="providerShellWorkspaceBack">
+            <Link
+              to="/provider"
+              className="providerShellWorkspaceBackLink"
+              onClick={closeMenu}
+            >
+              ← Back to team workspace
+            </Link>
+          </div>
+        ) : null}
+
         {menuOpen ? (
           <button type="button" className="navScrim" aria-label="Close menu" tabIndex={-1} onClick={closeMenu} />
         ) : null}
 
         <nav className="navLinks" id="provider-primary-navigation" aria-label="Provider navigation">
           <NavLink to="/" onClick={closeMenu}>
-            Home
+            Public site
           </NavLink>
           {USE_MEDPLUM_PROVIDER_PORTAL ? (
             <>

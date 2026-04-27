@@ -72,11 +72,8 @@ export default function MarketingProviderSecurity() {
           ) : null}
         </div>
         <div className="pageActions">
-          <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-            Back
-          </Link>
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Home
+            Public site
           </Link>
           <span className="pill pillRed">Provider</span>
         </div>

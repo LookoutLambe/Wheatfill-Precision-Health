@@ -211,12 +211,12 @@ export default function ProviderOrderHistory() {
               </div>
             ) : null}
           </div>
-          <div className="btnRow" style={{ flexWrap: 'wrap' }}>
-            <Link to="/provider" className="btn" style={{ textDecoration: 'none' }}>
-              Back to workspace
-            </Link>
+            <div className="btnRow" style={{ flexWrap: 'wrap' }}>
             <Link to="/provider#wph-orders" className="btn" style={{ textDecoration: 'none' }}>
               Open orders on workspace
+            </Link>
+            <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+              Public site
             </Link>
             <button type="button" className="btn btnPrimary" disabled={ordersLoading} onClick={() => void loadOrders()}>
               {ordersLoading ? 'Loading…' : 'Refresh'}
