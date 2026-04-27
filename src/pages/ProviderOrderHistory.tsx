@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiDelete, apiGetWithSessionWarmup, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import {
   getMarketingProviderLoginDisplay,
@@ -211,17 +212,14 @@ export default function ProviderOrderHistory() {
               </div>
             ) : null}
           </div>
-            <div className="btnRow" style={{ flexWrap: 'wrap' }}>
-            <Link to="/provider#wph-orders" className="btn" style={{ textDecoration: 'none' }}>
-              Open orders on workspace
-            </Link>
-            <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-              Public site
-            </Link>
-            <button type="button" className="btn btnPrimary" disabled={ordersLoading} onClick={() => void loadOrders()}>
-              {ordersLoading ? 'Loading…' : 'Refresh'}
-            </button>
-          </div>
+            <ProviderSubpageNavActions className="btnRow" style={{ flexWrap: 'wrap' }}>
+              <Link to="/provider#wph-orders" className="btn" style={{ textDecoration: 'none' }}>
+                Open orders on workspace
+              </Link>
+              <button type="button" className="btn btnPrimary" disabled={ordersLoading} onClick={() => void loadOrders()}>
+                {ordersLoading ? 'Loading…' : 'Refresh'}
+              </button>
+            </ProviderSubpageNavActions>
         </div>
       </header>
       {toast ? (

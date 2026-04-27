@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiPatch, apiPost, getToken } from '../api/client'
 import { getMarketingProviderLoginDisplay, isMarketingProviderAuthed } from '../marketing/providerStore'
 
@@ -169,12 +170,9 @@ export default function ProviderStaffUsers() {
             {headerPill}
           </div>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
+        <ProviderSubpageNavActions>
           <span className="pill pillRed">Provider</span>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       {err ? (

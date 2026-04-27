@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiLogout, apiPatch, apiPost, fetchApiSession, setApiSessionHint } from '../api/client'
 
 type PaymentsStatus = {
@@ -86,11 +87,7 @@ export default function ProviderPayments() {
             Connect Stripe or Clover, then choose which one is active for new payments.
           </p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
-        </div>
+        <ProviderSubpageNavActions />
       </div>
 
       {error ? (

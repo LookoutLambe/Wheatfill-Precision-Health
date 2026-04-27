@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import type { Appointment, Communication, Patient, Practitioner, Schedule, Slot } from '@medplum/fhirtypes'
 import { useMedplumApp } from '../medplum/provider'
 import { createBlackoutDay, ensureSchedule, listAppointmentsForRange, listBlackoutSlots, type UiApptType } from '../medplum/scheduling'
@@ -109,12 +110,9 @@ export default function ProviderPortal() {
             Scheduling, requests, and team tools.
           </p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
+        <ProviderSubpageNavActions>
           <span className="pill pillRed">Provider</span>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       {error ? (

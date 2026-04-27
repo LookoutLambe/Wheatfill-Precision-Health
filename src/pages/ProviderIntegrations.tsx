@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import type { Organization, Practitioner } from '@medplum/fhirtypes'
 import { useMedplumApp } from '../medplum/provider'
 import { getOrCreatePracticeOrg, readIntegrations, writeIntegrations, type PracticeIntegrations } from '../medplum/integrations'
@@ -59,11 +59,7 @@ export default function ProviderIntegrations() {
             customer-facing fulfillment copy for the public site.
           </p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
-        </div>
+        <ProviderSubpageNavActions />
       </div>
 
       {error ? (

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiPost, hasApiCredential } from '../api/client'
 import {
   ensureDefaultMarketingProviderUsers,
@@ -71,12 +72,9 @@ export default function MarketingProviderSecurity() {
             </div>
           ) : null}
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
+        <ProviderSubpageNavActions>
           <span className="pill pillRed">Provider</span>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       {canChangeUsername ? (

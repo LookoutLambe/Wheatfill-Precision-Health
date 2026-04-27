@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import {
   apiDelete,
   apiGetWithSessionWarmup,
@@ -175,12 +176,9 @@ export default function ProviderTeamInbox() {
           <h1 style={{ margin: 0 }}>Inbox</h1>
           <p className="muted pageSubtitle">Contact, booking, and site requests from the API.</p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
+        <ProviderSubpageNavActions>
           <span className="pill pillRed">Team</span>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       {who ? (

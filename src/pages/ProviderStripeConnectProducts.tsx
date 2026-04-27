@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiPost } from '../api/client'
 
 type AccountRow = { userId: string; label: string; accountId: string }
@@ -60,14 +61,11 @@ export default function ProviderStripeConnectProducts() {
           <h1 style={{ margin: 0 }}>Create products (sample)</h1>
           <p className="muted pageSubtitle">Platform products mapped to a connected account via metadata.</p>
         </div>
-        <div className="pageActions" style={{ justifyContent: 'center' }}>
+        <ProviderSubpageNavActions style={{ justifyContent: 'center' }}>
           <Link to="/provider/connect-demo" className="btn" style={{ textDecoration: 'none' }}>
             Connect demo
           </Link>
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       {error ? (

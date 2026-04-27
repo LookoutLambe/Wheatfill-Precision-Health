@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiPost } from '../api/client'
 
 type AccountStatus = {
@@ -78,11 +79,7 @@ export default function ProviderStripeConnectDemo() {
           <h1 style={{ margin: 0 }}>Stripe Connect (sample)</h1>
           <p className="muted pageSubtitle">Onboard a connected account, create products, and test the storefront.</p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
-        </div>
+        <ProviderSubpageNavActions />
       </div>
 
       {error ? (

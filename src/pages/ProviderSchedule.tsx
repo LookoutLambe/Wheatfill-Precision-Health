@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import {
   getPortalState,
   getScheduleConfig,
@@ -148,12 +148,9 @@ export default function ProviderSchedule() {
           <h1 style={{ margin: 0 }}>Weekly Schedule</h1>
           <p className="muted pageSubtitle">Slots are generated from your hours (slot size: {slotMinutes} min).</p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
+        <ProviderSubpageNavActions>
           <span className="pill pillRed">Provider</span>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       <section className="card cardAccentSoft cardSpan12">

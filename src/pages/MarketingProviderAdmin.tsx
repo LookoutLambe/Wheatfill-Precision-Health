@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import {
   getMarketingProviderLoginDisplay,
   getMarketingIntegrations,
@@ -30,12 +31,9 @@ export default function MarketingProviderAdmin() {
           </p>
           {who ? <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>Signed in as: {who}</div> : null}
         </div>
-        <div className="pageActions">
+        <ProviderSubpageNavActions>
           <Link to="/provider/security" className="btn" style={{ textDecoration: 'none' }}>
             Change password
-          </Link>
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
           </Link>
           <button
             type="button"
@@ -48,7 +46,7 @@ export default function MarketingProviderAdmin() {
             Logout
           </button>
           <span className="pill pillRed">Provider</span>
-        </div>
+        </ProviderSubpageNavActions>
       </div>
 
       <section className="card cardAccentSoft" style={{ maxWidth: 980 }}>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
+import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import type { MedicationRequest, Patient } from '@medplum/fhirtypes'
 import { apiGet } from '../api/client'
 import { useMedplumApp } from '../medplum/provider'
@@ -63,11 +64,7 @@ export default function ProviderOrderingTest() {
           <h1 style={{ margin: 0 }}>Provider Ordering (Test)</h1>
           <p className="muted pageSubtitle">Test flow: creates medication request records. No payment.</p>
         </div>
-        <div className="pageActions">
-          <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
-            Public site
-          </Link>
-        </div>
+        <ProviderSubpageNavActions />
       </div>
 
       {error ? (
