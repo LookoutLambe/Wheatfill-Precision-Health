@@ -606,6 +606,8 @@ export default function ProviderVbmsWorkspace() {
   const orderSubtotalCents = (o: ProviderOrderRow) =>
     o.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0)
 
+  const [orderDeleteId, setOrderDeleteId] = useState<string | null>(null)
+
   const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed' | 'declined') => {
     setOrdersError(null)
     try {
@@ -613,6 +615,27 @@ export default function ProviderVbmsWorkspace() {
       await loadOrders()
     } catch (e: any) {
       setOrdersError(String(e?.message || e))
+    }
+  }
+
+  const removeOrderFromList = async (o: ProviderOrderRow) => {
+    if (o.status !== 'closed' && o.status !== 'declined') return
+    if (
+      !window.confirm(
+        'Remove this order from the list? It will no longer appear here. A compliance audit entry is still kept on the server.',
+      )
+    )
+      return
+    setOrdersError(null)
+    setOrderDeleteId(o.id)
+    try {
+      await apiDelete(`/v1/provider/orders/${encodeURIComponent(o.id)}`)
+      setToast('Order removed from list.')
+      await loadOrders()
+    } catch (e: any) {
+      setOrdersError(String(e?.message || e))
+    } finally {
+      setOrderDeleteId(null)
     }
   }
 
@@ -1467,6 +1490,18 @@ export default function ProviderVbmsWorkspace() {
                       >
                         Decline
                       </button>
+                      {(o.status === 'closed' || o.status === 'declined') && (
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                          title="Hide this order from the list (closed or declined only)"
+                          disabled={ordersLoading || orderDeleteId !== null}
+                          onClick={() => void removeOrderFromList(o)}
+                        >
+                          {orderDeleteId === o.id ? 'Removing…' : 'Remove from list'}
+                        </button>
+                      )}
                     </div>
                     <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                       Status

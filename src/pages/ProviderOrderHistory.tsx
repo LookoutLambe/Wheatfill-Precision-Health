@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { apiGetWithSessionWarmup, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
+import { apiDelete, apiGetWithSessionWarmup, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import {
   getMarketingProviderLoginDisplay,
   isMarketingProviderAuthed,
@@ -88,6 +88,7 @@ export default function ProviderOrderHistory() {
   const [orderQuery, setOrderQuery] = useState('')
   const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed' | 'declined'>('all')
   const [toast, setToast] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isMarketingProviderAuthed()) {
@@ -151,6 +152,26 @@ export default function ProviderOrderHistory() {
     }
   }
 
+  const removeOrderFromList = async (o: ProviderOrderRow) => {
+    if (o.status !== 'closed' && o.status !== 'declined') return
+    const ok = window.confirm(
+      'Remove this order from the list? It will no longer appear here or in the workspace. ' +
+        'A compliance audit entry is still kept on the server.',
+    )
+    if (!ok) return
+    setOrdersError(null)
+    setDeletingId(o.id)
+    try {
+      await apiDelete(`/v1/provider/orders/${encodeURIComponent(o.id)}`)
+      setToast('Order removed from list.')
+      await loadOrders()
+    } catch (e: unknown) {
+      setOrdersError(String((e as Error)?.message || e))
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const orderTokens = useMemo(() => norm(orderQuery).split(' ').filter(Boolean), [orderQuery])
   const filteredOrders = useMemo(() => {
     const base = orderFilter === 'all' ? orders : orders.filter((o) => o.status === orderFilter)
@@ -180,7 +201,8 @@ export default function ProviderOrderHistory() {
           <div>
             <h1 style={{ margin: 0 }}>All orders</h1>
             <p className="muted" style={{ margin: '6px 0 0', maxWidth: 640 }}>
-              Full history including <strong>closed</strong> and <strong>declined</strong> orders. Use the filter to narrow, or
+              Full history including <strong>closed</strong> and <strong>declined</strong> orders. For closed or declined
+              rows, you can <strong>Remove from list</strong> (hides the order; audit is retained). Use the filter to narrow, or
               open the main workspace for day-to-day queue and inbox.
             </p>
             {who ? (
@@ -299,6 +321,18 @@ export default function ProviderOrderHistory() {
                     >
                       Decline
                     </button>
+                    {(o.status === 'closed' || o.status === 'declined') && (
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                        title="Hide this order from the list (closed or declined only)"
+                        disabled={ordersLoading || Boolean(deletingId)}
+                        onClick={() => void removeOrderFromList(o)}
+                      >
+                        {deletingId === o.id ? 'Removing…' : 'Remove from list'}
+                      </button>
+                    )}
                   </div>
                   <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
                     Status

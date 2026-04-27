@@ -2261,6 +2261,32 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  /** Soft-delete: order disappears from provider/patient lists; audit row retained. Only terminal statuses. */
+  protectedScope.delete(
+    '/v1/provider/orders/:id',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const id = (req.params as any).id as string
+      const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
+      const before = await prisma.order.findFirst({ where: { id, providerId: { in: teamIds }, deletedAt: null } })
+      if (!before) return reply.notFound('Order not found.')
+      if (before.status !== 'closed' && before.status !== 'declined') {
+        return reply.badRequest('Only closed or declined orders can be removed from the list.')
+      }
+      const order = await prisma.order.update({ where: { id }, data: { deletedAt: new Date() } })
+      await writeAudit({
+        actorId: req.user.sub,
+        entityType: 'order',
+        entityId: id,
+        action: 'provider_order_soft_deleted',
+        before,
+        after: order,
+        ip: reqIp(req),
+      })
+      return { ok: true as const }
+    },
+  )
+
   // Provider: blackout dates
   protectedScope.get(
     '/v1/provider/blackouts',
