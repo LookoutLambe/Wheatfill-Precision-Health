@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyBodyParser, FastifyInstance, FastifyRequest } from 'fastify'
 import type { FastifyBaseLogger } from 'fastify'
 import type Stripe from 'stripe'
 import type { PrismaClient } from '@prisma/client'
@@ -31,16 +31,18 @@ export async function registerBillingWebhookRoutes(app: FastifyInstance, deps: B
   const { prisma, stripe, STRIPE_WEBHOOK_SECRET, writeAudit, reqIp, stripeV2Request, log } = deps
 
   await app.register(async (instance) => {
-    instance.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
+    const stripeWebhookJsonParser: FastifyBodyParser<Buffer> = (req, body, done) => {
       try {
-        const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as ArrayBuffer | Uint8Array | string)
+        const buf = Buffer.isBuffer(body) ? body : Buffer.from(body as Uint8Array)
         const raw = buf.toString('utf8')
-        ;(req as ReqWithRawBody).rawBody = raw
+        ;(req as FastifyRequest & ReqWithRawBody).rawBody = raw
         done(null, JSON.parse(raw))
-      } catch (err: unknown) {
-        done(err as Error, undefined)
+      } catch (err) {
+        done(err instanceof Error ? err : new Error(String(err)), undefined)
       }
-    })
+    }
+
+    instance.addContentTypeParser('application/json', { parseAs: 'buffer' as const }, stripeWebhookJsonParser)
 
     instance.post('/v1/billing/stripe/webhook', async (req, reply) => {
       if (!stripe) return reply.badRequest('Stripe not configured.')
