@@ -242,6 +242,27 @@ export default function ProviderPayments() {
                       {status.activeProvider === 'stripe' ? 'Active' : 'Set Stripe as active'}
                     </button>
                   </div>
+                  <div className="btnRow" style={{ marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={!status.stripe.connected}
+                      style={{ width: '100%', opacity: status.stripe.connected ? 1 : 0.6 }}
+                      onClick={() => {
+                        ;(async () => {
+                          setError(null)
+                          try {
+                            const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/test-checkout', {})
+                            window.location.href = res.url
+                          } catch (e: any) {
+                            setError(String(e?.message || e))
+                          }
+                        })()
+                      }}
+                    >
+                      Open $1 test checkout
+                    </button>
+                  </div>
                 </>
               )}
             </section>

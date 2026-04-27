@@ -1271,6 +1271,42 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  // Provider: create a $1 test Checkout link (no Stripe product required).
+  protectedScope.post(
+    '/v1/provider/payments/stripe/test-checkout',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!stripe) return reply.badRequest('Stripe is not configured. Set STRIPE_SECRET_KEY.')
+      const u = await prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: { stripeConnectedAccountId: true },
+      })
+      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+      const successUrl = `${origin.replace(/\/$/, '')}/provider/payments?testCheckout=paid`
+      const cancelUrl = `${origin.replace(/\/$/, '')}/provider/payments?testCheckout=canceled`
+      const params = {
+        mode: 'payment' as const,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              unit_amount: 100,
+              product_data: { name: 'WPH test charge ($1)' },
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: { kind: 'provider_test_checkout', createdBy: req.user.sub },
+      }
+      const session = u?.stripeConnectedAccountId
+        ? await stripe.checkout.sessions.create(params as any, { stripeAccount: u.stripeConnectedAccountId })
+        : await stripe.checkout.sessions.create(params as any)
+      return { url: session.url }
+    },
+  )
+
   /**
    * Stripe Connect DEMO (sample integration)
    * ---------------------------------------
