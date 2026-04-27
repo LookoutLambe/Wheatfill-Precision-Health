@@ -7,6 +7,7 @@ import {
   runPharmacyOrderCheckout,
   type PharmacyPatientForOrder,
 } from './domain/pharmacyOrderCheckout.js'
+import { registerBillingWebhookRoutes } from './routes/billingWebhooks.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
 import Fastify from 'fastify'
@@ -17,8 +18,6 @@ import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
 import crypto from 'node:crypto'
-import { MedplumClient } from '@medplum/core'
-import type { MedicationRequest } from '@medplum/fhirtypes'
 import Stripe from 'stripe'
 
 import { prisma } from './db.js'
@@ -41,13 +40,8 @@ const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
 const CLOVER_ENV = (process.env.CLOVER_ENV || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox'
 const CLOVER_MERCHANT_ID = process.env.CLOVER_MERCHANT_ID || ''
 const CLOVER_PRIVATE_KEY = process.env.CLOVER_PRIVATE_KEY || ''
-const CLOVER_WEBHOOK_SECRET = process.env.CLOVER_WEBHOOK_SECRET || ''
 const CLOVER_API_BASE =
   CLOVER_ENV === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
-
-const MEDPLUM_BASE_URL = (process.env.MEDPLUM_BASE_URL || 'https://api.medplum.com').replace(/\/$/, '')
-const MEDPLUM_CLIENT_ID = process.env.MEDPLUM_CLIENT_ID || ''
-const MEDPLUM_CLIENT_SECRET = process.env.MEDPLUM_CLIENT_SECRET || ''
 
 const DEFAULT_PROVIDER_USERNAME = (process.env.DEFAULT_PROVIDER_USERNAME || 'brett').trim().toLowerCase()
 const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
@@ -120,16 +114,6 @@ async function stripeV2Request<T>(params: { method: 'GET' | 'POST'; path: string
 
 const PROVIDER_PRACTITIONER_ID = process.env.PROVIDER_PRACTITIONER_ID || ''
 
-let medplumAdmin: MedplumClient | null = null
-async function getMedplumAdmin() {
-  if (medplumAdmin) return medplumAdmin
-  if (!MEDPLUM_CLIENT_ID || !MEDPLUM_CLIENT_SECRET) return null
-  const client = new MedplumClient({ baseUrl: MEDPLUM_BASE_URL })
-  await client.startClientLogin(MEDPLUM_CLIENT_ID, MEDPLUM_CLIENT_SECRET)
-  medplumAdmin = client
-  return client
-}
-
 function reqIp(req: any) {
   if (TRUST_PROXY_ENABLED) {
     const ip = String(req?.ip || '').trim()
@@ -166,22 +150,6 @@ async function writeAudit(input: {
     // Do not block clinical flows on audit write failures.
     app.log.warn({ err: e }, 'audit_write_failed')
   }
-}
-
-function verifyCloverSignature(rawBody: string, header: string) {
-  // Clover-Signature: t=1642599079,v1=<hex>
-  const parts = Object.fromEntries(
-    header
-      .split(',')
-      .map((kv) => kv.trim().split('='))
-      .filter((x) => x.length === 2) as Array<[string, string]>,
-  )
-  const t = parts.t
-  const v1 = parts.v1
-  if (!t || !v1) return false
-  const payload = `${t}.${rawBody}`
-  const mac = crypto.createHmac('sha256', CLOVER_WEBHOOK_SECRET).update(payload).digest('hex')
-  return crypto.timingSafeEqual(Buffer.from(mac, 'utf8'), Buffer.from(v1, 'utf8'))
 }
 
 let providerSeeded = false
@@ -400,7 +368,7 @@ app.post('/v1/public/contact', async (req, reply) => {
 })
 
 // Public checkout (no patient sign-in): create a Stripe Checkout session for the cart total.
-// Note: this does not create an Order row (no PHI / address persistence); it only enables a pay flow.
+// Does not create an Order row (no PHI / address persistence); creates a Payment row so webhooks can reconcile.
 const PublicPharmacyCheckoutBody = z.object({
   partnerSlug: z.string().min(1).max(80),
   items: z
@@ -499,6 +467,22 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
   const session = providerRow?.stripeConnectedAccountId
     ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
     : await stripe.checkout.sessions.create(sessionCreateParams)
+
+  const totalCents = subtotal + shippingCents + shippingInsuranceCents
+  const primaryCurrency = (bySku.get(body.items[0]!.sku)?.currency || 'usd').toLowerCase()
+  await prisma.payment.create({
+    data: {
+      method: 'stripe',
+      status: 'pending',
+      amountCents: totalCents,
+      currency: primaryCurrency,
+      itemType: 'other',
+      patientId: null,
+      providerId: provider.id,
+      stripeCheckoutSessionId: session.id,
+      p2pMemo: `public_catalog:${partner.slug}`,
+    },
+  })
 
   return { ok: true, checkoutUrl: session.url }
 })
@@ -701,188 +685,14 @@ app.patch(
   },
 )
 
-// Stripe webhook (unauthenticated)
-app.post('/v1/billing/stripe/webhook', async (req, reply) => {
-  if (!stripe) return reply.badRequest('Stripe not configured.')
-  if (!STRIPE_WEBHOOK_SECRET) return reply.badRequest('Stripe webhook secret not configured.')
-  const sig = req.headers['stripe-signature']
-  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Stripe-Signature header.')
-
-  // NOTE: production hardening: register raw body parser for this route.
-  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
-  let event: Stripe.Event
-  try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET)
-  } catch (e: any) {
-    return reply.unauthorized(`Invalid Stripe signature: ${String(e?.message || e)}`)
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
-    const beforePay = await prisma.payment.findFirst({ where: { stripeCheckoutSessionId: session.id } })
-    await prisma.payment.updateMany({
-      where: { stripeCheckoutSessionId: session.id },
-      data: { status: 'succeeded', stripePaymentIntentId: (session.payment_intent as string) || undefined },
-    })
-    const afterPay = await prisma.payment.findFirst({ where: { stripeCheckoutSessionId: session.id } })
-    if (beforePay && afterPay) {
-      await writeAudit({
-        actorId: beforePay.providerId,
-        entityType: 'payment',
-        entityId: beforePay.id,
-        action: 'stripe_checkout_completed',
-        before: beforePay,
-        after: afterPay,
-        ip: reqIp(req),
-      })
-    }
-    if (beforePay?.orderId) {
-      const beforeOrder = await prisma.order.findUnique({ where: { id: beforePay.orderId } })
-      const afterOrder = await prisma.order.update({ where: { id: beforePay.orderId }, data: { status: 'ordered' } })
-      await writeAudit({
-        actorId: beforePay.providerId,
-        entityType: 'order',
-        entityId: beforePay.orderId,
-        action: 'order_marked_ordered_by_payment',
-        before: beforeOrder || undefined,
-        after: afterOrder,
-        ip: reqIp(req),
-      })
-    }
-  }
-
-  return { received: true }
-})
-
-/**
- * Sample Connect webhooks (V2 thin payloads)
- * -----------------------------------------
- * Configure the webhook destination in Stripe Dashboard to send THIN events for:
- * - v2.core.account[requirements].updated
- * - v2.core.account[configuration.configuration_type].capability_status_updated (for each config type you use)
- *
- * Then point it at this endpoint and set STRIPE_WEBHOOK_SECRET.
- */
-app.post('/v1/stripe-connect-demo/webhook', async (req, reply) => {
-  if (!stripe) return reply.badRequest('Stripe not configured. Set STRIPE_SECRET_KEY.')
-  if (!STRIPE_WEBHOOK_SECRET) return reply.badRequest('Stripe webhook secret not configured. Set STRIPE_WEBHOOK_SECRET (whsec_...).')
-  const sig = req.headers['stripe-signature']
-  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Stripe-Signature header.')
-
-  // NOTE: For production hardening, register a raw-body parser and pass the raw bytes here.
-  // This repo currently parses JSON bodies; we keep parity with the existing webhook route above.
-  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
-
-  try {
-    // Thin payloads can still be verified with constructEvent.
-    const thin = (requireStripeConfigured() as any).webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET) as any
-
-    // Thin payloads often omit full nested data. Retrieve the full V2 event by id.
-    // (In Stripe docs this is shown as: client.v2.core.events.retrieve(thinEvent.id))
-    const fullEvent = await stripeV2Request<any>({ method: 'GET', path: `/v2/core/events/${thin.id}` })
-
-    const typ = String(fullEvent?.type || thin?.type || '')
-    if (typ === 'v2.core.account[requirements].updated') {
-      app.log.info({ eventId: fullEvent?.id, type: typ }, 'connect_demo_requirements_updated')
-      // In a real app: notify the user, show which requirements are due, etc.
-    } else if (typ.includes('capability_status_updated')) {
-      app.log.info({ eventId: fullEvent?.id, type: typ }, 'connect_demo_capability_status_updated')
-    } else {
-      app.log.info({ eventId: fullEvent?.id, type: typ }, 'connect_demo_unhandled_event')
-    }
-
-    return { received: true }
-  } catch (e: any) {
-    return reply.unauthorized(`Invalid Stripe signature: ${String(e?.message || e)}`)
-  }
-})
-
-// Clover Hosted Checkout webhook (unauthenticated)
-app.post('/v1/billing/clover/webhook', async (req, reply) => {
-  if (!CLOVER_WEBHOOK_SECRET) return reply.badRequest('Clover webhook secret not configured.')
-  const sig = req.headers['clover-signature']
-  if (!sig || typeof sig !== 'string') return reply.badRequest('Missing Clover-Signature header.')
-
-  // We must validate against the raw body bytes. For now, we accept a string body if present.
-  // Production hardening: register a raw body parser for this route.
-  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {})
-  if (!verifyCloverSignature(rawBody, sig)) return reply.unauthorized('Invalid Clover signature.')
-
-  const body = (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) as any
-  const status = String(body?.Status || '').toUpperCase()
-  const typ = String(body?.Type || '').toUpperCase()
-  const checkoutSessionId = String(body?.Data || '')
-  if (!checkoutSessionId || typ !== 'PAYMENT') return { received: true }
-
-  if (status === 'APPROVED') {
-    const payment = await prisma.payment.findFirst({
-      where: { cloverCheckoutSessionId: checkoutSessionId },
-      select: { id: true, orderId: true, itemId: true },
-    })
-    const beforePay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
-    await prisma.payment.updateMany({
-      where: { cloverCheckoutSessionId: checkoutSessionId },
-      data: { status: 'succeeded' },
-    })
-    const afterPay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
-    if (payment?.id && beforePay && afterPay) {
-      await writeAudit({
-        actorId: beforePay.providerId,
-        entityType: 'payment',
-        entityId: payment.id,
-        action: 'clover_payment_approved',
-        before: beforePay,
-        after: afterPay,
-        ip: reqIp(req),
-      })
-    }
-    if (payment?.orderId) {
-      const beforeOrder = await prisma.order.findUnique({ where: { id: payment.orderId } })
-      const afterOrder = await prisma.order.update({ where: { id: payment.orderId }, data: { status: 'ordered' } })
-      await writeAudit({
-        actorId: (afterPay?.providerId || beforeOrder?.providerId || ''),
-        entityType: 'order',
-        entityId: payment.orderId,
-        action: 'order_marked_ordered_by_payment',
-        before: beforeOrder || undefined,
-        after: afterOrder,
-        ip: reqIp(req),
-      })
-    }
-
-    // Optional: if Payment.itemId stores a FHIR reference like "MedicationRequest/<id>", update it.
-    if (payment?.itemId && /^MedicationRequest\/.+/.test(payment.itemId)) {
-      const mp = await getMedplumAdmin()
-      if (mp) {
-        try {
-          const mr = (await mp.readResource('MedicationRequest', payment.itemId.split('/')[1])) as MedicationRequest
-          await mp.updateResource({ ...mr, status: 'active' } as MedicationRequest)
-        } catch (e) {
-          app.log.warn({ err: e }, 'medplum_update_failed')
-        }
-      }
-    }
-  } else if (status === 'DECLINED') {
-    const beforePay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
-    await prisma.payment.updateMany({
-      where: { cloverCheckoutSessionId: checkoutSessionId },
-      data: { status: 'failed' },
-    })
-    const afterPay = await prisma.payment.findFirst({ where: { cloverCheckoutSessionId: checkoutSessionId } })
-    if (beforePay && afterPay) {
-      await writeAudit({
-        actorId: beforePay.providerId,
-        entityType: 'payment',
-        entityId: beforePay.id,
-        action: 'clover_payment_declined',
-        before: beforePay,
-        after: afterPay,
-        ip: reqIp(req),
-      })
-    }
-  }
-
-  return { received: true }
+await registerBillingWebhookRoutes(app, {
+  prisma,
+  stripe,
+  STRIPE_WEBHOOK_SECRET,
+  writeAudit,
+  reqIp,
+  stripeV2Request,
+  log: app.log,
 })
 
 const SignupBody = z.object({
