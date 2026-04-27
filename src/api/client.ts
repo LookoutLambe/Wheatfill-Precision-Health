@@ -145,9 +145,35 @@ export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
 
 const WPH_BROWSER_CLIENT = '1'
 
-/** No client-side duration limit — requests use the browser's built-in fetch (waits for the server or failure). */
+/** Avoid infinite "Loading…" when the browser never settles fetch (sleeping host, proxy, rare mobile stalls). */
+const API_FETCH_TIMEOUT_MS = 60_000
+
 async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
-  return fetch(url, init)
+  if (typeof window === 'undefined') return fetch(url, init)
+  const timeoutController = new AbortController()
+  let timedOut = false
+  const timer = window.setTimeout(() => {
+    timedOut = true
+    timeoutController.abort()
+  }, API_FETCH_TIMEOUT_MS)
+  const anyFn = (AbortSignal as unknown as { any?: (signals: AbortSignal[]) => AbortSignal }).any
+  const signal =
+    init?.signal && typeof anyFn === 'function'
+      ? anyFn([init.signal, timeoutController.signal])
+      : timeoutController.signal
+  try {
+    return await fetch(url, { ...init, signal })
+  } catch (e) {
+    if (timedOut) {
+      const base = url.split('?')[0]
+      throw new Error(
+        `The API did not respond within ${Math.round(API_FETCH_TIMEOUT_MS / 1000)}s (${base}). Try Refresh — the server may still be waking (cold start) or the network stalled.`,
+      )
+    }
+    throw e
+  } finally {
+    window.clearTimeout(timer)
+  }
 }
 
 export async function apiLogout() {

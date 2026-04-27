@@ -435,26 +435,6 @@ export default function ProviderVbmsWorkspace() {
     void loadTeamInbox()
   }, [loadTeamInbox])
 
-  useEffect(() => {
-    const sync = () => {
-      void loadTeamInbox()
-    }
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === 'wph_token_v1') sync()
-    }
-    const onVis = () => {
-      if (document.visibilityState === 'visible') sync()
-    }
-    window.addEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
-    window.addEventListener('storage', onStorage)
-    document.addEventListener('visibilitychange', onVis)
-    return () => {
-      window.removeEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
-      window.removeEventListener('storage', onStorage)
-      document.removeEventListener('visibilitychange', onVis)
-    }
-  }, [loadTeamInbox])
-
   // Payment rails removed.
 
   const loadOrders = useCallback(async () => {
@@ -492,6 +472,28 @@ export default function ProviderVbmsWorkspace() {
   useEffect(() => {
     if (isMarketingProviderAuthed()) void loadOrders()
   }, [loadOrders])
+
+  // Token/session changes (other tab, return from login, PWA resume): refresh inbox and orders together.
+  useEffect(() => {
+    const sync = () => {
+      void loadTeamInbox()
+      void loadOrders()
+    }
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'wph_token_v1') sync()
+    }
+    const onVis = () => {
+      if (document.visibilityState === 'visible') sync()
+    }
+    window.addEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
+    window.addEventListener('storage', onStorage)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
+      window.removeEventListener('storage', onStorage)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [loadTeamInbox, loadOrders])
 
   const newCount = msgs.filter((m) => m.status === 'new').length
   const handledCount = msgs.filter((m) => m.status === 'handled').length
