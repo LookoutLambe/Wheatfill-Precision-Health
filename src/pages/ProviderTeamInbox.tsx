@@ -120,7 +120,7 @@ export default function ProviderTeamInbox() {
           `sessionHint=${hasApiSessionHint() ? '1' : '0'}`,
         ].join(' · ')
         setInboxError(
-          `Could not load inbox (401). This iPhone PWA likely blocked cookies; the app should fall back to a bearer token. ${authBits}`,
+          `Could not load inbox (401). Sign in again at Provider login — cross-site API calls need the bearer token when cookies are not sent. ${authBits}`,
         )
       } else {
         setInboxError(msg)

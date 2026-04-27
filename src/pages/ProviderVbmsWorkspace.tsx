@@ -336,12 +336,18 @@ export default function ProviderVbmsWorkspace() {
       return
     }
     ;(async () => {
-      // Staff sign-in is local (username/password); we never auto-logout from a session probe.
-      // iOS / mobile may not send httpOnly API cookies; inbox/orders will show an error but stay in the app.
       const s = await fetchApiSession()
-      if (s.ok && s.authenticated) setApiSessionHint()
+      if (s.ok && s.authenticated) {
+        setApiSessionHint()
+        return
+      }
+      // Static site → API on another host: cookies often are not sent; JWT bearer from POST /auth/login is required.
+      if (s.ok && !s.authenticated && !(getToken() || '').trim()) {
+        const next = encodeURIComponent(`${location.pathname}${location.search}${location.hash}`)
+        navigate(`/provider/login?next=${next}`, { replace: true })
+      }
     })()
-  }, [navigate])
+  }, [navigate, location.pathname, location.search, location.hash])
 
   /** From `/provider/inbox`: Preselect jumps back here and fills Quick schedule from `location.state.inboxQuickPick`. */
   useEffect(() => {
@@ -405,7 +411,15 @@ export default function ProviderVbmsWorkspace() {
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        setInboxError('Could not load inbox (the API did not accept the session in this browser). You are still signed in—try again or use another device; we do not log you out here.')
+        const tok = (getToken() || '').trim()
+        const authBits = [
+          `api=${getApiUrl()}`,
+          `token=${tok ? `${tok.slice(0, 12)}…` : 'none'}`,
+          `sessionHint=${hasApiSessionHint() ? '1' : '0'}`,
+        ].join(' · ')
+        setInboxError(
+          `Could not load inbox (401). Sign in again at Provider login — the API needs a bearer token when cookies cannot reach ${getApiUrl()}. ${authBits}`,
+        )
       } else {
         setInboxError(msg)
       }
@@ -464,7 +478,7 @@ export default function ProviderVbmsWorkspace() {
           `sessionHint=${hasApiSessionHint() ? '1' : '0'}`,
         ].join(' · ')
         setOrdersError(
-          `Could not load orders (401). This iPhone PWA likely blocked cookies; the app should fall back to a bearer token. ${authBits}`,
+          `Could not load orders (401). Sign in again at Provider login — cross-site API calls need the bearer token when cookies are not sent. ${authBits}`,
         )
       } else {
         setOrdersError(msg)
