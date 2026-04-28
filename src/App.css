@@ -1526,16 +1526,15 @@ html:has(.peptidePage) {
 .landingHeroEyebrow {
   align-self: center;
   margin: 0 auto 10px;
-  font-size: 14px;
-  font-weight: 750;
-  padding: 8px 14px;
-  letter-spacing: 0.02em;
+  font-size: clamp(16px, 1.55vw, 20px);
+  font-weight: 850;
+  padding: 12px 18px;
+  letter-spacing: 0.015em;
 }
 
 @media (min-width: 901px) {
   .landingHeroEyebrow {
-    font-size: 15px;
-    padding: 9px 16px;
+    padding: 14px 22px;
   }
 }
 
