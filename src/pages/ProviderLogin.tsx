@@ -111,7 +111,7 @@ export default function ProviderLogin() {
           <div className="formRow" style={{ marginTop: 12 }}>
             <label>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Username or email
+                Username
               </div>
               <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
             </label>
