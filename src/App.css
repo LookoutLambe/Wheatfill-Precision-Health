@@ -401,6 +401,30 @@ html.pharmacyCartOpen body {
 }
 
 /**
+ * Section separators (same hairline as `.divider`) between stacked major blocks site-wide.
+ * - Direct children of `.page` (typical marketing pages: header row + card grid, etc.)
+ * - Landing stacks sections inside `.twoCol.twoColLanding`
+ * - Landing “Services” column stacks accordion + consult + FAQ
+ */
+.main .page > *:not(:first-child) {
+  border-top: 1px solid var(--border);
+}
+
+.main .page.pageLanding .twoCol.twoColLanding > *:not(:first-child) {
+  border-top: 1px solid var(--border);
+}
+
+.landingGridAccordion {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.main .page .landingGridAccordion > *:not(:first-child) {
+  border-top: 1px solid var(--border);
+}
+
+/**
  * Global: center the top page title stack (h1 + subtitle) on all marketing / article-style pages.
  * 1) First .page child that already contains a title (e.g. div + h1, .pageHeaderRow, .aboutHeader).
  * 2) Direct <header> with h1 — needed when a breadcrumb/skip is the real first child (/order-now, pharmacy

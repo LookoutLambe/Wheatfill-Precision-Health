@@ -416,8 +416,6 @@ export default function Landing() {
           </aside>
         </section>
 
-        <div className="divider" />
-
         <section className="landingGridCatalog" aria-label="Order Now catalog highlight">
           <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
             <div className="cardTitle">
@@ -457,8 +455,6 @@ export default function Landing() {
             </div>
           </section>
         </section>
-
-        <div className="divider" />
 
         <section className="landingGridAccordion" aria-label="Services">
           <div className="cardGrid landingAccordionGrid" role="presentation">
@@ -504,8 +500,6 @@ export default function Landing() {
               )
             })}
           </div>
-
-          <div className="divider" />
 
           <section className="landingConsultBand" aria-labelledby={`${consultBaseId}-heading`}>
             <div className="landingConsultInner">
