@@ -35,6 +35,12 @@ export default function ProviderLogin() {
           // ignore
         }
         setApiSessionHint()
+        // In some mobile/privacy modes, sessionStorage/localStorage can be flaky right after sign-in.
+        // A hard navigation ensures the next route bootstraps with the freshest cookie/token state.
+        if (typeof window !== 'undefined') {
+          window.location.replace(redirectTo)
+          return
+        }
         navigate(redirectTo, { replace: true })
       } catch (e: unknown) {
         setError(String((e as Error)?.message || e || 'Sign-in failed. Is the API running?'))
