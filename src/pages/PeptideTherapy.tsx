@@ -5,7 +5,12 @@ import { apiPost } from '../api/client'
 import Page from '../components/Page'
 import { MARKETING_ONLY } from '../config/mode'
 import { PRACTICE_PUBLIC_NAME, PUBLIC_INQUIRY_EMAIL } from '../config/provider'
-import { PEPTIDE_EDUCATION, type PeptideId, peptideAnchorId } from '../data/peptideEducation'
+import {
+  PEPTIDE_EDUCATION,
+  PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER,
+  type PeptideId,
+  peptideAnchorId,
+} from '../data/peptideEducation'
 import { peptideVialImageSrc, peptideVialRibbonClass } from '../data/peptideVialImages'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
@@ -13,6 +18,16 @@ function hashToPeptideId(raw: string): PeptideId | null {
   const s = raw.startsWith('#') ? raw.slice(1) : raw
   const found = PEPTIDE_EDUCATION.find((p) => peptideAnchorId(p.id) === s)
   return found ? found.id : null
+}
+
+/** Minimal **bold** segments inside education strings */
+function renderBoldSegments(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, i) => {
+    const inner = /^\*\*([^*]+)\*\*$/.exec(part)
+    if (inner) return <strong key={i}>{inner[1]}</strong>
+    return <span key={i}>{part}</span>
+  })
 }
 
 export default function PeptideTherapy() {
@@ -159,8 +174,9 @@ export default function PeptideTherapy() {
         <p className="muted peptideSectionLead">
           Each card shows <strong>why people look up the name</strong>, a product-style illustration, and{' '}
           <strong>peer-reviewed entry points in PubMed</strong> (a specific paper where we list one, plus targeted
-          search links you can filter further). Open <strong>Read full profile</strong> for the rest of the science,
-          regulation, and expanded link list—we are not a shop; this is education only. For{' '}
+          search links you can filter further).           Open <strong>Read full profile</strong> for the{' '}
+          <strong>Wheatfill price list</strong>, <strong>educational dosing background</strong>, the rest of
+          the science, regulation, and expanded link list—we are not a shop; this is education only. For{' '}
           <Link to="/medications">GLP-1 medication education</Link> (semaglutide, tirzepatide), use our separate page. Use
           the <a href="#peptide-on-page-nav">On this page</a> menu to jump to sections.
         </p>
@@ -256,6 +272,26 @@ export default function PeptideTherapy() {
                     <p className="muted landingAccordionPara" style={{ marginTop: 8 }}>
                       {item.whyUseIt}
                     </p>
+                    <div
+                      className="peptideMarketProtocol card cardAccentSoft"
+                      style={{ marginTop: 14, padding: '14px 14px', borderRadius: 10 }}
+                    >
+                      <p className="peptideEduKicker muted" style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 750 }}>
+                        Wheatfill price list
+                      </p>
+                      <p className="muted landingAccordionPara" style={{ marginTop: 0, marginBottom: 10, lineHeight: 1.55 }}>
+                        {renderBoldSegments(item.wheatfillPriceList)}
+                      </p>
+                      <p className="peptideEduKicker muted" style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 750 }}>
+                        Educational dosing background
+                      </p>
+                      <p className="muted landingAccordionPara" style={{ marginTop: 0, marginBottom: 10, lineHeight: 1.55 }}>
+                        {renderBoldSegments(item.typicalProtocolDiscussed)}
+                      </p>
+                      <p className="muted" style={{ margin: 0, fontSize: 12, lineHeight: 1.45, opacity: 0.88 }}>
+                        {PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER}
+                      </p>
+                    </div>
                     {item.peerReviewedPicks.length > 0 ? (
                       <div style={{ marginTop: 12 }}>
                         <p className="peptideEduKicker muted" style={{ margin: '0 0 6px', fontSize: 12, fontWeight: 750 }}>

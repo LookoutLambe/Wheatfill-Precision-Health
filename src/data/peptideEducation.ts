@@ -3,6 +3,8 @@
  * Used on /peptides and summarized on /medications for discovery.
  */
 
+import { WHEATFILL_PEPTIDE_PRICE_LIST } from './wheatfillPeptidePriceList'
+
 export type PeptideId =
   | 'bpc157'
   | 'tb500'
@@ -48,7 +50,18 @@ export type PeptideEducation = {
    */
   peerReviewedPicks: PeptideEducationLink[]
   learnMore: PeptideEducationLink[]
+  /** Wheatfill peptide price line — amounts maintained in `wheatfillPeptidePriceList.ts`. */
+  wheatfillPriceList: string
+  /**
+   * Protocol patterns widely referenced in specialty peptide medicine, forums, and selected papers—not a prescription.
+   * Your clinician sets dose, route, and duration for your situation.
+   */
+  typicalProtocolDiscussed: string
 }
+
+/** Shown next to Wheatfill pricing + dosing sections on /peptides */
+export const PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER =
+  'Wheatfill price lines are typical cash-pay ranges for education until your clinician confirms your prescription, pharmacy fulfillment, and final total. Dosing below is educational background only—not instructions for use.'
 
 export const PEPTIDE_EDUCATION: PeptideEducation[] = [
   {
@@ -87,6 +100,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'NCBI Books: search “peptide therapeutic”', href: 'https://www.ncbi.nlm.nih.gov/books/?term=peptide+therapeutic' },
       { label: 'FDA: human drug compounding (policy context)', href: 'https://www.fda.gov/drugs/human-drug-compounding' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.bpc157,
+    typicalProtocolDiscussed:
+      'Commonly discussed patterns (not standardized FDA labeling): subcutaneous **250–500 mcg** daily or split twice daily for limited courses—often **4–8 weeks** with breaks—then reassessed. Animal studies use different scales; human use must be individualized.',
   },
   {
     id: 'tb500',
@@ -123,6 +139,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: thymosin beta-4 + heart or cardiac (models)', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=thymosin+beta-4+AND+%28heart+OR+cardiac%29' },
       { label: 'NCBI Bookshelf: search “thymosin” (background)', href: 'https://www.ncbi.nlm.nih.gov/books/?term=thymosin' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.tb500,
+    typicalProtocolDiscussed:
+      'Commonly cited “community” schedules (verify with your prescriber): a **loading phase** such as **~4–10 mg total per week** divided across **2 injections weekly for ~4–6 weeks**, then lower **maintenance** pulses or pause—actual mg depends entirely on vial concentration and medical judgment.',
   },
   {
     id: 'ghkcu',
@@ -158,6 +177,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: GHK + wound (lab/clinical-skin context)', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=GHK+peptide+AND+wound' },
       { label: 'NIH: copper (diet/health, general science)', href: 'https://ods.od.nih.gov/factsheets/Copper-Consumer/' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.ghkcu,
+    typicalProtocolDiscussed:
+      'Topical: provider-directed AM/PM use around procedures or as maintenance—**not** interchangeable with injectable peptide protocols. Injectable routes (where legally appropriate) are prescription-specific and vary by formulation.',
   },
   {
     id: 'cjcipa',
@@ -194,6 +216,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'MedlinePlus: growth hormone (overview)', href: 'https://medlineplus.gov/ency/article/002377.htm' },
       { label: 'DEA/DOJ: human growth hormone (legal context)', href: 'https://www.dea.gov/factsheets/human-growth-hormone' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.cjcipa,
+    typicalProtocolDiscussed:
+      'Frequently referenced scheduling (adjust for your Rx): **ipamorelin** subcutaneous in the **evening** (often **~100–300 mcg** range cited) plus **CJC-1295 (without DAC)** **~100–300 mcg** same window; many protocols use **5 nights on / 2 nights off** to preserve pulsatile biology. Doses are **not one-size**—IGF-1 and symptoms guide titration.',
   },
   {
     id: 'semax',
@@ -229,6 +254,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: Selank peptide (general)', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=selank+peptide' },
       { label: 'PubMed: Selank + anxiety or stress', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=selank+AND+%28anxi+OR+stress%29' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.semax,
+    typicalProtocolDiscussed:
+      'International nasal products use microgram-per-spray labels that **do not transfer** to U.S. compounded kits 1:1. Discussion protocols emphasize **short courses**, tolerability, and avoiding overlap with stimulants or serotonergic drugs—exact dosing is product- and prescriber-specific.',
   },
   {
     id: 'motsc',
@@ -264,6 +292,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: MOTS-c + exercise OR AMPK', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=MOTS-c+AND+%28exercise+OR+AMPK%29' },
       { label: 'PubMed: “mitochondrial derived peptide” family', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=mitochondrial+derived+peptide' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.motsc,
+    typicalProtocolDiscussed:
+      'Emerging clinic discussions mention **subcutaneous microdoses on a weekly cadence** (specific mcg/kg discussions mirror animal work)—human schedules are **not standardized**; pairing with exercise and glucose monitoring is common when medically supervised.',
   },
   {
     id: 'aod',
@@ -298,6 +329,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: AOD-9604 + lipolysis OR fat', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=AOD-9604+AND+%28lipolysis+OR+obes%29' },
       { label: 'PubMed: hGH fragment + lipolysis (broad background)', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=%22hGH+fragment%22+OR+%22growth+hormone+fragment%22+AND+lip' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.aod,
+    typicalProtocolDiscussed:
+      'Historical trial and forum discussions referenced **morning, fasted subcutaneous** dosing in modest microgram ranges (often **~250–500 mcg** themes in lay write-ups)—**not** interchangeable with GLP-1 titration; cardiovascular and metabolic monitoring matters.',
   },
   {
     id: 'ta1',
@@ -332,6 +366,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: thymosin alpha-1 + hepatitis (historical context)', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=thymosin+alpha-1+AND+hepatitis' },
       { label: 'PubMed: thymosin α1 + vaccine OR immunogenicity', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=thymosin+alpha+1+AND+%28vaccin+OR+immun%29' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.ta1,
+    typicalProtocolDiscussed:
+      'Published clinical trials (often outside wellness use) explored schedules such as **subcutaneous ~1.6 mg twice weekly** in specific disease contexts—**not** a general wellness default. Immune modulation requires infection screening, vaccine timing, and oncology considerations.',
   },
   {
     id: 'kpv',
@@ -366,6 +403,9 @@ export const PEPTIDE_EDUCATION: PeptideEducation[] = [
       { label: 'PubMed: KPV + NF-kappa B OR colitis', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=KPV+peptide+AND+%28NF-kappa+OR+colitis%29' },
       { label: 'PubMed: KPV + MSH or melanocortin + inflammation', href: 'https://pubmed.ncbi.nlm.nih.gov/?term=KPV+OR+%22Lys-Pro-Val%22+AND+inflamm' },
     ],
+    wheatfillPriceList: WHEATFILL_PEPTIDE_PRICE_LIST.kpv,
+    typicalProtocolDiscussed:
+      'Preclinical models guide interest; human wellness protocols (where lawful) are discussed as **low microgram subcutaneous or oral** experimental approaches—**duration and cycling vary**. Gut-specific goals require coordination with IBD care and medication lists.',
   },
 ]
 

@@ -162,8 +162,9 @@ export default function MedicationEducation() {
           <strong> not the same class</strong>: they are small signaling molecules that often show up in precision- or
           compounding-related discussions, many <strong>without the same U.S. approval and labeling</strong> story as
           Wegovy<sup>®</sup> or Zepbound<sup>®</sup>. Each card gives a <strong>why use it</strong> (typical goals in
-          discussion) and points you to the peptide page, where the <strong>deeper science</strong> lives under
-          &quot;Learn more: science and references.&quot; Not personal medical advice. Each link opens the full
+          discussion) and points you to the peptide page—where we list the <strong>Wheatfill price list</strong> per
+          peptide and <strong>educational dosing background</strong>, plus where the <strong>deeper science</strong>{' '}
+          lives under &quot;Learn more: science and references.&quot; Not personal medical advice. Each link opens the full
           write-up.
         </p>
         <div className="divider" />

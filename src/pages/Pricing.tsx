@@ -109,6 +109,21 @@ export default function Pricing() {
 
       <section className="card">
         <div className="cardTitle">
+          <h2 style={{ margin: 0 }}>Peptide therapy pricing</h2>
+          <span className="pill">Education</span>
+        </div>
+        <p className="muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
+          Peptide programs vary by peptide, dose, and what your clinician prescribes. Our{' '}
+          <Link to="/peptides" style={{ fontWeight: 650 }}>
+            peptide education page
+          </Link>{' '}
+          shows the <strong>Wheatfill price list</strong> for each peptide plus <strong>educational dosing</strong>
+          background—final totals are confirmed at visit. Open each peptide&apos;s <strong>Read full profile</strong>.
+        </p>
+      </section>
+
+      <section className="card">
+        <div className="cardTitle">
           <h2 style={{ margin: 0 }}>What’s Included</h2>
           <span className="pill">Telehealth</span>
         </div>
