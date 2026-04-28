@@ -1322,12 +1322,14 @@ html:has(.peptidePage) {
   color: var(--navy);
   background: rgba(10, 30, 63, 0.08);
   border: 1px solid rgba(10, 30, 63, 0.16);
-  padding: 6px 10px;
+  /* Allow 2-line pills on small screens without looking broken */
+  white-space: normal;
+  text-wrap: balance;
+  padding: 8px 12px;
   border-radius: 999px;
   vertical-align: middle;
   flex: 0 0 auto;
   max-width: 100%;
-  white-space: nowrap;
 }
 
 .pill:has(> .pill) {
