@@ -588,9 +588,8 @@ html.pharmacyCartOpen body {
 }
 
 .pageLanding {
-  align-self: center;
-  width: min(1180px, 100%);
-  max-width: 100%;
+  /* Let landing use the same container widths as other pages (page--wide = --container-max-wide). */
+  width: 100%;
   min-width: 0;
   box-sizing: border-box;
 }
