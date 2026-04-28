@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { apiPost, setApiSessionHint } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import Page from '../components/Page'
+import { setMarketingProviderAuthed } from '../marketing/providerStore'
 
 export default function ProviderLogin() {
   const navigate = useNavigate()
@@ -51,6 +52,13 @@ export default function ProviderLogin() {
         try {
           if (res.token) localStorage.setItem('wph_token_v1', res.token)
           else localStorage.removeItem('wph_token_v1')
+        } catch {
+          // ignore
+        }
+        // Required for provider workspace routing (marketing provider session gate).
+        // Token alone is not enough; the workspace uses this flag to avoid showing provider UI on public devices.
+        try {
+          setMarketingProviderAuthed(true, u)
         } catch {
           // ignore
         }
