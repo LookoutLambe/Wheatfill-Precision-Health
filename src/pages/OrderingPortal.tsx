@@ -134,7 +134,7 @@ export default function OrderingPortal() {
       </div>
 
       <div className="cardGrid">
-        <section className="card cardAccentNavy">
+        <section className="card cardAccentNavy cardSpan12">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Submit an Order Request</h2>
             <span className="pill">Patient</span>
