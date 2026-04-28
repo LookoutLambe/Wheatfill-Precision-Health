@@ -1470,9 +1470,14 @@ html:has(.peptidePage) {
     grid-row: 1;
   }
 
-  .twoCol.twoColLanding .landingGridAccordion {
+  .twoCol.twoColLanding .landingGridCatalog {
     grid-column: 1 / -1;
     grid-row: 2;
+  }
+
+  .twoCol.twoColLanding .landingGridAccordion {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 
   .twoCol.twoColLanding .landingGridProfileColumn {

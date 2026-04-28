@@ -347,44 +347,6 @@ export default function Landing() {
               </Link>
             </div>
           </section>
-
-          <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
-            <div className="cardTitle">
-              <h2 id="landing-catalog-heading" style={{ margin: 0 }}>
-                Order Now Catalog
-              </h2>
-              <span className="pill pillRed">GLP-1</span>
-            </div>
-            <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
-              Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
-              coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
-              medication is prescribed. Checkout opens securely with your order total after you submit from the summary page.
-              If something goes wrong with your order, your care team handles it from our side.
-            </p>
-            <div className="landingCatalogStartingRows">
-              <div className="landingCatalogStartingAt">
-                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
-                  Semaglutide starting at
-                </span>
-                <span className="landingCatalogStartingAmt">
-                  {formatCatalogPrice(SEMAGLUTIDE_STARTING_CENTS)}
-                </span>
-              </div>
-              <div className="landingCatalogStartingAt">
-                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
-                  Tirzepatide starting at
-                </span>
-                <span className="landingCatalogStartingAmt">
-                  {formatCatalogPrice(TIRZEPATIDE_STARTING_CENTS)}
-                </span>
-              </div>
-            </div>
-            <div className="btnRow">
-              <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-                View Full Catalog
-              </Link>
-            </div>
-          </section>
         </section>
 
         <aside className="landingGridProfileColumn" aria-label="About the care team">
@@ -436,6 +398,46 @@ export default function Landing() {
             </p>
           </div>
         </aside>
+
+        <section className="landingGridCatalog" aria-label="Order Now catalog highlight">
+          <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
+            <div className="cardTitle">
+              <h2 id="landing-catalog-heading" style={{ margin: 0 }}>
+                Order Now Catalog
+              </h2>
+              <span className="pill pillRed">GLP-1</span>
+            </div>
+            <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
+              Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
+              coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
+              medication is prescribed. Checkout opens securely with your order total after you submit from the summary page.
+              If something goes wrong with your order, your care team handles it from our side.
+            </p>
+            <div className="landingCatalogStartingRows">
+              <div className="landingCatalogStartingAt">
+                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
+                  Semaglutide starting at
+                </span>
+                <span className="landingCatalogStartingAmt">
+                  {formatCatalogPrice(SEMAGLUTIDE_STARTING_CENTS)}
+                </span>
+              </div>
+              <div className="landingCatalogStartingAt">
+                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
+                  Tirzepatide starting at
+                </span>
+                <span className="landingCatalogStartingAmt">
+                  {formatCatalogPrice(TIRZEPATIDE_STARTING_CENTS)}
+                </span>
+              </div>
+            </div>
+            <div className="btnRow">
+              <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+                View Full Catalog
+              </Link>
+            </div>
+          </section>
+        </section>
 
         <section className="landingGridAccordion" aria-label="Services">
           <div className="divider" />
