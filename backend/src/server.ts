@@ -274,10 +274,7 @@ async function ensureProviderSeed() {
   await ensureDemoPatientSeed()
   await ensureMarketingTeamLogins()
   try {
-    const useSupabase =
-      (process.env.USE_SUPABASE_AUTH || '').trim() === '1' ||
-      (process.env.USE_SUPABASE_AUTH || '').trim().toLowerCase() === 'true'
-    if (useSupabase && (process.env.SUPABASE_URL || '').trim()) {
+    if ((process.env.SUPABASE_URL || '').trim()) {
       await ensureDefaultProviderProfiles()
     }
   } catch (e) {
@@ -784,10 +781,6 @@ app.post('/auth/staff-request', async (req, reply) => {
   const lim = rateLimitHit(`staffreq:${reqIp(req) || 'unknown'}`, 12, PUBLIC_POST_RATE_WINDOW_MS)
   if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many requests.')
   const body = StaffRequestBody.parse(req.body)
-  const useSupabase =
-    (process.env.USE_SUPABASE_AUTH || '').trim() === '1' ||
-    (process.env.USE_SUPABASE_AUTH || '').trim().toLowerCase() === 'true'
-  if (!useSupabase) return reply.status(501).send('Staff request is disabled on this API.')
   const supabaseConfigured = Boolean((process.env.SUPABASE_URL || '').trim())
   if (!supabaseConfigured) return reply.status(501).send('Supabase is not configured on this API.')
 
@@ -885,16 +878,7 @@ const LoginBody = z.object({
 app.post('/auth/login', async (req, reply) => {
   const body = LoginBody.parse(req.body)
   // If Supabase is configured, use it as the source of truth for provider/admin credentials.
-  const useSupabase =
-    (process.env.USE_SUPABASE_AUTH || '').trim() === '1' ||
-    (process.env.USE_SUPABASE_AUTH || '').trim().toLowerCase() === 'true'
-  const supabaseConfigured =
-    useSupabase &&
-    Boolean(
-      (process.env.SUPABASE_URL || '').trim() &&
-        (process.env.SUPABASE_ANON_KEY || '').trim() &&
-        (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
-    )
+  const supabaseConfigured = Boolean((process.env.SUPABASE_URL || '').trim() && (process.env.SUPABASE_ANON_KEY || '').trim() && (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim())
   if (supabaseConfigured) {
     const prof = await providerProfileByLogin(body.username)
     if (!prof) return reply.unauthorized('Invalid username or password.')
