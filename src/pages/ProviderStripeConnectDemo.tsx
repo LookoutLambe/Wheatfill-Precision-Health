@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiPost } from '../api/client'
+import { navigateToStripeHostedUrl } from '../lib/stripeHostedNavigation'
 
 type AccountStatus = {
   ok: true
@@ -64,7 +65,7 @@ export default function ProviderStripeConnectDemo() {
     try {
       const r = await apiPost<{ ok: true; url: string }>('/v1/stripe-connect-demo/account-link', {})
       if (!r?.url) throw new Error('No onboarding URL returned.')
-      window.location.href = r.url
+      if (!navigateToStripeHostedUrl(r.url)) throw new Error('Invalid Stripe URL.')
     } catch (e: any) {
       setError(String(e?.message || e))
     } finally {

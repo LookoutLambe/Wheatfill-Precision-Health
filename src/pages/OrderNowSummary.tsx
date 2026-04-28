@@ -7,6 +7,7 @@ import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet, apiPost, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
+import { navigateToStripeHostedUrl } from '../lib/stripeHostedNavigation'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
@@ -164,7 +165,9 @@ export default function OrderNowSummary() {
             body,
           )
           if (res.checkoutUrl) {
-            window.location.href = res.checkoutUrl
+            if (!navigateToStripeHostedUrl(res.checkoutUrl)) {
+              setCheckoutError('Could not open the secure payment page. Please try again.')
+            }
             return
           }
           writeCartForSlug(slug, {})
@@ -183,7 +186,9 @@ export default function OrderNowSummary() {
           '',
         )
         if (res.checkoutUrl) {
-          window.location.href = res.checkoutUrl
+          if (!navigateToStripeHostedUrl(res.checkoutUrl)) {
+            setCheckoutError('Could not open the secure payment page. Please try again.')
+          }
           return
         }
         writeCartForSlug(slug, {})

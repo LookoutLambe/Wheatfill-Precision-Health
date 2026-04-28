@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { apiGet, apiPost } from '../api/client'
+import { navigateToStripeHostedUrl } from '../lib/stripeHostedNavigation'
 
 type StorefrontProduct = {
   id: string
@@ -66,7 +67,7 @@ export default function StripeConnectStorefront() {
     try {
       const r = await apiPost<{ ok: true; url: string }>('/v1/stripe-connect-demo/checkout', { productId, quantity: 1 }, '')
       if (!r?.url) throw new Error('No checkout URL returned.')
-      window.location.href = r.url
+      if (!navigateToStripeHostedUrl(r.url)) throw new Error('Invalid Stripe checkout URL.')
     } catch (e: any) {
       setError(String(e?.message || e))
     } finally {

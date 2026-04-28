@@ -64,8 +64,10 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // HTML / SPA navigations: network-only (no caching) so deploys always get a fresh shell.
+  // Same-origin HTML / SPA navigations only. Cross-origin top-level navigations (Stripe
+  // Checkout, OAuth, etc.) must not be intercepted — mobile Safari and PWAs rely on native handling.
   if (isNavigationRequest(request)) {
+    if (!sameOrigin(request.url)) return
     event.respondWith(
       fetch(request, { cache: 'no-store' }).catch(
         () =>

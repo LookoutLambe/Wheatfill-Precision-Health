@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiLogout, apiPatch, apiPost, fetchApiSession, setApiSessionHint } from '../api/client'
+import { navigateToStripeHostedUrl } from '../lib/stripeHostedNavigation'
 
 type PaymentsStatus = {
   activeProvider: 'stripe' | null
@@ -171,7 +172,9 @@ export default function ProviderPayments() {
                           setError(null)
                           try {
                             const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/onboard', {})
-                            window.location.href = res.url
+                            if (!navigateToStripeHostedUrl(res.url)) {
+                              setError('Could not open Stripe. Check the URL and try again.')
+                            }
                           } catch (e: unknown) {
                             setError(String((e as Error)?.message || e))
                           }
@@ -232,7 +235,9 @@ export default function ProviderPayments() {
                           setError(null)
                           try {
                             const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/test-checkout', {})
-                            window.location.href = res.url
+                            if (!navigateToStripeHostedUrl(res.url)) {
+                              setError('Could not open checkout. Check the URL and try again.')
+                            }
                           } catch (e: unknown) {
                             setError(String((e as Error)?.message || e))
                           }
