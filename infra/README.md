@@ -6,7 +6,7 @@ This folder is a scaffold for deploying Wheatfill Precision Health to AWS in a H
 - **Frontend**: S3 (static) + CloudFront (TLS)
 - **Backend**: ECS Fargate service behind an ALB (TLS)
 - **Database**: RDS Postgres (encrypted, automated backups, PITR)
-- **Secrets**: Secrets Manager (JWT secret, Clover keys, DB URL)
+- **Secrets**: Secrets Manager (JWT secret, Stripe keys, DB URL)
 - **Logs/metrics**: CloudWatch
 
 ### Next steps to make it real

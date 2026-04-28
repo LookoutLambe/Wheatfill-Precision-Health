@@ -23,7 +23,6 @@ import Stripe from 'stripe'
 import { prisma } from './db.js'
 import { hashPassword, verifyPassword } from './auth/password.js'
 import { registerAuth, requireRole } from './auth/authz.js'
-import { encryptSecret } from './crypto/secrets.js'
 import { clearJwtCookie, injectJwtFromCookie, JWT_COOKIE_NAME, setJwtCookie } from './security/jwtCookie.js'
 import { rateLimitHit } from './security/simpleRateLimit.js'
 
@@ -37,12 +36,6 @@ const FRONTEND_ORIGIN =
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_change_me'
 const JWT_ISSUER = process.env.JWT_ISSUER || 'wph-backend'
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
-const CLOVER_ENV = (process.env.CLOVER_ENV || 'sandbox').toLowerCase() === 'production' ? 'production' : 'sandbox'
-const CLOVER_MERCHANT_ID = process.env.CLOVER_MERCHANT_ID || ''
-const CLOVER_PRIVATE_KEY = process.env.CLOVER_PRIVATE_KEY || ''
-const CLOVER_API_BASE =
-  CLOVER_ENV === 'production' ? 'https://api.clover.com' : 'https://apisandbox.dev.clover.com'
-
 const DEFAULT_PROVIDER_USERNAME = (process.env.DEFAULT_PROVIDER_USERNAME || 'brett').trim().toLowerCase()
 const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'wheatfill'
 /** Public marketing site sign-in: brett / bridgette / admin — created if missing. */
@@ -214,24 +207,6 @@ async function ensureProviderSeed() {
       username: DEFAULT_PROVIDER_USERNAME,
       passwordHash,
       displayName: 'Brett Wheatfill, FNP-C',
-      activePaymentProvider: CLOVER_MERCHANT_ID && CLOVER_PRIVATE_KEY ? 'clover' : null,
-      cloverEnv: CLOVER_MERCHANT_ID && CLOVER_PRIVATE_KEY ? CLOVER_ENV : null,
-      cloverMerchantId: CLOVER_MERCHANT_ID || null,
-      ...(CLOVER_PRIVATE_KEY
-        ? (() => {
-            try {
-              const enc = encryptSecret(CLOVER_PRIVATE_KEY)
-              return {
-                cloverPrivateKeyEnc: enc.enc,
-                cloverPrivateKeyIv: enc.iv,
-                cloverPrivateKeyTag: enc.tag,
-              }
-            } catch {
-              // If encryption key not present in dev, leave blank.
-              return {}
-            }
-          })()
-        : {}),
     },
   })
   providerSeeded = true
@@ -394,14 +369,9 @@ app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
 
   const providerRow = await prisma.user.findUnique({
     where: { id: provider.id },
-    select: { activePaymentProvider: true, stripeConnectedAccountId: true },
+    select: { stripeConnectedAccountId: true },
   })
 
-  // Allow card checkout when Stripe is configured even if the practice hasn't explicitly flipped a "stripe" toggle yet.
-  // If a connected account is present, we run the session on that connected account; otherwise we fall back to the platform account.
-  if (providerRow?.activePaymentProvider && providerRow.activePaymentProvider !== 'stripe') {
-    return reply.badRequest('Card checkout is not configured.')
-  }
   if (!stripe) return reply.badRequest('Stripe is not configured.')
 
   const products = await prisma.pharmacyProduct.findMany({
@@ -599,9 +569,6 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
     guestContactEmail: contactEmail.trim(),
     stripe,
     frontendOrigin: FRONTEND_ORIGIN,
-    cloverEnv: CLOVER_ENV,
-    cloverMerchantIdFallback: CLOVER_MERCHANT_ID,
-    cloverPrivateKeyFallback: CLOVER_PRIVATE_KEY,
   })
   if (!r.ok) return reply.status(r.status).send(r.message)
   return { orderId: r.orderId, totalCents: r.totalCents, checkoutUrl: r.checkoutUrl }
@@ -871,8 +838,6 @@ await app.register(async (protectedScope) => {
           stripePayoutsEnabled: true,
           stripeOnboardingStatus: true,
           activePaymentProvider: true,
-          cloverEnv: true,
-          cloverMerchantId: true,
           createdAt: true,
         },
       })
@@ -1039,7 +1004,7 @@ await app.register(async (protectedScope) => {
     },
   )
 
-  // Provider: payment integrations (Stripe + Clover)
+  // Provider: Stripe Connect + Hosted Checkout
   protectedScope.get(
     '/v1/provider/payments',
     { preHandler: requireRole(['provider', 'admin']) },
@@ -1052,17 +1017,11 @@ await app.register(async (protectedScope) => {
           stripeChargesEnabled: true,
           stripePayoutsEnabled: true,
           stripeOnboardingStatus: true,
-          cloverEnv: true,
-          cloverMerchantId: true,
-          cloverPrivateKeyEnc: true,
-          cloverPrivateKeyIv: true,
-          cloverPrivateKeyTag: true,
         },
       })
-      const cloverConnected = Boolean(u?.cloverMerchantId && u?.cloverPrivateKeyEnc && u?.cloverPrivateKeyIv && u?.cloverPrivateKeyTag)
       const stripeConnected = Boolean(u?.stripeConnectedAccountId)
       return {
-        activeProvider: u?.activePaymentProvider || null,
+        activeProvider: u?.activePaymentProvider === 'stripe' ? 'stripe' : null,
         stripe: {
           available: Boolean(stripe && STRIPE_CONNECT_CLIENT_ID),
           connected: stripeConnected,
@@ -1070,12 +1029,6 @@ await app.register(async (protectedScope) => {
           onboardingStatus: u?.stripeOnboardingStatus || null,
           chargesEnabled: Boolean(u?.stripeChargesEnabled),
           payoutsEnabled: Boolean(u?.stripePayoutsEnabled),
-        },
-        clover: {
-          available: true,
-          connected: cloverConnected,
-          env: u?.cloverEnv || null,
-          merchantId: u?.cloverMerchantId || null,
         },
       }
     },
@@ -1388,29 +1341,23 @@ await app.register(async (protectedScope) => {
   })
 
   const SetActivePaymentBody = z.object({
-    provider: z.enum(['stripe', 'clover']),
+    provider: z.literal('stripe'),
   })
   protectedScope.patch(
     '/v1/provider/payments/active',
     { preHandler: requireRole(['provider', 'admin']) },
     async (req, reply) => {
-      const body = SetActivePaymentBody.parse(req.body)
+      SetActivePaymentBody.parse(req.body)
       const u = await prisma.user.findUnique({
         where: { id: req.user.sub },
         select: {
           stripeConnectedAccountId: true,
-          cloverMerchantId: true,
-          cloverPrivateKeyEnc: true,
-          cloverPrivateKeyIv: true,
-          cloverPrivateKeyTag: true,
         },
       })
       const stripeOk = Boolean(u?.stripeConnectedAccountId)
-      const cloverOk = Boolean(u?.cloverMerchantId && u?.cloverPrivateKeyEnc && u?.cloverPrivateKeyIv && u?.cloverPrivateKeyTag)
-      if (body.provider === 'stripe' && !stripeOk) return reply.badRequest('Stripe is not connected yet.')
-      if (body.provider === 'clover' && !cloverOk) return reply.badRequest('Clover is not connected yet.')
+      if (!stripeOk) return reply.badRequest('Stripe is not connected yet.')
       const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
-      const after = await prisma.user.update({ where: { id: req.user.sub }, data: { activePaymentProvider: body.provider } })
+      const after = await prisma.user.update({ where: { id: req.user.sub }, data: { activePaymentProvider: 'stripe' } })
       await writeAudit({
         actorId: req.user.sub,
         entityType: 'user',
@@ -1420,72 +1367,7 @@ await app.register(async (protectedScope) => {
         after,
         ip: reqIp(req),
       })
-      return { ok: true, activeProvider: body.provider }
-    },
-  )
-
-  const SaveCloverBody = z.object({
-    env: z.enum(['sandbox', 'production']).default('sandbox'),
-    merchantId: z.string().min(3).max(120),
-    privateKey: z.string().min(10).max(4000),
-  })
-  protectedScope.post(
-    '/v1/provider/payments/clover',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req) => {
-      const body = SaveCloverBody.parse(req.body)
-      const enc = encryptSecret(body.privateKey.trim())
-      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
-      const after = await prisma.user.update({
-        where: { id: req.user.sub },
-        data: {
-          cloverEnv: body.env,
-          cloverMerchantId: body.merchantId.trim(),
-          cloverPrivateKeyEnc: enc.enc,
-          cloverPrivateKeyIv: enc.iv,
-          cloverPrivateKeyTag: enc.tag,
-          activePaymentProvider: before?.activePaymentProvider || 'clover',
-        },
-      })
-      await writeAudit({
-        actorId: req.user.sub,
-        entityType: 'user',
-        entityId: req.user.sub,
-        action: 'provider_clover_connected',
-        before,
-        after,
-        ip: reqIp(req),
-      })
-      return { ok: true }
-    },
-  )
-
-  protectedScope.post(
-    '/v1/provider/payments/clover/disconnect',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req) => {
-      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
-      const after = await prisma.user.update({
-        where: { id: req.user.sub },
-        data: {
-          cloverEnv: null,
-          cloverMerchantId: null,
-          cloverPrivateKeyEnc: null,
-          cloverPrivateKeyIv: null,
-          cloverPrivateKeyTag: null,
-          ...(before?.activePaymentProvider === 'clover' ? { activePaymentProvider: null } : {}),
-        },
-      })
-      await writeAudit({
-        actorId: req.user.sub,
-        entityType: 'user',
-        entityId: req.user.sub,
-        action: 'provider_clover_disconnected',
-        before,
-        after,
-        ip: reqIp(req),
-      })
-      return { ok: true }
+      return { ok: true, activeProvider: 'stripe' as const }
     },
   )
 
@@ -2218,9 +2100,6 @@ await app.register(async (protectedScope) => {
         patient,
         stripe,
         frontendOrigin: FRONTEND_ORIGIN,
-        cloverEnv: CLOVER_ENV,
-        cloverMerchantIdFallback: CLOVER_MERCHANT_ID,
-        cloverPrivateKeyFallback: CLOVER_PRIVATE_KEY,
       })
       if (!r.ok) return reply.status(r.status).send(r.message)
       return { orderId: r.orderId, totalCents: r.totalCents, checkoutUrl: r.checkoutUrl }

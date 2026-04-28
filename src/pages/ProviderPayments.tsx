@@ -4,7 +4,7 @@ import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActio
 import { apiGet, apiLogout, apiPatch, apiPost, fetchApiSession, setApiSessionHint } from '../api/client'
 
 type PaymentsStatus = {
-  activeProvider: 'stripe' | 'clover' | null
+  activeProvider: 'stripe' | null
   stripe: {
     available: boolean
     connected: boolean
@@ -12,12 +12,6 @@ type PaymentsStatus = {
     onboardingStatus: string | null
     chargesEnabled: boolean
     payoutsEnabled: boolean
-  }
-  clover: {
-    available: boolean
-    connected: boolean
-    env: string | null
-    merchantId: string | null
   }
 }
 
@@ -33,10 +27,6 @@ export default function ProviderPayments() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
-  const [cloverEnv, setCloverEnv] = useState<'sandbox' | 'production'>('sandbox')
-  const [cloverMerchantId, setCloverMerchantId] = useState('')
-  const [cloverPrivateKey, setCloverPrivateKey] = useState('')
-
   async function load(opts?: { silent?: boolean }) {
     setLoading(true)
     setError(null)
@@ -45,12 +35,10 @@ export default function ProviderPayments() {
       setStatus(res)
       setPaymentsAuthed(true)
       setApiSessionHint()
-      setCloverEnv((res.clover.env === 'production' ? 'production' : 'sandbox') as any)
-      setCloverMerchantId(res.clover.merchantId || '')
-    } catch (e: any) {
+    } catch (e: unknown) {
       setPaymentsAuthed(false)
       setStatus(null)
-      if (!opts?.silent) setError(String(e?.message || e))
+      if (!opts?.silent) setError(String((e as Error)?.message || e))
     } finally {
       setLoading(false)
     }
@@ -70,10 +58,8 @@ export default function ProviderPayments() {
   }, [])
 
   useEffect(() => {
-    // Helpful after Stripe onboarding redirect
     if (qs.get('stripe') === 'return' || qs.get('stripe') === 'refresh') {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      apiPost('/v1/provider/payments/stripe/refresh', {}).catch(() => {})
+      void apiPost('/v1/provider/payments/stripe/refresh', {}).catch(() => {})
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -84,7 +70,7 @@ export default function ProviderPayments() {
         <div>
           <h1 style={{ margin: 0 }}>Payments</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Connect Stripe or Clover, then choose which one is active for new payments.
+            Connect Stripe for patient catalog checkout (Hosted Checkout). Payouts use Stripe Connect when configured.
           </p>
         </div>
         <ProviderSubpageNavActions />
@@ -106,9 +92,7 @@ export default function ProviderPayments() {
             <span className="pill pillRed">Backend</span>
           </div>
           <div className="divider" />
-          <p className="muted">
-            This screen uses your backend provider credentials for payment configuration.
-          </p>
+          <p className="muted">This screen uses your backend provider credentials for payment configuration.</p>
           <div className="formRow" style={{ marginTop: 12 }}>
             <label>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
@@ -142,8 +126,8 @@ export default function ProviderPayments() {
                     setApiSessionHint()
                     setPaymentsAuthed(true)
                     await load()
-                  } catch (e: any) {
-                    setError(String(e?.message || e))
+                  } catch (e: unknown) {
+                    setError(String((e as Error)?.message || e))
                   }
                 })()
               }}
@@ -188,8 +172,8 @@ export default function ProviderPayments() {
                           try {
                             const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/onboard', {})
                             window.location.href = res.url
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
+                          } catch (e: unknown) {
+                            setError(String((e as Error)?.message || e))
                           }
                         })()
                       }}
@@ -207,8 +191,8 @@ export default function ProviderPayments() {
                           try {
                             await apiPost('/v1/provider/payments/stripe/disconnect', {})
                             await load()
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
+                          } catch (e: unknown) {
+                            setError(String((e as Error)?.message || e))
                           }
                         })()
                       }}
@@ -228,13 +212,13 @@ export default function ProviderPayments() {
                           try {
                             await apiPatch('/v1/provider/payments/active', { provider: 'stripe' })
                             await load()
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
+                          } catch (e: unknown) {
+                            setError(String((e as Error)?.message || e))
                           }
                         })()
                       }}
                     >
-                      {status.activeProvider === 'stripe' ? 'Active' : 'Set Stripe as active'}
+                      {status.activeProvider === 'stripe' ? 'Stripe active for checkout' : 'Set Stripe as active'}
                     </button>
                   </div>
                   <div className="btnRow" style={{ marginTop: 10 }}>
@@ -249,8 +233,8 @@ export default function ProviderPayments() {
                           try {
                             const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/test-checkout', {})
                             window.location.href = res.url
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
+                          } catch (e: unknown) {
+                            setError(String((e as Error)?.message || e))
                           }
                         })()
                       }}
@@ -261,128 +245,20 @@ export default function ProviderPayments() {
                 </>
               )}
             </section>
-
-            <section className="card cardAccentSoft">
-              <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Clover</h2>
-                <span className="pill pillRed">Keys</span>
-              </div>
-              <div className="divider" />
-              {loading || !status ? (
-                <p className="muted">Loading…</p>
-              ) : (
-                <>
-                  <div className="muted" style={{ fontSize: 13 }}>
-                    Status: <b>{status.clover.connected ? 'Connected' : 'Not connected'}</b>
-                  </div>
-                  <div className="divider" />
-                  <div className="formRow">
-                    <label>
-                      <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                        Environment
-                      </div>
-                      <select className="select" value={cloverEnv} onChange={(e) => setCloverEnv(e.target.value as any)}>
-                        <option value="sandbox">Sandbox</option>
-                        <option value="production">Production</option>
-                      </select>
-                    </label>
-                    <label>
-                      <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                        Merchant ID
-                      </div>
-                      <input className="input" value={cloverMerchantId} onChange={(e) => setCloverMerchantId(e.target.value)} />
-                    </label>
-                  </div>
-                  <label style={{ display: 'block', marginTop: 12 }}>
-                    <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                      Private key (stored encrypted)
-                    </div>
-                    <input className="input" type="password" value={cloverPrivateKey} onChange={(e) => setCloverPrivateKey(e.target.value)} />
-                  </label>
-                  <div className="btnRow" style={{ marginTop: 12 }}>
-                    <button
-                      type="button"
-                      className="btn btnPrimary"
-                      disabled={!cloverMerchantId.trim() || !cloverPrivateKey.trim()}
-                      style={{ width: '100%', opacity: cloverMerchantId.trim() && cloverPrivateKey.trim() ? 1 : 0.6 }}
-                      onClick={() => {
-                        ;(async () => {
-                          setError(null)
-                          try {
-                            await apiPost('/v1/provider/payments/clover', {
-                              env: cloverEnv,
-                              merchantId: cloverMerchantId,
-                              privateKey: cloverPrivateKey,
-                            })
-                            setCloverPrivateKey('')
-                            await load()
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
-                          }
-                        })()
-                      }}
-                    >
-                      Save Clover connection
-                    </button>
-                  </div>
-                  <div className="btnRow" style={{ marginTop: 10 }}>
-                    <button
-                      type="button"
-                      className="btn btnAccent"
-                      disabled={!status.clover.connected}
-                      style={{ width: '100%', opacity: status.clover.connected ? 1 : 0.6 }}
-                      onClick={() => {
-                        ;(async () => {
-                          setError(null)
-                          try {
-                            await apiPatch('/v1/provider/payments/active', { provider: 'clover' })
-                            await load()
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
-                          }
-                        })()
-                      }}
-                    >
-                      {status.activeProvider === 'clover' ? 'Active' : 'Set Clover as active'}
-                    </button>
-                  </div>
-                  <div className="btnRow" style={{ marginTop: 10 }}>
-                    <button
-                      type="button"
-                      className="btn"
-                      disabled={!status.clover.connected}
-                      style={{ width: '100%', opacity: status.clover.connected ? 1 : 0.6 }}
-                      onClick={() => {
-                        ;(async () => {
-                          setError(null)
-                          try {
-                            await apiPost('/v1/provider/payments/clover/disconnect', {})
-                            await load()
-                          } catch (e: any) {
-                            setError(String(e?.message || e))
-                          }
-                        })()
-                      }}
-                    >
-                      Disconnect Clover
-                    </button>
-                  </div>
-                </>
-              )}
-            </section>
           </div>
 
           <section className="card" style={{ marginTop: 16 }}>
             <div className="cardTitle">
-              <h2 style={{ margin: 0 }}>Active payment processor</h2>
-              <span className="pill">Routing</span>
+              <h2 style={{ margin: 0 }}>Checkout routing</h2>
+              <span className="pill">Stripe</span>
             </div>
             <div className="divider" />
             {loading || !status ? (
               <p className="muted">Loading…</p>
             ) : (
               <p className="muted">
-                Active: <b>{status.activeProvider || 'Not set'}</b>
+                Catalog checkout uses Stripe Hosted Checkout when <code>STRIPE_SECRET_KEY</code> is set on the API.
+                Connect lets payments settle to your linked account when onboarding is complete.
               </p>
             )}
             <div className="btnRow" style={{ marginTop: 12 }}>
@@ -407,4 +283,3 @@ export default function ProviderPayments() {
     </div>
   )
 }
-

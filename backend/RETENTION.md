@@ -6,7 +6,7 @@ This document describes how we keep data on file for **5+ years**, how to back i
 - **Patients**: profile + contact + address fields (no payment card data is stored).
 - **Appointments**: requests, scheduled visits, timestamps, and status transitions.
 - **Orders**: requests, pharmacy orders, items, and statuses.
-- **Payments**: Clover checkout identifiers + payment status (no PAN/CVV).
+- **Payments**: Stripe checkout session / payment intent identifiers + payment status (no PAN/CVV).
 - **Audit log**: immutable event trail for key actions (who/what/when/IP).
 
 ### Default retention period
@@ -38,7 +38,7 @@ Audit events are written automatically for:
 - provider scheduling + status changes
 - provider order status changes
 - provider blackout add/remove
-- Clover webhook payment approval/decline, and order status changes caused by payment
+- Stripe webhook payment completion, and order status changes caused by payment
 
 Each audit row includes:
 - **actor** (`actorId`)
