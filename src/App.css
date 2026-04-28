@@ -1362,6 +1362,17 @@ html:has(.peptidePage) {
   gap: 18px;
 }
 
+.twoCol.twoColLanding {
+  /* Landing uses stacked full-width sections; the top area is its own 2-col grid. */
+  grid-template-columns: 1fr;
+}
+
+.landingGridTop {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
 /* About: two bios side-by-side on desktop, stack on mobile. */
 .aboutTeamGrid {
   display: grid;
@@ -1465,22 +1476,17 @@ html:has(.peptidePage) {
 }
 
 @media (min-width: 901px) {
-  .twoCol.twoColLanding .landingGridHeroCatalog {
+  .landingGridTop {
+    grid-template-columns: 1.2fr 0.8fr;
+    align-items: start;
+  }
+
+  .landingGridTop .landingGridHeroCatalog {
     grid-column: 1;
     grid-row: 1;
   }
 
-  .twoCol.twoColLanding .landingGridCatalog {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .twoCol.twoColLanding .landingGridAccordion {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-
-  .twoCol.twoColLanding .landingGridProfileColumn {
+  .landingGridTop .landingGridProfileColumn {
     grid-column: 2;
     grid-row: 1;
     align-self: start;
@@ -1540,23 +1546,8 @@ html:has(.peptidePage) {
     grid-template-columns: 1fr;
   }
 
-  .twoCol.twoColLanding {
-    grid-template-areas:
-      "hero"
-      "acc"
-      "profile";
-  }
-
-  .twoCol.twoColLanding .landingGridHeroCatalog {
-    grid-area: hero;
-  }
-
-  .twoCol.twoColLanding .landingGridAccordion {
-    grid-area: acc;
-  }
-
-  .twoCol.twoColLanding .landingGridProfileColumn {
-    grid-area: profile;
+  .landingGridTop {
+    grid-template-columns: 1fr;
   }
 }
 
