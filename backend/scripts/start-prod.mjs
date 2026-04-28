@@ -12,14 +12,62 @@ process.chdir(root)
 
 const env = process.env
 
-if (env.WPH_SKIP_PRISMA === '1' || env.WPH_SKIP_PRISMA === 'true') {
+function isTruthy(v) {
+  return v === '1' || v === 'true' || v === 'yes' || v === 'on'
+}
+
+function requireEnv(name) {
+  const v = env[name]
+  if (!v || !String(v).trim()) return null
+  return String(v).trim()
+}
+
+function assertRequiredEnv() {
+  // The server may still start without some of these in dev, but on Render we prefer a clear failure.
+  const required = ['DATABASE_URL', 'JWT_SECRET', 'FRONTEND_ORIGIN']
+  const missing = required.filter((k) => !requireEnv(k))
+  if (missing.length) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[wph] Missing required environment variables: ${missing.join(', ')}. ` +
+        `Set them in Render → Environment.`
+    )
+    process.exit(1)
+  }
+}
+
+function runStep(label, command, { inherit = false } = {}) {
+  try {
+    if (inherit) {
+      execSync(command, { stdio: 'inherit', env, shell: true })
+      return
+    }
+    const out = execSync(command, { stdio: 'pipe', env, shell: true })
+    if (out && out.length) {
+      // eslint-disable-next-line no-console
+      console.log(String(out))
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(`[wph] Failed step: ${label}`)
+    const stdout = err?.stdout ? String(err.stdout) : ''
+    const stderr = err?.stderr ? String(err.stderr) : ''
+    if (stdout.trim()) console.error(stdout)
+    if (stderr.trim()) console.error(stderr)
+    process.exit(1)
+  }
+}
+
+assertRequiredEnv()
+
+if (isTruthy(env.WPH_SKIP_PRISMA)) {
   const child = spawn('node', [path.join(root, 'dist', 'server.js')], { stdio: 'inherit', env, shell: true })
   child.on('exit', (code) => process.exit(code ?? 0))
 } else {
   const sqlFile = JSON.stringify(path.join(root, 'prisma', 'clear_broken_migration_history.sql'))
   const schemaFile = JSON.stringify(path.join(root, 'prisma', 'schema.prisma'))
 
-  if (env.WPH_SKIP_CLEAR_MIGRATION !== '1' && env.WPH_SKIP_CLEAR_MIGRATION !== 'true') {
+  if (!isTruthy(env.WPH_SKIP_CLEAR_MIGRATION)) {
     try {
       execSync(`npx prisma db execute --file ${sqlFile} --schema ${schemaFile}`, {
         stdio: 'pipe',
@@ -41,11 +89,12 @@ if (env.WPH_SKIP_PRISMA === '1' || env.WPH_SKIP_PRISMA === 'true') {
     // no failed migration to mark rolled back
   }
 
-  try {
-    execSync('npx prisma db push', { stdio: 'inherit', env, shell: true })
-  } catch {
-    process.exit(1)
-  }
+  const acceptDataLoss = isTruthy(env.WPH_ACCEPT_DATA_LOSS)
+  runStep(
+    'prisma db push',
+    `npx prisma db push${acceptDataLoss ? ' --accept-data-loss' : ''}`,
+    { inherit: true }
+  )
 
   const child = spawn('node', [path.join(root, 'dist', 'server.js')], { stdio: 'inherit', env, shell: true })
   child.on('exit', (code) => process.exit(code ?? 0))

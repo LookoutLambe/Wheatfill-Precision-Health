@@ -193,201 +193,164 @@ export default function Landing() {
   return (
     <Page className="pageLanding" variant="wide">
       <div className="twoCol twoColLanding">
-        <section className="landingGridHeroCatalog" aria-label="Welcome">
-          <div className="landingHeroIntro">
-            <span className="pill">Precision health. Elevated living.</span>
-            <h1 className="heroHeadline">
-              Personalized, evidence-based care designed to optimize your health, performance, and
-              longevity.
-            </h1>
-            <p className="muted pageSubtitle" style={{ marginTop: 0 }}>
-              Specializing in metabolic optimization, weight management, and advanced wellness
-              therapies.
-            </p>
+        <section className="landingGridTop" aria-label="Welcome and care team">
+          <section className="landingGridHeroCatalog" aria-label="Welcome">
+            <div className="landingHeroIntro">
+              <span className="pill landingHeroEyebrow">Precision health. Elevated living.</span>
+              <h1 className="heroHeadline">
+                Personalized, evidence-based care designed to optimize your health, performance, and
+                longevity.
+              </h1>
+              <p className="muted pageSubtitle" style={{ marginTop: 0 }}>
+                Specializing in metabolic optimization, weight management, and advanced wellness
+                therapies.
+              </p>
 
-            <div className="divider" />
+              <div className="divider" />
 
-            <div className="btnRow">
-              <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
-              <PatientPortalCta className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }} />
+              <div className="btnRow">
+                <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
+                <PatientPortalCta className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }} />
+              </div>
+
+              <div className="divider" />
+
+              <section className="card cardAccentNavy" aria-labelledby="landing-start-here-heading" style={{ marginTop: 12 }}>
+                <div className="cardTitle">
+                  <h2 id="landing-start-here-heading" style={{ margin: 0 }}>
+                    Start here
+                  </h2>
+                  <span className="pill">Patient paths</span>
+                </div>
+                <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                  Pick the path that matches what you need—booking, medication education, refill-style requests, or the storefront catalog.
+                </p>
+                <div className="divider" />
+                <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                  <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
+                  <NavLink to="/medications" className="btn" style={{ textDecoration: 'none' }}>
+                    Medication education
+                  </NavLink>
+                  <NavLink to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
+                    Order requests
+                  </NavLink>
+                  <NavLink to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
+                    Order Now catalog
+                  </NavLink>
+                  <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+                    Contact
+                  </Link>
+                </div>
+              </section>
             </div>
 
             <div className="divider" />
 
-            <section className="card cardAccentNavy" aria-labelledby="landing-start-here-heading" style={{ marginTop: 12 }}>
+            <section className="card cardAccentSoft" aria-labelledby="landing-how-it-works-heading">
               <div className="cardTitle">
-                <h2 id="landing-start-here-heading" style={{ margin: 0 }}>
-                  Start here
+                <h2 id="landing-how-it-works-heading" style={{ margin: 0 }}>
+                  How it works
                 </h2>
-                <span className="pill">Patient paths</span>
+                <span className="pill">Simple steps</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                Pick the path that matches what you need—booking, medication education, refill-style requests, or the storefront catalog.
+                A clear path from your first request to follow-up. If you are unsure where to start, book a visit.
               </p>
               <div className="divider" />
-              <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+              <ol className="landingStepsList">
+                <li className="landingStep">
+                  <div className="landingStepTitle">Request care</div>
+                  <div className="muted landingStepBody">
+                    Book online (or reach out on the contact page). We’ll confirm next steps and what to expect.
+                  </div>
+                </li>
+                <li className="landingStep">
+                  <div className="landingStepTitle">Clinical visit</div>
+                  <div className="muted landingStepBody">
+                    We review your history, goals, labs (if needed), and create a plan that fits your life.
+                  </div>
+                </li>
+                <li className="landingStep">
+                  <div className="landingStepTitle">Plan + options</div>
+                  <div className="muted landingStepBody">
+                    Nutrition, movement, medications when appropriate, and a follow-up cadence you can stick to.
+                  </div>
+                </li>
+                <li className="landingStep">
+                  <div className="landingStepTitle">Ongoing support</div>
+                  <div className="muted landingStepBody">
+                    Check-ins and adjustments over time—so results are safe, measurable, and sustainable.
+                  </div>
+                </li>
+              </ol>
+              <div className="divider" />
+              <div className="btnRow">
                 <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
-                <NavLink to="/medications" className="btn" style={{ textDecoration: 'none' }}>
-                  Medication education
-                </NavLink>
-                <NavLink to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
-                  Order requests
-                </NavLink>
-                <NavLink to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
-                  Order Now catalog
-                </NavLink>
                 <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
-                  Contact
+                  Ask a question
                 </Link>
               </div>
             </section>
-          </div>
 
-          <div className="divider" />
-
-          <section className="card cardAccentSoft" aria-labelledby="landing-how-it-works-heading">
-            <div className="cardTitle">
-              <h2 id="landing-how-it-works-heading" style={{ margin: 0 }}>
-                How it works
-              </h2>
-              <span className="pill">Simple steps</span>
-            </div>
-            <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-              A clear path from your first request to follow-up. If you are unsure where to start, book a visit.
-            </p>
-            <div className="divider" />
-            <ol className="landingStepsList">
-              <li className="landingStep">
-                <div className="landingStepTitle">Request care</div>
-                <div className="muted landingStepBody">
-                  Book online (or reach out on the contact page). We’ll confirm next steps and what to expect.
+            <section
+              className="card cardAccentSoft landingWhyUs"
+              aria-labelledby="landing-why-us-heading"
+              style={{ margin: 0 }}
+            >
+              <div className="cardTitle">
+                <h2 id="landing-why-us-heading" style={{ margin: 0 }}>
+                  Why {PRACTICE_PUBLIC_NAME}?
+                </h2>
+                <span className="pill">Why us</span>
+              </div>
+              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                A care model built for busy adults who want real planning—not generic handouts—so you can improve
+                metabolism, weight, and energy with clarity and follow-through.
+              </p>
+              <div className="divider" />
+              <div className="landingWhyUsGrid">
+                <div className="landingWhyUsItem landingWhyUsItem--stripeRed">
+                  <div className="landingWhyUsItemTitle">Precision, not a template</div>
+                  <p className="landingWhyUsItemText">
+                    Plans are individualized to your history, risk, and goals—so recommendations match your physiology, not
+                    a one-size protocol.
+                  </p>
                 </div>
-              </li>
-              <li className="landingStep">
-                <div className="landingStepTitle">Clinical visit</div>
-                <div className="muted landingStepBody">
-                  We review your history, goals, labs (if needed), and create a plan that fits your life.
+                <div className="landingWhyUsItem landingWhyUsItem--stripeWhite">
+                  <div className="landingWhyUsItemTitle">Everything in one place</div>
+                  <p className="landingWhyUsItemText">
+                    Book, medication education, order requests, and the storefront catalog are on this site—so you
+                    are not shuffled between disconnected logins to get things done.
+                  </p>
                 </div>
-              </li>
-              <li className="landingStep">
-                <div className="landingStepTitle">Plan + options</div>
-                <div className="muted landingStepBody">
-                  Nutrition, movement, medications when appropriate, and a follow-up cadence you can stick to.
+                <div className="landingWhyUsItem landingWhyUsItem--stripeBlue">
+                  <div className="landingWhyUsItemTitle">Clarity and safety</div>
+                  <p className="landingWhyUsItemText">
+                    We are upfront about options, monitoring, and what “success” can look like—so you can make informed
+                    decisions with a team that stays in touch.
+                  </p>
                 </div>
-              </li>
-              <li className="landingStep">
-                <div className="landingStepTitle">Ongoing support</div>
-                <div className="muted landingStepBody">
-                  Check-ins and adjustments over time—so results are safe, measurable, and sustainable.
+                <div className="landingWhyUsItem landingWhyUsItem--stripeGray">
+                  <div className="landingWhyUsItemTitle">Long-term in mind</div>
+                  <p className="landingWhyUsItemText">
+                    Visits, check-ins, and adjustments are built for sustainability—so changes are more likely to stick
+                    when life gets busy.
+                  </p>
                 </div>
-              </li>
-            </ol>
-            <div className="divider" />
-            <div className="btnRow">
-              <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
-              <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
-                Ask a question
-              </Link>
-            </div>
+              </div>
+              <div className="divider" />
+              <div className="btnRow">
+                <Link to="/about" className="btn" style={{ textDecoration: 'none' }}>
+                  About the team
+                </Link>
+                <Link to="/pricing" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
+                  Pricing
+                </Link>
+              </div>
+            </section>
           </section>
 
-          <section
-            className="card cardAccentSoft landingWhyUs"
-            aria-labelledby="landing-why-us-heading"
-            style={{ margin: 0 }}
-          >
-            <div className="cardTitle">
-              <h2 id="landing-why-us-heading" style={{ margin: 0 }}>
-                Why {PRACTICE_PUBLIC_NAME}?
-              </h2>
-              <span className="pill">Why us</span>
-            </div>
-            <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-              A care model built for busy adults who want real planning—not generic handouts—so you can improve
-              metabolism, weight, and energy with clarity and follow-through.
-            </p>
-            <div className="divider" />
-            <div className="landingWhyUsGrid">
-              <div className="landingWhyUsItem landingWhyUsItem--stripeRed">
-                <div className="landingWhyUsItemTitle">Precision, not a template</div>
-                <p className="landingWhyUsItemText">
-                  Plans are individualized to your history, risk, and goals—so recommendations match your physiology, not
-                  a one-size protocol.
-                </p>
-              </div>
-              <div className="landingWhyUsItem landingWhyUsItem--stripeWhite">
-                <div className="landingWhyUsItemTitle">Everything in one place</div>
-                <p className="landingWhyUsItemText">
-                  Book, medication education, order requests, and the storefront catalog are on this site—so you
-                  are not shuffled between disconnected logins to get things done.
-                </p>
-              </div>
-              <div className="landingWhyUsItem landingWhyUsItem--stripeBlue">
-                <div className="landingWhyUsItemTitle">Clarity and safety</div>
-                <p className="landingWhyUsItemText">
-                  We are upfront about options, monitoring, and what “success” can look like—so you can make informed
-                  decisions with a team that stays in touch.
-                </p>
-              </div>
-              <div className="landingWhyUsItem landingWhyUsItem--stripeGray">
-                <div className="landingWhyUsItemTitle">Long-term in mind</div>
-                <p className="landingWhyUsItemText">
-                  Visits, check-ins, and adjustments are built for sustainability—so changes are more likely to stick
-                  when life gets busy.
-                </p>
-              </div>
-            </div>
-            <div className="divider" />
-            <div className="btnRow">
-              <Link to="/about" className="btn" style={{ textDecoration: 'none' }}>
-                About the team
-              </Link>
-              <Link to="/pricing" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
-                Pricing
-              </Link>
-            </div>
-          </section>
-
-          <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
-            <div className="cardTitle">
-              <h2 id="landing-catalog-heading" style={{ margin: 0 }}>
-                Order Now Catalog
-              </h2>
-              <span className="pill pillRed">GLP-1</span>
-            </div>
-            <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
-              Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
-              coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
-              medication is prescribed. Checkout opens securely with your order total after you submit from the summary page.
-              If something goes wrong with your order, your care team handles it from our side.
-            </p>
-            <div className="landingCatalogStartingRows">
-              <div className="landingCatalogStartingAt">
-                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
-                  Semaglutide starting at
-                </span>
-                <span className="landingCatalogStartingAmt">
-                  {formatCatalogPrice(SEMAGLUTIDE_STARTING_CENTS)}
-                </span>
-              </div>
-              <div className="landingCatalogStartingAt">
-                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
-                  Tirzepatide starting at
-                </span>
-                <span className="landingCatalogStartingAmt">
-                  {formatCatalogPrice(TIRZEPATIDE_STARTING_CENTS)}
-                </span>
-              </div>
-            </div>
-            <div className="btnRow">
-              <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-                View Full Catalog
-              </Link>
-            </div>
-          </section>
-        </section>
-
-        <aside className="landingGridProfileColumn" aria-label="About the care team">
+          <aside className="landingGridProfileColumn" aria-label="About the care team">
           <div className="portrait">
             <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
           </div>
@@ -435,7 +398,48 @@ export default function Landing() {
               </Link>
             </p>
           </div>
-        </aside>
+          </aside>
+        </section>
+
+        <section className="landingGridCatalog" aria-label="Order Now catalog highlight">
+          <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
+            <div className="cardTitle">
+              <h2 id="landing-catalog-heading" style={{ margin: 0 }}>
+                Order Now Catalog
+              </h2>
+              <span className="pill pillRed">GLP-1</span>
+            </div>
+            <p className="muted" style={{ marginTop: 6, marginBottom: 14 }}>
+              Representative vial SKUs and list prices. You order through {PRACTICE_PUBLIC_NAME}—we
+              coordinate preferred pricing and fulfillment with {resolvedFulfillmentPharmacyName()} when
+              medication is prescribed. Checkout opens securely with your order total after you submit from the summary page.
+              If something goes wrong with your order, your care team handles it from our side.
+            </p>
+            <div className="landingCatalogStartingRows">
+              <div className="landingCatalogStartingAt">
+                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
+                  Semaglutide starting at
+                </span>
+                <span className="landingCatalogStartingAmt">
+                  {formatCatalogPrice(SEMAGLUTIDE_STARTING_CENTS)}
+                </span>
+              </div>
+              <div className="landingCatalogStartingAt">
+                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
+                  Tirzepatide starting at
+                </span>
+                <span className="landingCatalogStartingAmt">
+                  {formatCatalogPrice(TIRZEPATIDE_STARTING_CENTS)}
+                </span>
+              </div>
+            </div>
+            <div className="btnRow">
+              <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+                View Full Catalog
+              </Link>
+            </div>
+          </section>
+        </section>
 
         <section className="landingGridAccordion" aria-label="Services">
           <div className="divider" />

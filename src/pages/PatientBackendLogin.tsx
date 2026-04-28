@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { apiPost, setApiSessionHint } from '../api/client'
+import { apiPost, persistToken, setApiSessionHint } from '../api/client'
 import Page from '../components/Page'
 
 export default function PatientBackendLogin() {
@@ -80,12 +80,7 @@ export default function PatientBackendLogin() {
                     password,
                   })
                   if (!res?.user) throw new Error('Sign-in failed.')
-                  try {
-                    if (res.token) localStorage.setItem('wph_token_v1', res.token)
-                    else localStorage.removeItem('wph_token_v1')
-                  } catch {
-                    // ignore
-                  }
+                  persistToken(res.token)
                   setApiSessionHint()
                   navigate(next, { replace: true })
                 } catch (e: any) {
