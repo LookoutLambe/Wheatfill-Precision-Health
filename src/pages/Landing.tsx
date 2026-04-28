@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
+import { apiPost } from '../api/client'
 import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
 import Page from '../components/Page'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
@@ -185,6 +186,16 @@ export default function Landing() {
   const [openId, setOpenId] = useState<AccordionId | null>(null)
   const baseId = useId()
   const faqBaseId = `${baseId}-faq`
+  const consultBaseId = `${baseId}-consult`
+
+  const [consultFirst, setConsultFirst] = useState('')
+  const [consultLast, setConsultLast] = useState('')
+  const [consultEmail, setConsultEmail] = useState('')
+  const [consultMsg, setConsultMsg] = useState('')
+  const [consultUpdates, setConsultUpdates] = useState(false)
+  const [consultBusy, setConsultBusy] = useState(false)
+  const [consultStatus, setConsultStatus] = useState<'idle' | 'sent' | 'error'>('idle')
+  const [consultError, setConsultError] = useState<string | null>(null)
 
   const toggle = useCallback((id: AccordionId) => {
     setOpenId((prev) => (prev === id ? null : id))
@@ -488,6 +499,149 @@ export default function Landing() {
           </div>
 
           <div className="divider" />
+
+          <section className="landingConsultBand" aria-labelledby={`${consultBaseId}-heading`}>
+            <div className="landingConsultInner">
+              <div className="landingConsultCopy">
+                <h2 id={`${consultBaseId}-heading`} className="landingConsultTitle">
+                  Request a consultation
+                </h2>
+                <p className="muted landingConsultLead">
+                  Submit the form to initiate a detailed discussion regarding objectives, timelines, and
+                  customized service options.
+                </p>
+                <div className="landingConsultMeta">
+                  <span className="pill">Secure request</span>
+                  <span className="pill pillRed">Response in 1 business day</span>
+                </div>
+              </div>
+
+              <form
+                className="landingConsultForm"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (consultBusy) return
+                  setConsultError(null)
+                  setConsultStatus('idle')
+                  const first = consultFirst.trim()
+                  const last = consultLast.trim()
+                  const email = consultEmail.trim()
+                  const msg = consultMsg.trim()
+                  if (!first || !last || !email || !msg) {
+                    setConsultError('Please fill out all required fields.')
+                    setConsultStatus('error')
+                    return
+                  }
+                  setConsultBusy(true)
+                  ;(async () => {
+                    try {
+                      const name = `${first} ${last}`.trim()
+                      const fullMessage = [
+                        msg,
+                        '',
+                        `—`,
+                        `Landing consultation request`,
+                        `Updates opt-in: ${consultUpdates ? 'yes' : 'no'}`,
+                      ].join('\n')
+                      await apiPost('/v1/public/contact', { name, email, message: fullMessage })
+                      setConsultStatus('sent')
+                      setConsultFirst('')
+                      setConsultLast('')
+                      setConsultEmail('')
+                      setConsultMsg('')
+                      setConsultUpdates(false)
+                    } catch (err: unknown) {
+                      setConsultStatus('error')
+                      setConsultError(String((err as Error)?.message || err || 'Request failed. Please try again.'))
+                    } finally {
+                      setConsultBusy(false)
+                    }
+                  })()
+                }}
+              >
+                <div className="landingConsultFormGrid">
+                  <label>
+                    <div className="muted landingConsultLabel">
+                      First name <span aria-hidden="true">(required)</span>
+                    </div>
+                    <input
+                      className="input"
+                      value={consultFirst}
+                      onChange={(e) => setConsultFirst(e.target.value)}
+                      autoComplete="given-name"
+                      required
+                    />
+                  </label>
+                  <label>
+                    <div className="muted landingConsultLabel">
+                      Last name <span aria-hidden="true">(required)</span>
+                    </div>
+                    <input
+                      className="input"
+                      value={consultLast}
+                      onChange={(e) => setConsultLast(e.target.value)}
+                      autoComplete="family-name"
+                      required
+                    />
+                  </label>
+                  <label className="landingConsultFull">
+                    <div className="muted landingConsultLabel">
+                      Email <span aria-hidden="true">(required)</span>
+                    </div>
+                    <input
+                      className="input"
+                      value={consultEmail}
+                      onChange={(e) => setConsultEmail(e.target.value)}
+                      autoComplete="email"
+                      type="email"
+                      required
+                    />
+                  </label>
+                  <label className="landingConsultCheckbox landingConsultFull">
+                    <input
+                      type="checkbox"
+                      checked={consultUpdates}
+                      onChange={(e) => setConsultUpdates(e.target.checked)}
+                    />
+                    <span>Sign up for news and updates</span>
+                  </label>
+                  <label className="landingConsultFull">
+                    <div className="muted landingConsultLabel">
+                      Message <span aria-hidden="true">(required)</span>
+                    </div>
+                    <textarea
+                      className="textarea"
+                      value={consultMsg}
+                      onChange={(e) => setConsultMsg(e.target.value)}
+                      required
+                    />
+                  </label>
+                </div>
+
+                {consultStatus === 'sent' ? (
+                  <div className="landingConsultNotice landingConsultNotice--ok" role="status">
+                    Request sent. We’ll reply as soon as we can.
+                  </div>
+                ) : null}
+                {consultStatus === 'error' && consultError ? (
+                  <div className="landingConsultNotice landingConsultNotice--err" role="alert">
+                    {consultError}
+                  </div>
+                ) : null}
+
+                <div className="landingConsultActions">
+                  <button
+                    type="submit"
+                    className="btn btnPrimary"
+                    disabled={consultBusy}
+                    style={{ opacity: consultBusy ? 0.7 : 1 }}
+                  >
+                    {consultBusy ? 'Submitting…' : 'Submit'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
 
           <section className="card cardAccentSoft" aria-labelledby={`${faqBaseId}-heading`}>
             <div className="cardTitle">

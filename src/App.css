@@ -2619,6 +2619,142 @@ html:has(.peptidePage) {
   line-height: 1.55;
 }
 
+/* —— Landing: consultation request band —— */
+.landingConsultBand {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 16px;
+  background: linear-gradient(180deg, rgba(10, 30, 63, 0.035), rgba(255, 255, 255, 0.94));
+  box-shadow: rgba(10, 30, 63, 0.06) 0 20px 40px -30px;
+}
+
+.landingConsultInner {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.landingConsultCopy {
+  min-width: 0;
+  padding: 8px 4px 0;
+}
+
+.landingConsultTitle {
+  margin: 0 0 8px;
+  font-size: clamp(34px, 4.2vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.landingConsultLead {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 46ch;
+}
+
+.landingConsultMeta {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.landingConsultForm {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(10, 30, 63, 0.12);
+  border-radius: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.landingConsultFormGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.landingConsultFull {
+  grid-column: 1 / -1;
+}
+
+.landingConsultLabel {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.landingConsultCheckbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(31, 41, 55, 0.78);
+  margin-top: 2px;
+  user-select: none;
+}
+
+.landingConsultCheckbox input {
+  margin-top: 4px;
+}
+
+.landingConsultActions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.landingConsultNotice {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  border: 1px solid rgba(10, 30, 63, 0.14);
+  background: rgba(10, 30, 63, 0.045);
+  color: rgba(31, 41, 55, 0.85);
+  font-weight: 650;
+}
+
+.landingConsultNotice--ok {
+  border-color: rgba(20, 83, 45, 0.18);
+  background: rgba(20, 83, 45, 0.06);
+}
+
+.landingConsultNotice--err {
+  border-color: rgba(122, 15, 28, 0.22);
+  background: rgba(122, 15, 28, 0.06);
+}
+
+@media (max-width: 900px) {
+  .landingConsultInner {
+    grid-template-columns: 1fr;
+  }
+
+  .landingConsultCopy {
+    text-align: center;
+    padding-top: 0;
+  }
+
+  .landingConsultLead {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .landingConsultActions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .landingConsultFormGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .landingCatalogSection .cardTitle {
   margin-bottom: 4px;
 }
