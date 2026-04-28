@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { apiPost, setApiSessionHint } from '../api/client'
+import { apiPost, persistToken, setApiSessionHint } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import Page from '../components/Page'
 
@@ -28,12 +28,7 @@ export default function ProviderLogin() {
         const u = username.trim().toLowerCase()
         const res = await apiPost<{ user?: { username: string }; token?: string }>('/auth/login', { username: u, password }, '')
         if (!res?.user) return setError('Sign-in failed. Try again.')
-        try {
-          if (res.token) localStorage.setItem('wph_token_v1', res.token)
-          else localStorage.removeItem('wph_token_v1')
-        } catch {
-          // ignore
-        }
+        persistToken(res.token)
         setApiSessionHint()
         // In some mobile/privacy modes, sessionStorage/localStorage can be flaky right after sign-in.
         // A hard navigation ensures the next route bootstraps with the freshest cookie/token state.
