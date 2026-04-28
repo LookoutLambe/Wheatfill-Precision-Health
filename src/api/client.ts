@@ -124,8 +124,12 @@ export type ApiSessionSnapshot = { authenticated: boolean; role?: string; ok: bo
 export async function fetchApiSession(): Promise<ApiSessionSnapshot> {
   let res: Response
   try {
+    const t = getToken()
     res = await apiFetch(`${getApiUrl()}/v1/auth/session`, {
       credentials: 'include',
+      headers: {
+        ...(t ? { authorization: `Bearer ${t}` } : {}),
+      },
     })
   } catch {
     return { authenticated: false, ok: false }

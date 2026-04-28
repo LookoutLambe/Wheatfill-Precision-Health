@@ -55,7 +55,12 @@ export default function ProviderLogin() {
           // ignore
         }
         setApiSessionHint()
-        navigate(redirectTo, { replace: true })
+          // Hard navigation avoids SPA state/cookie races in stricter browsers (incl. Edge).
+          if (typeof window !== 'undefined') {
+            window.location.replace(redirectTo)
+            return
+          }
+          navigate(redirectTo, { replace: true })
       } catch (e: unknown) {
         setError(String((e as Error)?.message || e || 'Sign-in failed. Is the API running?'))
       } finally {
