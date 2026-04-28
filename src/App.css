@@ -297,53 +297,39 @@ html.pharmacyCartOpen body {
   min-width: 0;
 }
 
-/* Practice slogan copy only (`PRACTICE_SLOGAN`) — header logo stays in the nav */
+/**
+ * Practice slogan (`PRACTICE_SLOGAN`) — one pill treatment site-wide: white capsule, rose script,
+ * subtle border + shadow (matches landing / marketing reference).
+ */
 .brandSlogan {
-  margin: 0 auto 12px;
-  max-width: 42rem;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: min(100%, 40rem);
+  margin: 0 auto 14px;
+  padding: 12px 22px 14px;
+  box-sizing: border-box;
   font-family: var(--font-slogan);
-  font-size: clamp(17px, 1.85vw, 22px);
+  font-size: clamp(17px, 1.85vw, 24px);
   font-weight: 600;
   font-style: normal;
-  letter-spacing: 0.02em;
-  color: var(--brand-wordmark-rose);
-  line-height: 1.35;
-  text-wrap: balance;
-}
-
-.brandSlogan--hero {
-  margin: 0 auto 8px;
-  font-family: var(--font-slogan);
-  font-size: clamp(16px, 1.65vw, 21px);
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: 0.02em;
-  color: rgba(90, 60, 70, 0.88);
-}
-
-/* Home hero: slogan as focal eyebrow (still text-only; distinct from header lockup) */
-.brandSlogan--landing {
-  display: flex;
-  width: fit-content;
-  margin: 0 auto 10px;
-  align-self: center;
-  font-family: var(--font-slogan);
-  font-size: clamp(20px, 2.2vw, 28px);
-  font-weight: 700;
-  font-style: normal;
-  padding: 13px 20px;
   letter-spacing: 0.015em;
   color: var(--brand-wordmark-rose);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(90, 60, 70, 0.18);
-  box-shadow: 0 10px 36px -22px rgba(10, 30, 63, 0.35);
+  line-height: 1.28;
+  text-align: center;
+  text-wrap: balance;
+  border-radius: 9999px;
+  background: #fff;
+  border: 1px solid rgba(10, 30, 63, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 1) inset,
+    0 8px 28px -18px rgba(10, 30, 63, 0.2);
 }
 
 @media (min-width: 901px) {
-  .brandSlogan--landing {
-    padding: 14px 22px;
+  .brandSlogan {
+    padding: 13px 26px 15px;
   }
 }
 
@@ -1617,6 +1603,10 @@ a.btn:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.landingHeroIntro .brandSlogan {
+  align-self: center;
 }
 
 @media (min-width: 901px) {

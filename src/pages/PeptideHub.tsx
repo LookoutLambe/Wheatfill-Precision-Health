@@ -8,7 +8,7 @@ export default function PeptideHub() {
   return (
     <Page className="peptidePage peptideHubPage" variant="prose">
       <header className="peptideHero">
-        <BrandSlogan variant="hero" />
+        <BrandSlogan />
         <h1 style={{ margin: '0 0 10px' }}>Peptide information hub</h1>
         <p className="peptideTagline">
           A short index of <strong>independent, mostly primary or official sources</strong> on lab handling, quality testing,

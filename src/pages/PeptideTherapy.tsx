@@ -109,7 +109,7 @@ export default function PeptideTherapy() {
   return (
     <Page className="peptidePage" variant="prose">
       <header className="peptideHero">
-        <BrandSlogan variant="hero" />
+        <BrandSlogan />
         <h1 style={{ margin: '0 0 10px' }}>Advanced Peptide Therapy</h1>
         <p className="peptideTagline">Precision-driven optimization. Elevated human performance.</p>
         <div className="peptideHeroBody">
