@@ -235,7 +235,7 @@ export default function BookOnline() {
   }
 
   return (
-    <Page variant="wide">
+    <Page className="bookOnlinePage" variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Book Online</h1>
@@ -274,7 +274,7 @@ export default function BookOnline() {
           <div className="divider" />
 
           <div className="cardGrid">
-            <div className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
+            <div className="card cardAccentNavy">
               <div className="cardTitle">
                 <h2 style={{ margin: 0 }}>New Patient Consultation</h2>
                 <span className="pill pillRed">$110</span>
@@ -301,7 +301,7 @@ export default function BookOnline() {
               </button>
             </div>
 
-            <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+            <div className="card cardAccentSoft">
               <div className="cardTitle">
                 <h2 style={{ margin: 0 }}>Follow-Up Consultation</h2>
                 <span className="pill">$85</span>

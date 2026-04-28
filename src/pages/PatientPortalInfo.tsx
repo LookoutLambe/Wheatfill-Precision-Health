@@ -30,7 +30,7 @@ export default function PatientPortalInfo() {
       </div>
 
       <div className="cardGrid" style={{ alignItems: 'stretch' }}>
-        <section className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Book a visit</h2>
             <span className="pill">Schedule</span>
@@ -65,7 +65,7 @@ export default function PatientPortalInfo() {
           )}
         </section>
 
-        <section className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Order &amp; catalog</h2>
             <span className="pill">Order Now</span>

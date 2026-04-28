@@ -1035,6 +1035,18 @@ html:has(.peptidePage) {
   width: 100%;
 }
 
+@media (max-width: 480px) {
+  .pageActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pageActions > .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 /* Ensure the title/subtitle block spans full width for centering */
 .pageHeaderRow > div:first-child {
   width: 100%;
@@ -1089,7 +1101,15 @@ html:has(.peptidePage) {
   border-radius: 12px;
   font: 600 15px/1 var(--sans);
   cursor: pointer;
+  box-sizing: border-box;
   transition: transform 80ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+a.btn,
+a.btn:hover,
+a.btn:focus,
+a.btn:focus-visible {
+  text-decoration: none;
 }
 
 .btn:hover {
@@ -3996,7 +4016,10 @@ html:has(.peptidePage) {
    .card stack at 900px. Nested CTAs as inline-level in ultra-narrow columns clipped the
    navy fill around wrapped label text—force block + normal wrapping on small viewports. */
 @media (max-width: 900px) {
-  .pricingPage .card .btn {
+  /* Same pattern as /pricing: nested .card grids must stack; primary CTAs read as full-width blocks. */
+  .pricingPage .card .btn,
+  .orderNowHubPage .card .btn,
+  .bookOnlinePage .card .btn {
     display: block;
     width: 100%;
     max-width: 100%;
