@@ -620,7 +620,7 @@ html.pharmacyCartOpen body {
   text-align: left;
 }
 
-/* Landing: prose/body left; primary titles (h1/h2) centered. Pills keep their own alignment inside title rows. */
+/* Landing: prose/body left; hero headline is display copy (left). Section card titles (h2) centered. */
 
 .pageLanding .pageSubtitle,
 .pageLanding p,
@@ -631,7 +631,7 @@ html.pharmacyCartOpen body {
 
 .pageLanding h1,
 .pageLanding .heroHeadline {
-  text-align: center;
+  text-align: left;
 }
 
 .pageLanding h2 {
@@ -1574,7 +1574,7 @@ html:has(.peptidePage) {
 
   .landingHeroIntro .heroHeadline,
   .landingHeroIntro h1 {
-    text-align: center;
+    text-align: left;
   }
 
   .landingHeroIntro .btnRow {
