@@ -29,6 +29,12 @@ export default function ProviderPayments() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  const [reqAmount, setReqAmount] = useState('')
+  const [reqDesc, setReqDesc] = useState('')
+  const [reqEmail, setReqEmail] = useState('')
+  const [reqBusy, setReqBusy] = useState(false)
+  const [reqUrl, setReqUrl] = useState<string | null>(null)
+
   async function load(opts?: { silent?: boolean }) {
     setLoading(true)
     setError(null)
@@ -250,6 +256,127 @@ export default function ProviderPayments() {
                   </div>
                 </>
               )}
+            </section>
+
+            <section className="card cardAccentSoft">
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Create payment request</h2>
+                <span className="pill pillRed">Custom</span>
+              </div>
+              <div className="divider" />
+              <p className="muted" style={{ marginTop: 0 }}>
+                Generate a secure Stripe payment link for any service amount. Nothing is charged until the patient pays.
+              </p>
+
+              <div className="formRow" style={{ marginTop: 12 }}>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Amount (USD)
+                  </div>
+                  <input
+                    className="input"
+                    value={reqAmount}
+                    onChange={(e) => setReqAmount(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="149"
+                  />
+                </label>
+                <label>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Patient email (optional)
+                  </div>
+                  <input
+                    className="input"
+                    value={reqEmail}
+                    onChange={(e) => setReqEmail(e.target.value)}
+                    type="email"
+                    placeholder="name@email.com"
+                  />
+                </label>
+              </div>
+
+              <label style={{ display: 'block', marginTop: 12 }}>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Description
+                </div>
+                <input
+                  className="input"
+                  value={reqDesc}
+                  onChange={(e) => setReqDesc(e.target.value)}
+                  placeholder="Initial consultation"
+                />
+              </label>
+
+              {reqUrl ? (
+                <div className="landingConsultNotice landingConsultNotice--ok" style={{ marginTop: 12 }}>
+                  Payment link created.{' '}
+                  <a href={reqUrl} target="_blank" rel="noreferrer">
+                    Open Stripe checkout
+                  </a>
+                </div>
+              ) : null}
+
+              <div className="btnRow" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="btn btnPrimary"
+                  disabled={reqBusy}
+                  style={{ opacity: reqBusy ? 0.7 : 1 }}
+                  onClick={() => {
+                    ;(async () => {
+                      setError(null)
+                      setReqUrl(null)
+                      const amt = Number(String(reqAmount).replace(/[^0-9.]/g, ''))
+                      if (!Number.isFinite(amt) || amt <= 0) {
+                        setError('Enter a valid amount.')
+                        return
+                      }
+                      const amountCents = Math.round(amt * 100)
+                      if (amountCents < 50) {
+                        setError('Amount must be at least $0.50.')
+                        return
+                      }
+                      const desc = reqDesc.trim()
+                      if (desc.length < 2) {
+                        setError('Enter a short description.')
+                        return
+                      }
+                      setReqBusy(true)
+                      try {
+                        const res = await apiPost<{ url: string }>('/v1/provider/payments/stripe/payment-request', {
+                          amountCents,
+                          currency: 'usd',
+                          description: desc,
+                          patientEmail: reqEmail.trim(),
+                        })
+                        setReqUrl(res.url)
+                        if (!navigateToStripeHostedUrl(res.url)) {
+                          // If popup blocked, keep link visible.
+                        }
+                      } catch (e: unknown) {
+                        setError(String((e as Error)?.message || e))
+                      } finally {
+                        setReqBusy(false)
+                      }
+                    })()
+                  }}
+                >
+                  {reqBusy ? 'Creating…' : 'Create payment link'}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={reqBusy}
+                  onClick={() => {
+                    setReqAmount('')
+                    setReqDesc('')
+                    setReqEmail('')
+                    setReqUrl(null)
+                  }}
+                >
+                  Clear
+                </button>
+              </div>
             </section>
           </div>
 

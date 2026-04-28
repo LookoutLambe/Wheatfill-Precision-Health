@@ -1190,6 +1190,78 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  // Provider: create a custom amount payment request (Hosted Checkout link to share with a patient).
+  protectedScope.post(
+    '/v1/provider/payments/stripe/payment-request',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!stripe) return reply.badRequest('Stripe is not configured. Set STRIPE_SECRET_KEY.')
+      const body = z
+        .object({
+          amountCents: z.number().int().min(50).max(10_000_000),
+          currency: z.string().min(3).max(3).optional().default('usd'),
+          description: z.string().min(2).max(140),
+          patientEmail: z.string().email().max(200).optional().default(''),
+        })
+        .parse((req as any).body)
+
+      const u = await prisma.user.findUnique({
+        where: { id: req.user.sub },
+        select: { stripeConnectedAccountId: true },
+      })
+      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+      const successUrl = `${origin.replace(/\/$/, '')}/provider/payments?request=paid`
+      const cancelUrl = `${origin.replace(/\/$/, '')}/provider/payments?request=canceled`
+
+      const params: any = {
+        mode: 'payment' as const,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        line_items: [
+          {
+            price_data: {
+              currency: (body.currency || 'usd').toLowerCase(),
+              unit_amount: body.amountCents,
+              product_data: {
+                name: body.description,
+                metadata: { kind: 'provider_payment_request' },
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          kind: 'provider_payment_request',
+          createdBy: req.user.sub,
+          ...(body.patientEmail ? { patientEmail: body.patientEmail.trim().toLowerCase() } : {}),
+        },
+        ...(body.patientEmail ? { customer_email: body.patientEmail.trim().toLowerCase() } : {}),
+      }
+
+      const session = u?.stripeConnectedAccountId
+        ? await stripe.checkout.sessions.create(params, { stripeAccount: u.stripeConnectedAccountId })
+        : await stripe.checkout.sessions.create(params)
+
+      const payment = await prisma.payment.create({
+        data: {
+          method: 'stripe',
+          status: 'pending',
+          amountCents: body.amountCents,
+          currency: (body.currency || 'usd').toLowerCase(),
+          itemType: 'other',
+          itemId: null,
+          patientId: null,
+          providerId: req.user.sub,
+          stripeCheckoutSessionId: session.id,
+          p2pMemo: `${body.description}${body.patientEmail ? ` (${body.patientEmail.trim().toLowerCase()})` : ''}`,
+        },
+        select: { id: true },
+      })
+
+      return { ok: true, url: session.url, paymentId: payment.id }
+    },
+  )
+
   /**
    * Stripe Connect DEMO (sample integration)
    * ---------------------------------------
