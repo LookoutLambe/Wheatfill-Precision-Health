@@ -159,11 +159,26 @@ export default function OrderNowSummary() {
           shippingPostalCode: shipZip.trim(),
         }
 
+        const wantsEmbedded = !!(import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY
         if (patientOk) {
-          const res = await apiPost<{ checkoutUrl: string | null; orderId?: string; totalCents?: number }>(
+          const res = await apiPost<{
+            checkoutUrl: string | null
+            checkoutClientSecret?: string | null
+            orderId?: string
+            totalCents?: number
+          }>(
             '/v1/patient/orders/pharmacy',
-            body,
+            { ...body, uiMode: wantsEmbedded ? 'embedded' : 'redirect' },
           )
+          if (wantsEmbedded && res.checkoutClientSecret) {
+            try {
+              sessionStorage.setItem(`wph_checkout_cs_${partner.slug}`, res.checkoutClientSecret)
+            } catch {
+              // ignore
+            }
+            window.location.assign(`/order-now/${encodeURIComponent(partner.slug)}/checkout`)
+            return
+          }
           if (res.checkoutUrl) {
             if (!navigateToStripeHostedUrl(res.checkoutUrl)) {
               setCheckoutError('Could not open the secure payment page. Please try again.')
@@ -180,11 +195,25 @@ export default function OrderNowSummary() {
           return
         }
 
-        const res = await apiPost<{ orderId: string; totalCents: number; checkoutUrl: string | null }>(
+        const res = await apiPost<{
+          orderId: string
+          totalCents: number
+          checkoutUrl: string | null
+          checkoutClientSecret?: string | null
+        }>(
           '/v1/public/orders/pharmacy',
-          { ...body, contactEmail: contactEmail.trim() },
+          { ...body, contactEmail: contactEmail.trim(), uiMode: wantsEmbedded ? 'embedded' : 'redirect' },
           '',
         )
+        if (wantsEmbedded && res.checkoutClientSecret) {
+          try {
+            sessionStorage.setItem(`wph_checkout_cs_${partner.slug}`, res.checkoutClientSecret)
+          } catch {
+            // ignore
+          }
+          window.location.assign(`/order-now/${encodeURIComponent(partner.slug)}/checkout`)
+          return
+        }
         if (res.checkoutUrl) {
           if (!navigateToStripeHostedUrl(res.checkoutUrl)) {
             setCheckoutError('Could not open the secure payment page. Please try again.')

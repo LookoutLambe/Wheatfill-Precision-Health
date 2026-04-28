@@ -39,7 +39,7 @@ export type PharmacyPatientForOrder = {
 }
 
 export type PharmacyOrderCheckoutResult =
-  | { ok: true; orderId: string; totalCents: number; checkoutUrl: string | null }
+  | { ok: true; orderId: string; totalCents: number; checkoutUrl: string | null; checkoutClientSecret?: string | null }
   | { ok: false; status: 400 | 404 | 500; message: string }
 
 /**
@@ -52,8 +52,9 @@ export async function runPharmacyOrderCheckout(input: {
   guestContactEmail?: string
   stripe: Stripe | null
   frontendOrigin: string
+  uiMode?: 'redirect' | 'embedded'
 }): Promise<PharmacyOrderCheckoutResult> {
-  const { body, patient, guestContactEmail, stripe, frontendOrigin } = input
+  const { body, patient, guestContactEmail, stripe, frontendOrigin, uiMode } = input
   if (!body.agreedToShippingTerms) return { ok: false, status: 400, message: 'You must agree to shipping terms.' }
 
   const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
@@ -127,15 +128,15 @@ export async function runPharmacyOrderCheckout(input: {
   const origin = frontendOrigin.split(',')[0]?.trim() || 'http://localhost:5176'
   const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?paid=1&order=${order.id}`
   const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?canceled=1&order=${order.id}`
+  const returnUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?checkout=1&session_id={CHECKOUT_SESSION_ID}&order=${order.id}`
 
   if (!stripe) {
-    return { ok: true, orderId: order.id, totalCents: total, checkoutUrl: null }
+    return { ok: true, orderId: order.id, totalCents: total, checkoutUrl: null, checkoutClientSecret: null }
   }
 
-  const sessionCreateParams = {
+  const wantsEmbedded = uiMode === 'embedded'
+  const sessionCreateParams: any = {
     mode: 'payment' as const,
-    success_url: successUrl,
-    cancel_url: cancelUrl,
     line_items: [
       ...order.items.map((it) => ({
         price_data: {
@@ -172,6 +173,13 @@ export async function runPharmacyOrderCheckout(input: {
     ],
     metadata: { orderId: order.id },
   }
+  if (wantsEmbedded) {
+    sessionCreateParams.ui_mode = 'embedded'
+    sessionCreateParams.return_url = returnUrl
+  } else {
+    sessionCreateParams.success_url = successUrl
+    sessionCreateParams.cancel_url = cancelUrl
+  }
   const session = providerRow?.stripeConnectedAccountId
     ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
     : await stripe.checkout.sessions.create(sessionCreateParams)
@@ -189,5 +197,11 @@ export async function runPharmacyOrderCheckout(input: {
       stripeCheckoutSessionId: session.id,
     },
   })
-  return { ok: true, orderId: order.id, totalCents: total, checkoutUrl: session.url }
+  return {
+    ok: true,
+    orderId: order.id,
+    totalCents: total,
+    checkoutUrl: session.url,
+    checkoutClientSecret: (session as any).client_secret || null,
+  }
 }

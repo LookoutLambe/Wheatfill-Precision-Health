@@ -594,6 +594,7 @@ async function getOrCreateGuestPharmacyPatient(input: {
 
 const PublicPharmacyOrderBody = CreatePharmacyOrderBody.extend({
   contactEmail: z.string().email(),
+  uiMode: z.enum(['redirect', 'embedded']).optional(),
 })
 
 // Full catalog order + consents (website, no sign-in). Creates User + Order + payment session when payment is configured.
@@ -606,7 +607,7 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
       .send('Too many order submissions from this network. Try again later.')
   }
   const raw = PublicPharmacyOrderBody.parse(req.body)
-  const { contactEmail, ...rest } = raw
+  const { contactEmail, uiMode, ...rest } = raw
   const body = CreatePharmacyOrderBody.parse(rest)
   if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
   if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
@@ -628,9 +629,15 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
     guestContactEmail: contactEmail.trim(),
     stripe,
     frontendOrigin: FRONTEND_ORIGIN,
+    uiMode: uiMode || 'redirect',
   })
   if (!r.ok) return reply.status(r.status).send(r.message)
-  return { orderId: r.orderId, totalCents: r.totalCents, checkoutUrl: r.checkoutUrl }
+  return {
+    orderId: r.orderId,
+    totalCents: r.totalCents,
+    checkoutUrl: r.checkoutUrl,
+    checkoutClientSecret: r.checkoutClientSecret || null,
+  }
 })
 
 const PublicTeamInboxBody = z.object({
@@ -2183,7 +2190,9 @@ await app.register(async (protectedScope) => {
     '/v1/patient/orders/pharmacy',
     { preHandler: requireRole(['patient']) },
     async (req, reply) => {
-      const body = CreatePharmacyOrderBody.parse(req.body)
+      const body = CreatePharmacyOrderBody.extend({ uiMode: z.enum(['redirect', 'embedded']).optional() }).parse(
+        req.body,
+      )
       if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
 
       const patient = (await prisma.user.findUnique({
@@ -2205,13 +2214,19 @@ await app.register(async (protectedScope) => {
       if (!patient) return reply.unauthorized('Invalid user.')
 
       const r = await runPharmacyOrderCheckout({
-        body,
+        body: CreatePharmacyOrderBody.parse(body),
         patient,
         stripe,
         frontendOrigin: FRONTEND_ORIGIN,
+        uiMode: body.uiMode || 'redirect',
       })
       if (!r.ok) return reply.status(r.status).send(r.message)
-      return { orderId: r.orderId, totalCents: r.totalCents, checkoutUrl: r.checkoutUrl }
+      return {
+        orderId: r.orderId,
+        totalCents: r.totalCents,
+        checkoutUrl: r.checkoutUrl,
+        checkoutClientSecret: r.checkoutClientSecret || null,
+      }
     },
   )
 })

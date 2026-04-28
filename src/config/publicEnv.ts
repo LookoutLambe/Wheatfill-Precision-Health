@@ -9,6 +9,7 @@ export type VitePublicEnv = {
   VITE_MARKETING_ONLY?: string
   VITE_APP_URL?: string
   VITE_API_URL?: string
+  VITE_STRIPE_PUBLISHABLE_KEY?: string
 }
 
 export const vitePublicEnv: VitePublicEnv = {
@@ -18,4 +19,5 @@ export const vitePublicEnv: VitePublicEnv = {
   VITE_MARKETING_ONLY: import.meta.env.VITE_MARKETING_ONLY,
   VITE_APP_URL: import.meta.env.VITE_APP_URL,
   VITE_API_URL: import.meta.env.VITE_API_URL,
+  VITE_STRIPE_PUBLISHABLE_KEY: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
 }

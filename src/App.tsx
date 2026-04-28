@@ -21,6 +21,7 @@ const PharmacyPartner = lazy(() => import('./pages/PharmacyPartner'))
 const MountainViewPharmacy = lazy(() => import('./pages/MountainViewPharmacy'))
 const HallandalePharmacy = lazy(() => import('./pages/HallandalePharmacy'))
 const OrderNowSummary = lazy(() => import('./pages/OrderNowSummary'))
+const EmbeddedCheckoutPage = lazy(() => import('./pages/EmbeddedCheckout'))
 const PatientPortalInfo = lazy(() => import('./pages/PatientPortalInfo'))
 import SignIn from './pages/SignIn'
 const ProviderLogin = lazy(() => import('./pages/ProviderLogin'))
@@ -104,6 +105,7 @@ export default function App() {
 
           <Route path="/book" element={<BookOnline />} />
           <Route path="/order-now" element={<PharmacyOptions />} />
+          <Route path="/order-now/:slug/checkout" element={<EmbeddedCheckoutPage />} />
           <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
           <Route path="/order-now/:slug" element={<PharmacyPartner />} />
           <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
@@ -160,6 +162,7 @@ export default function App() {
         <Route path="/ordering" element={<OrderingPortal />} />
         <Route path="/medications" element={<MedicationEducation />} />
         <Route path="/order-now" element={<PharmacyOptions />} />
+        <Route path="/order-now/:slug/checkout" element={<EmbeddedCheckoutPage />} />
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />
         <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
