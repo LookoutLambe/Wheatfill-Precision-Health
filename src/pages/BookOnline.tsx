@@ -7,7 +7,7 @@ import { getScheduleConfig, bookAppointment, getPortalState, slotsForDate, subsc
 import { apiPost } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import Page from '../components/Page'
-import { SiteLogoPageBadge } from '../components/SiteLogo'
+import { BrandSlogan } from '../components/BrandSlogan'
 
 type UiApptType = 'New Patient Consultation' | 'Follow-Up Consultation'
 
@@ -239,7 +239,7 @@ export default function BookOnline() {
     <Page className="bookOnlinePage" variant="wide">
       <div className="pageHeaderRow">
         <div>
-          <SiteLogoPageBadge />
+          <BrandSlogan />
           <h1 style={{ margin: 0 }}>Book Online</h1>
           <p className="muted pageSubtitle">
             It&rsquo;s a simple form: you pick a preferred time, we send the team an alert. Someone will follow up to

@@ -185,7 +185,7 @@ export default function Shell() {
               onClick={closeMenu}
               aria-label={SITE_LOGO_ARIA_LABEL_HOME}
             >
-              <SiteLogo mode="marketing" presentation="nav" />
+              <SiteLogo mode="marketing" />
             </NavLink>
 
             <div className="topNavRight">

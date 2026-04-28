@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { BookVisitCta } from '../components/CharmMarketingCtas'
 import Page from '../components/Page'
-import { SiteLogoPageBadge } from '../components/SiteLogo'
+import { BrandSlogan } from '../components/BrandSlogan'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { PEPTIDE_EDUCATION, PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER, peptideAnchorId } from '../data/peptideEducation'
 import { WHEATFILL_PEPTIDE_PRICE_LIST } from '../data/wheatfillPeptidePriceList'
@@ -20,7 +20,7 @@ export default function Pricing() {
     <Page className="pricingPage" style={{ gap: 22 }}>
       <div className="pageHeaderRow">
         <div>
-          <SiteLogoPageBadge />
+          <BrandSlogan />
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>Transparent Pricing</h1>
           <p className="muted pageSubtitle" style={{ marginTop: 8, fontSize: 18 }}>
             Clear, upfront costs with no hidden fees or surprises.

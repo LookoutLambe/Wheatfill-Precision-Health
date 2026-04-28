@@ -54,7 +54,7 @@ export default function ProviderShell() {
               className="brand brandWithMark isProviderBrand"
               aria-label={`Wheatfill Precision Health — ${PROVIDER_TEAM_LABEL} workspace`}
             >
-              <SiteLogo mode="provider" presentation="nav" />
+              <SiteLogo mode="provider" />
             </div>
 
             <button

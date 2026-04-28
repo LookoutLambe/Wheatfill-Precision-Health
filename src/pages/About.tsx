@@ -1,14 +1,14 @@
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
+import { BrandSlogan } from '../components/BrandSlogan'
 import Page from '../components/Page'
-import { SiteLogoPageBadge } from '../components/SiteLogo'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
 export default function About() {
   return (
     <Page>
       <div className="aboutHeader">
-        <SiteLogoPageBadge />
+        <BrandSlogan />
         <h1 style={{ margin: 0 }}>About</h1>
       </div>
 

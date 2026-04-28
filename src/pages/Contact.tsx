@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Page from '../components/Page'
-import { SiteLogoPageBadge } from '../components/SiteLogo'
+import { BrandSlogan } from '../components/BrandSlogan'
 import { MARKETING_ONLY } from '../config/mode'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 
@@ -97,7 +97,7 @@ export default function Contact() {
     <Page variant="prose">
       <div className="pageHeaderRow">
         <div>
-          <SiteLogoPageBadge />
+          <BrandSlogan />
           <h1 style={{ margin: 0 }}>Contact</h1>
           <p className="muted pageSubtitle">
             Fill this out on the website, then we’ll open an email draft for you to send. For privacy, don’t send

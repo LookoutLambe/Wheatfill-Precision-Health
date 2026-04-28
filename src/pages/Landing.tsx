@@ -4,6 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import { apiPost } from '../api/client'
+import { BrandSlogan } from '../components/BrandSlogan'
 import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
 import Page from '../components/Page'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
@@ -207,7 +208,7 @@ export default function Landing() {
         <section className="landingGridTop" aria-label="Welcome and care team">
           <section className="landingGridHeroCatalog" aria-label="Welcome">
             <div className="landingHeroIntro">
-              <span className="pill landingHeroEyebrow">Precision health. Elevated living.</span>
+              <BrandSlogan variant="landing" />
               <h1 className="heroHeadline">
                 Personalized, evidence-based care designed to optimize your health, performance, and
                 longevity.

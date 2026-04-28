@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom'
 import Page from '../components/Page'
-import { SiteLogoPageBadge } from '../components/SiteLogo'
+import { BrandSlogan } from '../components/BrandSlogan'
 
 export default function NotFound() {
   return (
     <Page variant="prose">
       <div className="pageHeaderRow">
         <div>
-          <SiteLogoPageBadge />
+          <BrandSlogan />
           <h1 style={{ margin: 0 }}>Page not found</h1>
           <p className="muted" style={{ marginTop: 8 }}>
             That link may be out of date, or the page was moved. Try the home page or the patient hub.

@@ -296,59 +296,52 @@ html.pharmacyCartOpen body {
   min-width: 0;
 }
 
-/* Slightly more open subline on in-page badge (same words, calmer read) */
-.brandSub--page {
-  letter-spacing: 0.11em;
-  opacity: 0.9;
+/* Practice slogan copy only (`PRACTICE_SLOGAN`) — header logo stays in the nav */
+.brandSlogan {
+  margin: 0 auto 12px;
+  max-width: 42rem;
+  text-align: center;
+  font-family: var(--brand-wordmark-sans);
+  font-size: clamp(15px, 1.6vw, 18px);
+  font-weight: 650;
+  font-style: italic;
+  letter-spacing: 0.045em;
+  color: var(--brand-wordmark-rose);
+  line-height: 1.35;
+  text-wrap: balance;
 }
 
-/* In-content logo: same lockup as the header, packaged so it’s read as a mark—not a sentence */
-.brandLockup--page {
-  gap: 4px;
+.brandSlogan--hero {
+  margin: 0 auto 8px;
+  font-size: clamp(14px, 1.45vw, 17px);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.055em;
+  color: rgba(90, 60, 70, 0.88);
 }
 
-.brandMarkImg--page {
-  width: 40px;
-  height: 40px;
-}
-
-.siteLogoPageBadge {
+/* Home hero: slogan as focal eyebrow (still text-only; distinct from header lockup) */
+.brandSlogan--landing {
   display: flex;
-  align-items: center;
-  justify-content: center;
   width: fit-content;
-  max-width: 100%;
-  margin: 0 auto 14px;
-  padding: 12px 20px 14px;
-  border-radius: 16px;
-  text-decoration: none;
-  color: inherit;
-  box-sizing: border-box;
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(10, 30, 63, 0.05) 100%);
-  border: 1px solid rgba(10, 30, 63, 0.1);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.85) inset,
-    0 10px 32px -18px rgba(10, 30, 63, 0.28);
-  transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
+  margin: 0 auto 10px;
+  align-self: center;
+  font-size: clamp(18px, 1.9vw, 24px);
+  font-weight: 850;
+  font-style: italic;
+  padding: 13px 20px;
+  letter-spacing: 0.02em;
+  color: var(--brand-wordmark-rose);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(90, 60, 70, 0.18);
+  box-shadow: 0 10px 36px -22px rgba(10, 30, 63, 0.35);
 }
 
-.siteLogoPageBadge:hover {
-  border-color: rgba(10, 30, 63, 0.16);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 14px 36px -16px rgba(10, 30, 63, 0.32);
-}
-
-.siteLogoPageBadge:active {
-  transform: translateY(0.5px);
-}
-
-.siteLogoPageBadge:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
+@media (min-width: 901px) {
+  .brandSlogan--landing {
+    padding: 14px 22px;
+  }
 }
 
 .brandProviderLine {
@@ -371,11 +364,6 @@ html.pharmacyCartOpen body {
   .brandMarkImg {
     width: 56px;
     height: 56px;
-  }
-
-  .brandMarkImg--page {
-    width: 50px;
-    height: 50px;
   }
 
   .brandDivider {
@@ -505,11 +493,11 @@ html.pharmacyCartOpen body {
   text-align: start;
 }
 .main .peptidePage > .peptideHero .peptideEyebrow,
-.main .peptidePage > .peptideHero .siteLogoPageBadge,
+.main .peptidePage > .peptideHero .brandSlogan,
 .main .peptidePage > .peptideHero h1,
 .main .peptidePage > .peptideHero .peptideTagline,
 .main .peptideHubPage > .peptideHero .peptideEyebrow,
-.main .peptideHubPage > .peptideHero .siteLogoPageBadge,
+.main .peptideHubPage > .peptideHero .brandSlogan,
 .main .peptideHubPage > .peptideHero h1,
 .main .peptideHubPage > .peptideHero .peptideTagline {
   text-align: center;
@@ -1682,24 +1670,6 @@ a.btn:focus-visible {
   text-wrap: balance;
 }
 
-.landingHeroEyebrow {
-  /* Center above hero headline on all viewports */
-  display: flex;
-  width: fit-content;
-  margin: 0 auto 10px;
-  align-self: center;
-  font-size: clamp(18px, 1.9vw, 24px);
-  font-weight: 850;
-  padding: 13px 20px;
-  letter-spacing: 0.015em;
-}
-
-@media (min-width: 901px) {
-  .landingHeroEyebrow {
-    padding: 14px 22px;
-  }
-}
-
 @media (max-width: 900px) {
   .heroHeadline {
     line-height: 1.5 !important;
@@ -1997,16 +1967,6 @@ a.btn:focus-visible {
   .isProviderBrand .brandProviderLine {
     font-size: 9px;
     letter-spacing: 0.04em;
-  }
-
-  .siteLogoPageBadge {
-    padding: 10px 14px 12px;
-    margin-bottom: 12px;
-  }
-
-  .siteLogoPageBadge .brandMarkImg--page {
-    width: 36px;
-    height: 36px;
   }
 
   .navDrawerTop {
