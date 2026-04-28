@@ -1491,9 +1491,11 @@ html:has(.peptidePage) {
     grid-column: 2;
     grid-row: 1;
     align-self: start;
-    justify-self: center;
-    width: auto;
-    max-width: 100%;
+    /* Stretch to fill the right grid column so the whole top section aligns with
+       the full-width sections below (avoid a narrow centered bio column). */
+    justify-self: stretch;
+    width: 100%;
+    max-width: none;
   }
 }
 
@@ -1587,7 +1589,7 @@ html:has(.peptidePage) {
   .landingGridProfileColumn > .landingBioCard {
     align-self: flex-start;
     width: 100%;
-    max-width: min(300px, 100%);
+    max-width: none;
     box-sizing: border-box;
   }
 
@@ -1603,7 +1605,7 @@ html:has(.peptidePage) {
 @media (min-width: 1200px) {
   .landingGridProfileColumn .portrait,
   .landingGridProfileColumn > .landingBioCard {
-    max-width: min(280px, 100%);
+    max-width: none;
   }
 }
 
