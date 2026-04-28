@@ -5,6 +5,7 @@ import {
   apiDelete,
   apiGetWithSessionWarmup,
   apiPatch,
+  apiPost,
   fetchApiSession,
   hasApiCredential,
   getApiUrl,
@@ -24,6 +25,7 @@ type DemoMsg = {
   fromName: string
   category: string
   body: string
+  meta?: any
   when: string
   status: 'new' | 'handled'
 }
@@ -58,6 +60,8 @@ export default function ProviderTeamInbox() {
   const [inboxQuery, setInboxQuery] = useState(() => readPersisted('wph_provider_inbox_query', ''))
   const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>(() => readPersisted('wph_provider_inbox_filter', 'new'))
   const [msgs, setMsgs] = useState<DemoMsg[]>([])
+  const [payLinks, setPayLinks] = useState<Record<string, { url: string; totalCents?: number }>>({})
+  const [payBusyId, setPayBusyId] = useState<string | null>(null)
   const [inboxError, setInboxError] = useState<string | null>(null)
   const [inboxLoading, setInboxLoading] = useState(false)
 
@@ -98,6 +102,7 @@ export default function ProviderTeamInbox() {
           fromName: string
           fromEmail: string
           body: string
+          meta: string
           createdAt: string
         }>
       }>('/v1/provider/team-inbox')
@@ -107,6 +112,13 @@ export default function ProviderTeamInbox() {
         fromName: (row.fromName || '').trim(),
         category: row.kind,
         body: row.body,
+        meta: (() => {
+          try {
+            return row.meta ? JSON.parse(row.meta) : null
+          } catch {
+            return null
+          }
+        })(),
         when: new Date(row.createdAt).toLocaleString(),
         status: (row.status === 'handled' ? 'handled' : 'new') as DemoMsg['status'],
       }))
@@ -269,6 +281,62 @@ export default function ProviderTeamInbox() {
                     <td>{m.body}</td>
                     <td>
                       <div className="btnRow" style={{ flexWrap: 'wrap', gap: 8 }}>
+                        {m.category === 'order_request' && m.meta?.orderId ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btnPrimary"
+                              disabled={payBusyId === m.id || !hasApiCredential()}
+                              style={{ opacity: payBusyId === m.id || !hasApiCredential() ? 0.6 : 1 }}
+                              onClick={() => {
+                                ;(async () => {
+                                  setInboxError(null)
+                                  setPayBusyId(m.id)
+                                  try {
+                                    const r = await apiPost<{ ok: boolean; url: string; totalCents?: number }>(
+                                      `/v1/provider/orders/${encodeURIComponent(String(m.meta.orderId))}/stripe/checkout`,
+                                      {},
+                                    )
+                                    setPayLinks((prev) => ({ ...prev, [m.id]: { url: r.url, totalCents: r.totalCents } }))
+                                  } catch (e: any) {
+                                    setInboxError(String(e?.message || e))
+                                  } finally {
+                                    setPayBusyId(null)
+                                  }
+                                })()
+                              }}
+                            >
+                              {payBusyId === m.id ? 'Creating link…' : 'Create payment link'}
+                            </button>
+                            {payLinks[m.id]?.url ? (
+                              <>
+                                <a className="btn" href={payLinks[m.id]!.url} target="_blank" rel="noreferrer">
+                                  Open link
+                                </a>
+                                {(() => {
+                                  const email = String(m.from || '').match(/<([^>]+)>/)?.[1] || ''
+                                  if (!email.trim()) return null
+                                  const amt =
+                                    typeof payLinks[m.id]!.totalCents === 'number'
+                                      ? `$${(payLinks[m.id]!.totalCents! / 100).toFixed(2)}`
+                                      : 'your total'
+                                  const subject = `Payment link — ${amt}`
+                                  const body = `Here is your secure payment link: ${payLinks[m.id]!.url}\n\nAmount: ${amt}\n\nIf you have questions, reply to this email.`
+                                  return (
+                                    <a
+                                      className="btn"
+                                      href={`mailto:${encodeURIComponent(email.trim())}?subject=${encodeURIComponent(
+                                        subject,
+                                      )}&body=${encodeURIComponent(body)}`}
+                                    >
+                                      Email patient
+                                    </a>
+                                  )
+                                })()}
+                              </>
+                            ) : null}
+                          </>
+                        ) : null}
                         {m.fromName.trim() ? (
                           <button
                             type="button"

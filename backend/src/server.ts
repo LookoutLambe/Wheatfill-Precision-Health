@@ -601,6 +601,19 @@ const PublicPharmacyOrderBody = CreatePharmacyOrderBody.extend({
   uiMode: z.enum(['redirect', 'embedded']).optional(),
 })
 
+const PublicPharmacyOrderRequestBody = CreatePharmacyOrderBody.extend({
+  contactEmail: z.string().email(),
+  consultType: z.enum(['new_patient', 'follow_up']).optional(),
+})
+
+function consultFeeCentsForType(t?: 'new_patient' | 'follow_up'): number {
+  const rawNew = Number(process.env.CONSULT_FEE_NEW_CENTS || 0) || 0
+  const rawFu = Number(process.env.CONSULT_FEE_FOLLOWUP_CENTS || 0) || 0
+  if (t === 'new_patient') return Math.max(0, Math.round(rawNew))
+  if (t === 'follow_up') return Math.max(0, Math.round(rawFu))
+  return 0
+}
+
 // Full catalog order + consents (website, no sign-in). Creates User + Order + payment session when payment is configured.
 app.post('/v1/public/orders/pharmacy', async (req, reply) => {
   const lim = rateLimitHit(`pubord:${reqIp(req) || 'unknown'}`, 20, 3_600_000)
@@ -642,6 +655,138 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
     checkoutUrl: r.checkoutUrl,
     checkoutClientSecret: r.checkoutClientSecret || null,
   }
+})
+
+// Public: submit a pharmacy + consult request for provider review (NO Stripe checkout).
+app.post('/v1/public/orders/pharmacy/request', async (req, reply) => {
+  const lim = rateLimitHit(`pubordreq:${reqIp(req) || 'unknown'}`, 20, 3_600_000)
+  if (!lim.ok) {
+    return reply
+      .status(429)
+      .header('Retry-After', String(lim.retryAfterSec))
+      .send('Too many order submissions from this network. Try again later.')
+  }
+  const raw = PublicPharmacyOrderRequestBody.parse(req.body)
+  const { contactEmail, consultType, ...rest } = raw
+  const body = CreatePharmacyOrderBody.parse(rest)
+  if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
+  if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
+    return reply.badRequest('Shipping address is required for this order.')
+  }
+
+  const guest = await getOrCreateGuestPharmacyPatient({
+    contactEmail,
+    displayName: body.signatureName,
+    shippingAddress1: body.shippingAddress1!,
+    shippingCity: body.shippingCity!,
+    shippingState: body.shippingState!,
+    shippingPostalCode: body.shippingPostalCode!,
+  })
+
+  const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
+  if (!partner) return reply.notFound('Pharmacy not found.')
+  const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
+  if (!provider) return reply.internalServerError('No provider configured.')
+
+  const products = await prisma.pharmacyProduct.findMany({
+    where: { partnerId: partner.id, isActive: true, sku: { in: body.items.map((i) => i.sku) } },
+    select: { sku: true, name: true, priceCents: true, currency: true },
+  })
+  const bySku = new Map(products.map((p) => [p.sku, p]))
+  for (const it of body.items) {
+    if (!bySku.has(it.sku)) return reply.badRequest(`Invalid item sku: ${it.sku}`)
+  }
+  const shippingCents = shippingCentsForPartnerSlug(partner.slug)
+  const insuranceCents = body.shippingInsurance ? Math.round(body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0) * 0.02) : 0
+  const consultCents = consultFeeCentsForType(consultType)
+  const totalCents =
+    body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0) +
+    shippingCents +
+    insuranceCents +
+    consultCents
+
+  const order = await prisma.order.create({
+    data: {
+      category: 'glp1',
+      item: consultType ? 'Consult + medication request' : 'Medication request',
+      request: `Patient request (pay later): ${partner.name}`,
+      status: 'new',
+      pharmacyPartnerId: partner.id,
+      patientId: guest.id,
+      providerId: provider.id,
+      shippingAddress1: body.shippingAddress1!.trim(),
+      shippingAddress2: '',
+      shippingCity: body.shippingCity!.trim(),
+      shippingState: body.shippingState!.trim(),
+      shippingPostalCode: body.shippingPostalCode!.trim(),
+      shippingCountry: 'US',
+      shippingCents,
+      shippingInsuranceCents: insuranceCents,
+      agreedToShippingTerms: body.agreedToShippingTerms,
+      contactPermission: body.contactPermission,
+      signatureName: body.signatureName.trim(),
+      signatureDate: new Date(body.signatureDate),
+      items: {
+        create: [
+          ...(consultCents
+            ? [
+                {
+                  partnerSlug: partner.slug,
+                  productSku: consultType === 'new_patient' ? 'consult_new_patient' : 'consult_follow_up',
+                  name: consultType === 'new_patient' ? 'New patient consultation' : 'Follow-up consultation',
+                  unitPriceCents: consultCents,
+                  quantity: 1,
+                },
+              ]
+            : []),
+          ...body.items.map((it) => {
+            const p = bySku.get(it.sku)!
+            return {
+              partnerSlug: partner.slug,
+              productSku: p.sku,
+              name: p.name,
+              unitPriceCents: p.priceCents,
+              quantity: it.quantity,
+            }
+          }),
+        ],
+      },
+    },
+    include: { items: true, patient: { select: { displayName: true, email: true } } },
+  })
+
+  const inboxBody = [
+    `Order ID: ${order.id}`,
+    `Partner: ${partner.name} (${partner.slug})`,
+    consultType ? `Consult: ${consultType === 'new_patient' ? 'New patient' : 'Follow-up'} ($${(consultCents / 100).toFixed(2)})` : null,
+    `Items:`,
+    ...order.items.map((it) => `- ${it.name} (x${it.quantity}) — $${((it.unitPriceCents * it.quantity) / 100).toFixed(2)}`),
+    `Shipping: $${(shippingCents / 100).toFixed(2)}`,
+    insuranceCents ? `Shipping insurance: $${(insuranceCents / 100).toFixed(2)}` : null,
+    `Total: $${(totalCents / 100).toFixed(2)} (${totalCents} cents)`,
+    ``,
+    `Signature: ${body.signatureName.trim()} — ${body.signatureDate}`,
+    `Ship to: ${body.shippingAddress1!.trim()}, ${body.shippingCity!.trim()}, ${body.shippingState!.trim()} ${body.shippingPostalCode!.trim()}`,
+  ].filter(Boolean)
+
+  await prisma.teamInboxItem.create({
+    data: {
+      kind: 'order_request',
+      status: 'new',
+      fromName: (order.patient.displayName || body.signatureName).trim().slice(0, 200),
+      fromEmail: contactEmail.trim().toLowerCase().slice(0, 200),
+      body: inboxBody.join('\n'),
+      meta: JSON.stringify({
+        kind: 'pharmacy_pay_later',
+        orderId: order.id,
+        partnerSlug: partner.slug,
+        consultType: consultType || null,
+        totalCents,
+      }),
+    },
+  })
+
+  return { ok: true, orderId: order.id, totalCents }
 })
 
 const PublicTeamInboxBody = z.object({
@@ -1259,6 +1404,89 @@ await app.register(async (protectedScope) => {
       })
 
       return { ok: true, url: session.url, paymentId: payment.id }
+    },
+  )
+
+  // Provider: create a Stripe Checkout link for an existing Order (pay later requests).
+  protectedScope.post(
+    '/v1/provider/orders/:id/stripe/checkout',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      if (!stripe) return reply.badRequest('Stripe is not configured. Set STRIPE_SECRET_KEY.')
+      const orderId = String((req.params as any).id || '').trim()
+      if (!orderId) return reply.badRequest('Missing order id.')
+
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: true,
+          patient: { select: { id: true, displayName: true, email: true } },
+          provider: { select: { id: true, stripeConnectedAccountId: true } },
+        },
+      })
+      if (!order || order.deletedAt) return reply.notFound('Order not found.')
+
+      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
+      const successUrl = `${origin.replace(/\/$/, '')}/provider/orders?paid=1&order=${encodeURIComponent(order.id)}`
+      const cancelUrl = `${origin.replace(/\/$/, '')}/provider/orders?canceled=1&order=${encodeURIComponent(order.id)}`
+
+      const lineItems: any[] = order.items.map((it) => ({
+        price_data: {
+          currency: 'usd',
+          unit_amount: it.unitPriceCents,
+          product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug, orderId: order.id } },
+        },
+        quantity: it.quantity,
+      }))
+      if (order.shippingInsuranceCents > 0) {
+        lineItems.push({
+          price_data: { currency: 'usd', unit_amount: order.shippingInsuranceCents, product_data: { name: 'Shipping insurance' } },
+          quantity: 1,
+        })
+      }
+      if (order.shippingCents > 0) {
+        lineItems.push({
+          price_data: { currency: 'usd', unit_amount: order.shippingCents, product_data: { name: 'Shipping' } },
+          quantity: 1,
+        })
+      }
+
+      const totalCents =
+        order.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0) +
+        (order.shippingCents || 0) +
+        (order.shippingInsuranceCents || 0)
+
+      const params: any = {
+        mode: 'payment' as const,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        line_items: lineItems,
+        metadata: { kind: 'provider_order_checkout', orderId: order.id, patientId: order.patientId },
+        ...(order.patient?.email ? { customer_email: order.patient.email } : {}),
+      }
+
+      const session = order.provider?.stripeConnectedAccountId
+        ? await stripe.checkout.sessions.create(params, { stripeAccount: order.provider.stripeConnectedAccountId })
+        : await stripe.checkout.sessions.create(params)
+
+      const payment = await prisma.payment.create({
+        data: {
+          method: 'stripe',
+          status: 'pending',
+          amountCents: totalCents,
+          currency: 'usd',
+          itemType: 'order',
+          itemId: order.id,
+          orderId: order.id,
+          patientId: order.patientId,
+          providerId: order.providerId,
+          stripeCheckoutSessionId: session.id,
+          p2pMemo: `order:${order.id}`,
+        },
+        select: { id: true },
+      })
+
+      return { ok: true, url: session.url, paymentId: payment.id, totalCents }
     },
   )
 

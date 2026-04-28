@@ -42,6 +42,7 @@ export default function OrderNowSummary() {
   const [shipState, setShipState] = useState('')
   const [shipZip, setShipZip] = useState('')
   const [contactEmail, setContactEmail] = useState('')
+  const [consultType, setConsultType] = useState<'none' | 'new_patient' | 'follow_up'>('none')
   const [apiSession, setApiSession] = useState<ApiSessionSnapshot | null>(null)
 
   useEffect(() => {
@@ -224,6 +225,66 @@ export default function OrderNowSummary() {
         setCheckoutError(null)
         alert(
           `Order received. Reference: ${res.orderId}. No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active method in provider settings. Your care team can still collect payment.`,
+        )
+      } catch (e: unknown) {
+        setCheckoutError(String((e as Error)?.message || e))
+      } finally {
+        setCheckoutBusy(false)
+      }
+    })()
+  }
+
+  const onRequestPayLater = () => {
+    setCheckoutError(null)
+    if (!partner || items.length === 0) return
+    if (!agree) {
+      setCheckoutError('Please read and agree to the medication shipping terms and conditions above.')
+      return
+    }
+    if (!contactOk) {
+      setCheckoutError('Please agree to the contact / privacy authorization to continue.')
+      return
+    }
+    if (!shipStreet.trim() || !shipCity.trim() || !shipState || !shipZip.trim()) {
+      setCheckoutError('Please complete street, city, state, and zip for shipping.')
+      return
+    }
+    if (!sigName.trim()) {
+      setCheckoutError('Please type your name as a signature to continue.')
+      return
+    }
+    if (!emailOk(contactEmail)) {
+      setCheckoutError('Please enter a valid email so we can send you a payment link.')
+      return
+    }
+
+    setCheckoutBusy(true)
+    ;(async () => {
+      try {
+        const body = {
+          partnerSlug: partner.slug,
+          items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
+          agreedToShippingTerms: agree,
+          contactPermission: contactOk,
+          signatureName: sigName.trim(),
+          signatureDate: sigDate,
+          shippingInsurance: insurance,
+          shippingAddress1: shipStreet.trim(),
+          shippingCity: shipCity.trim(),
+          shippingState: shipState.trim(),
+          shippingPostalCode: shipZip.trim(),
+          contactEmail: contactEmail.trim(),
+          consultType: consultType === 'none' ? undefined : consultType,
+        }
+        const res = await apiPost<{ ok: boolean; orderId: string; totalCents: number }>(
+          '/v1/public/orders/pharmacy/request',
+          body,
+          '',
+        )
+        writeCartForSlug(slug, {})
+        setCheckoutError(null)
+        alert(
+          `Request sent to the team (ref ${res.orderId}). We’ll email you a payment link for $${(res.totalCents / 100).toFixed(2)} once the order is reviewed.`,
         )
       } catch (e: unknown) {
         setCheckoutError(String((e as Error)?.message || e))
@@ -483,6 +544,17 @@ export default function OrderNowSummary() {
                   <input type="checkbox" checked={insurance} onChange={(e) => setInsurance(e.target.checked)} />
                   <span className="muted">Add shipping insurance (2% of subtotal, optional)</span>
                 </label>
+
+                <label style={{ display: 'block', marginTop: 12 }}>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Visit type (optional)
+                  </div>
+                  <select className="select" value={consultType} onChange={(e) => setConsultType(e.target.value as any)}>
+                    <option value="none">Medication only</option>
+                    <option value="new_patient">New patient + medication</option>
+                    <option value="follow_up">Follow-up + medication</option>
+                  </select>
+                </label>
               </div>
 
               <div className="card" style={{ padding: '18px 16px' }}>
@@ -581,6 +653,15 @@ export default function OrderNowSummary() {
                 onClick={onCheckout}
               >
                 {checkoutBusy ? 'Opening checkout…' : 'Check out'}
+              </button>
+              <button
+                type="button"
+                className="btn orderNowPayBtn"
+                disabled={!canCheckOut || checkoutBusy}
+                style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
+                onClick={onRequestPayLater}
+              >
+                {checkoutBusy ? 'Sending request…' : 'Send request (pay later)'}
               </button>
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
                 Your checkout opens securely. The practice confirms fulfillment details after payment.
