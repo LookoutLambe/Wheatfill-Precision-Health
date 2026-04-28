@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
+import Page from '../components/Page'
 
 export default function NotFound() {
   return (
-    <div className="page">
+    <Page variant="prose">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Page not found</h1>
@@ -19,6 +20,6 @@ export default function NotFound() {
           </Link>
         </div>
       </div>
-    </div>
+    </Page>
   )
 }

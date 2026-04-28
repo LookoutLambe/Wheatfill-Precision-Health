@@ -5,6 +5,7 @@ import {
   optionalCustomerAccountUrl,
   publicSchedulingUrlForFullApp,
 } from '../config/patientFeatures'
+import Page from '../components/Page'
 
 /**
  * Customer hub (DTC / consumer site—not a hospital portal). Everything important is on this site.
@@ -14,7 +15,7 @@ export default function PatientPortalInfo() {
   const bookUrl = publicSchedulingUrlForFullApp() || null
 
   return (
-    <div className="page orderNowHubPage">
+    <Page className="orderNowHubPage" variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>For patients</h1>
@@ -110,6 +111,6 @@ export default function PatientPortalInfo() {
           </div>
         </section>
       ) : null}
-    </div>
+    </Page>
   )
 }

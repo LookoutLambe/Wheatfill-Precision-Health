@@ -6,7 +6,6 @@ import { apiGet } from '../api/client'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
-import { USE_MEDPLUM_PROVIDER_PORTAL } from '../config/providerAuth'
 import {
   getMarketingIntegrations,
   isMarketingProviderAuthed,
@@ -312,7 +311,7 @@ export default function Shell() {
                 For patients
               </NavLink>
             )}
-          {MARKETING_ONLY || !USE_MEDPLUM_PROVIDER_PORTAL ? null : <AuthStatus onMenuClose={closeMenu} />}
+          {MARKETING_ONLY ? null : <AuthStatus onMenuClose={closeMenu} />}
         </nav>
       </div>
 

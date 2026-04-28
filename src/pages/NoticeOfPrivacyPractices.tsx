@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { PRACTICE_PUBLIC_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
+import Page from '../components/Page'
 
 /**
  * Required HIPAA Notice of Privacy Practices (NPP) for patients. Edit dates and contact
@@ -8,7 +9,7 @@ import { PRACTICE_PUBLIC_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES }
 export default function NoticeOfPrivacyPractices() {
   const states = PROVIDER_LICENSED_STATES.join(', ')
   return (
-    <div className="page">
+    <Page variant="prose">
       <div>
         <h1 style={{ margin: 0 }}>Notice of Privacy Practices</h1>
         <p className="muted pageSubtitle">HIPAA · Protected health information (PHI)</p>
@@ -140,6 +141,6 @@ export default function NoticeOfPrivacyPractices() {
           </Link>
         </p>
       </section>
-    </div>
+    </Page>
   )
 }

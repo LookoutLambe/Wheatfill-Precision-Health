@@ -1,10 +1,11 @@
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
+import Page from '../components/Page'
 
 export default function About() {
   return (
-    <div className="page">
+    <Page>
       <div className="aboutHeader">
         <h1 style={{ margin: 0 }}>About</h1>
       </div>
@@ -116,6 +117,6 @@ export default function About() {
           </div>
         </section>
       </div>
-    </div>
+    </Page>
   )
 }

@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
+import Page from '../components/Page'
 
 import { PEPTIDE_HUB_CATEGORIES } from '../data/peptideHubResources'
 
 export default function PeptideHub() {
   return (
-    <div className="page peptidePage peptideHubPage">
+    <Page className="peptidePage peptideHubPage" variant="prose">
       <header className="peptideHero">
         <p className="peptideEyebrow">Wheatfill Precision Health</p>
         <h1 style={{ margin: '0 0 10px' }}>Peptide information hub</h1>
@@ -75,6 +76,6 @@ export default function PeptideHub() {
           ← Back to advanced peptide therapy (education)
         </Link>
       </p>
-    </div>
+    </Page>
   )
 }

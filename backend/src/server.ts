@@ -22,9 +22,10 @@ import Stripe from 'stripe'
 
 import { prisma } from './db.js'
 import { hashPassword, verifyPassword } from './auth/password.js'
-import { registerAuth, requireRole } from './auth/authz.js'
+import { registerAuth, requireApprover, requireRole } from './auth/authz.js'
 import { clearJwtCookie, injectJwtFromCookie, JWT_COOKIE_NAME, setJwtCookie } from './security/jwtCookie.js'
 import { rateLimitHit } from './security/simpleRateLimit.js'
+import { supabaseAnon, supabaseServiceRole, type ProviderProfile } from './integrations/supabase.js'
 
 loadAndValidateEnv()
 
@@ -191,6 +192,56 @@ async function ensureMarketingTeamLogins() {
   }
 }
 
+/**
+ * Supabase-backed provider auth
+ * ----------------------------
+ * We use Supabase Auth to validate passwords, and still issue the site’s httpOnly JWT cookie
+ * (so the existing SPA + backend auth middleware remain consistent).
+ *
+ * Approval gate: provider_profiles.approved must be true to issue a session.
+ */
+async function providerProfileByUsername(usernameRaw: string): Promise<ProviderProfile | null> {
+  const username = usernameRaw.trim().toLowerCase()
+  if (!username) return null
+  const sb = supabaseServiceRole()
+  const { data, error } = await sb
+    .from('provider_profiles')
+    .select('*')
+    .eq('username', username)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return (data as ProviderProfile | null) ?? null
+}
+
+async function ensureDefaultProviderProfiles() {
+  // Optional helper to bootstrap the 3 core usernames if missing.
+  // This does NOT set passwords; Supabase Auth passwords are managed in Supabase.
+  const sb = supabaseServiceRole()
+  const defaults: Array<Pick<ProviderProfile, 'username' | 'email' | 'display_name' | 'role' | 'approved'>> = [
+    { username: 'brett', email: 'brett@wheatfillprecisionhealth.com', display_name: 'Brett', role: 'admin', approved: true },
+    { username: 'bridgette', email: 'bridgette@wheatfillprecisionhealth.com', display_name: 'Bridgette', role: 'admin', approved: true },
+    { username: 'admin', email: 'admin@wheatfillprecisionhealth.com', display_name: 'Site admin', role: 'admin', approved: true },
+  ]
+  for (const d of defaults) {
+    const { data, error } = await sb
+      .from('provider_profiles')
+      .select('id')
+      .eq('username', d.username)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    if (data?.id) continue
+    const { error: insErr } = await sb.from('provider_profiles').insert({
+      username: d.username,
+      email: d.email,
+      display_name: d.display_name,
+      role: d.role,
+      approved: d.approved,
+      approved_at: d.approved ? new Date().toISOString() : null,
+    })
+    if (insErr) throw new Error(insErr.message)
+  }
+}
+
 async function ensureProviderSeed() {
   if (providerSeeded) return
   const existing = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
@@ -212,6 +263,14 @@ async function ensureProviderSeed() {
   providerSeeded = true
   await ensureDemoPatientSeed()
   await ensureMarketingTeamLogins()
+  try {
+    if ((process.env.SUPABASE_URL || '').trim()) {
+      await ensureDefaultProviderProfiles()
+    }
+  } catch (e) {
+    // Do not block server boot if Supabase is not configured during local dev.
+    app.log.warn({ err: e }, 'supabase_default_profiles_failed')
+  }
 }
 
 /**
@@ -702,6 +761,7 @@ const SignupBody = z.object({
 const StaffRequestBody = z.object({
   username: z.string().min(2).max(50).transform((s) => s.trim().toLowerCase()),
   displayName: z.string().min(2).max(120).transform((s) => s.trim()),
+  email: z.string().email().max(200),
   password: z.string().min(8).max(200),
   note: z.string().max(1000).optional(),
 })
@@ -711,34 +771,58 @@ app.post('/auth/staff-request', async (req, reply) => {
   const lim = rateLimitHit(`staffreq:${reqIp(req) || 'unknown'}`, 12, PUBLIC_POST_RATE_WINDOW_MS)
   if (!lim.ok) return reply.status(429).header('Retry-After', String(lim.retryAfterSec)).send('Too many requests.')
   const body = StaffRequestBody.parse(req.body)
-  const exists = await prisma.user.findUnique({ where: { username: body.username } })
-  if (exists) return reply.conflict('That username is already in use.')
+  const supabaseConfigured = Boolean((process.env.SUPABASE_URL || '').trim())
+  if (!supabaseConfigured) return reply.status(501).send('Supabase is not configured on this API.')
 
-  const existingReq = await prisma.staffSignupRequest.findUnique({ where: { username: body.username } })
-  if (existingReq && existingReq.status === 'pending') {
-    return reply.conflict('A request for that username is already pending approval.')
+  const sbSrv = supabaseServiceRole()
+  const { data: existing, error: exErr } = await sbSrv
+    .from('provider_profiles')
+    .select('id')
+    .or(`username.eq.${body.username},email.eq.${body.email}`)
+    .maybeSingle()
+  if (exErr && !/Results contain 0 rows/i.test(String(exErr.message || exErr))) {
+    // ignore 0 rows; supabase may still represent as null without error
+  }
+  if (existing?.id) return reply.conflict('That username or email is already in use.')
+
+  // Create Supabase auth user (email/password) + pending provider profile
+  const { data: sign, error: signErr } = await sbSrv.auth.admin.createUser({
+    email: body.email.trim().toLowerCase(),
+    password: body.password,
+    email_confirm: true,
+  })
+  if (signErr || !sign.user) return reply.status(400).send(signErr?.message || 'Could not create account.')
+
+  const { error: insErr } = await sbSrv.from('provider_profiles').insert({
+    auth_user_id: sign.user.id,
+    username: body.username,
+    email: body.email.trim().toLowerCase(),
+    display_name: body.displayName,
+    role: 'provider',
+    approved: false,
+  })
+  if (insErr) {
+    // Clean up auth user if profile insert fails
+    await sbSrv.auth.admin.deleteUser(sign.user.id)
+    return reply.status(400).send(insErr.message)
   }
 
-  const passwordHash = await hashPassword(body.password)
-  await prisma.staffSignupRequest.upsert({
-    where: { username: body.username },
-    update: {
-      displayName: body.displayName,
-      passwordHash,
-      note: (body.note ?? '').trim(),
-      status: 'pending',
-      decidedAt: null,
-      decidedById: null,
-    },
-    create: {
-      username: body.username,
-      displayName: body.displayName,
-      passwordHash,
-      note: (body.note ?? '').trim(),
-      status: 'pending',
-    },
-    select: { id: true },
-  })
+  // Record request in team inbox for visibility (optional)
+  try {
+    await prisma.teamInboxItem.create({
+      data: {
+        kind: 'contact',
+        status: 'new',
+        fromName: body.displayName,
+        fromEmail: body.email.trim().toLowerCase(),
+        body: `Staff access request: ${body.username}\n\n${(body.note || '').trim()}`.trim(),
+        meta: JSON.stringify({ source: 'staff_request' }),
+      },
+    })
+  } catch {
+    // ignore
+  }
+
   return { ok: true }
 })
 
@@ -783,18 +867,37 @@ const LoginBody = z.object({
 
 app.post('/auth/login', async (req, reply) => {
   const body = LoginBody.parse(req.body)
+  // If Supabase is configured, use it as the source of truth for provider/admin credentials.
+  const supabaseConfigured = Boolean((process.env.SUPABASE_URL || '').trim() && (process.env.SUPABASE_ANON_KEY || '').trim() && (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim())
+  if (supabaseConfigured) {
+    const prof = await providerProfileByUsername(body.username)
+    if (!prof) return reply.unauthorized('Invalid username or password.')
+    if (!prof.approved) return reply.status(403).send('Account is pending approval.')
+
+    const sb = supabaseAnon()
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: prof.email,
+      password: body.password,
+    })
+    if (error || !data.user) return reply.unauthorized('Invalid username or password.')
+
+    // Issue site cookie session
+    const token = await reply.jwtSign({ sub: String(data.user.id), role: prof.role, username: prof.username })
+    setJwtCookie(reply, token)
+    return {
+      user: { id: String(data.user.id), role: prof.role, username: prof.username, displayName: prof.display_name },
+      token,
+    }
+  }
+
+  // Legacy local dev fallback (Prisma users)
   const user = await prisma.user.findUnique({ where: { username: body.username } })
   if (!user) return reply.unauthorized('Invalid username or password.')
-
   const ok = await verifyPassword(body.password, user.passwordHash)
   if (!ok) return reply.unauthorized('Invalid username or password.')
-
-  const token = await reply.jwtSign({ sub: user.id, role: user.role })
+  const token = await reply.jwtSign({ sub: user.id, role: user.role, username: user.username })
   setJwtCookie(reply, token)
-  return {
-    user: { id: user.id, role: user.role, username: user.username, displayName: user.displayName },
-    token,
-  }
+  return { user: { id: user.id, role: user.role, username: user.username, displayName: user.displayName }, token }
 })
 
 // Protected API scope
@@ -845,84 +948,77 @@ await app.register(async (protectedScope) => {
     },
   )
 
-  // Admin: approve/deny staff signup requests.
+  // Approvers (brett / bridgette / admin): list + approve pending provider profiles
   protectedScope.get(
     '/v1/admin/staff-requests',
-    { preHandler: requireRole(['admin']) },
-    async () => {
-      const items = await prisma.staffSignupRequest.findMany({
-        where: { status: 'pending' },
-        orderBy: { createdAt: 'desc' },
-        take: 200,
-        select: { id: true, username: true, displayName: true, note: true, createdAt: true },
-      })
-      return { requests: items }
+    { preHandler: requireApprover() },
+    async (req, reply) => {
+      const sb = supabaseServiceRole()
+      const { data, error } = await sb
+        .from('provider_profiles')
+        .select('id,username,email,display_name,role,approved,created_at')
+        .eq('approved', false)
+        .order('created_at', { ascending: false })
+        .limit(200)
+      if (error) return reply.internalServerError(error.message)
+      return { requests: (data || []).map((r: any) => ({ id: r.id, username: r.username, displayName: r.display_name, email: r.email, createdAt: r.created_at })) }
     },
   )
 
   protectedScope.post(
     '/v1/admin/staff-requests/:id/approve',
-    { preHandler: requireRole(['admin']) },
+    { preHandler: requireApprover() },
     async (req, reply) => {
       const id = (req.params as any).id as string
-      const r = await prisma.staffSignupRequest.findUnique({ where: { id } })
-      if (!r) return reply.notFound('Request not found.')
-      if (r.status !== 'pending') return reply.badRequest('Request is not pending.')
+      const sb = supabaseServiceRole()
+      const { data: prof, error } = await sb.from('provider_profiles').select('*').eq('id', id).maybeSingle()
+      if (error) return reply.internalServerError(error.message)
+      if (!prof) return reply.notFound('Request not found.')
+      if (prof.approved) return reply.badRequest('Request is already approved.')
 
-      const exists = await prisma.user.findUnique({ where: { username: r.username } })
-      if (exists) return reply.conflict('A user with that username already exists.')
-
-      const user = await prisma.user.create({
-        data: {
-          role: 'provider',
-          username: r.username,
-          passwordHash: r.passwordHash,
-          displayName: r.displayName,
-        },
-        select: { id: true, role: true, username: true, displayName: true, createdAt: true },
-      })
-
-      await prisma.staffSignupRequest.update({
-        where: { id },
-        data: { status: 'approved', decidedAt: new Date(), decidedById: req.user.sub },
-      })
+      const { error: upErr } = await sb
+        .from('provider_profiles')
+        .update({ approved: true, approved_at: new Date().toISOString(), approved_by: String(req.user.sub || '') })
+        .eq('id', id)
+      if (upErr) return reply.internalServerError(upErr.message)
 
       await writeAudit({
         actorId: req.user.sub,
-        entityType: 'staff_signup_request',
+        entityType: 'provider_profile',
         entityId: id,
-        action: 'staff_request_approved',
-        after: { request: { id, username: r.username }, user },
+        action: 'provider_profile_approved',
+        after: { id, username: prof.username, email: prof.email },
         ip: reqIp(req),
       })
-
-      return { user }
+      return { ok: true }
     },
   )
 
   protectedScope.post(
     '/v1/admin/staff-requests/:id/deny',
-    { preHandler: requireRole(['admin']) },
+    { preHandler: requireApprover() },
     async (req, reply) => {
       const id = (req.params as any).id as string
-      const r = await prisma.staffSignupRequest.findUnique({ where: { id } })
-      if (!r) return reply.notFound('Request not found.')
-      if (r.status !== 'pending') return reply.badRequest('Request is not pending.')
+      const sb = supabaseServiceRole()
+      const { data: prof, error } = await sb.from('provider_profiles').select('*').eq('id', id).maybeSingle()
+      if (error) return reply.internalServerError(error.message)
+      if (!prof) return reply.notFound('Request not found.')
+      if (prof.approved) return reply.badRequest('Cannot deny an approved user.')
 
-      await prisma.staffSignupRequest.update({
-        where: { id },
-        data: { status: 'denied', decidedAt: new Date(), decidedById: req.user.sub },
-      })
+      if (prof.auth_user_id) {
+        await sb.auth.admin.deleteUser(String(prof.auth_user_id))
+      }
+      const { error: delErr } = await sb.from('provider_profiles').delete().eq('id', id)
+      if (delErr) return reply.internalServerError(delErr.message)
 
       await writeAudit({
         actorId: req.user.sub,
-        entityType: 'staff_signup_request',
+        entityType: 'provider_profile',
         entityId: id,
-        action: 'staff_request_denied',
-        after: { id, username: r.username },
+        action: 'provider_profile_denied',
+        after: { id, username: prof.username, email: prof.email },
         ip: reqIp(req),
       })
-
       return { ok: true }
     },
   )

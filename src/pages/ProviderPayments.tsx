@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiGet, apiLogout, apiPatch, apiPost, fetchApiSession, setApiSessionHint } from '../api/client'
 import { navigateToStripeHostedUrl } from '../lib/stripeHostedNavigation'
+import Page from '../components/Page'
 
 type PaymentsStatus = {
   activeProvider: 'stripe' | null
@@ -66,7 +67,7 @@ export default function ProviderPayments() {
   }, [])
 
   return (
-    <div className="page">
+    <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Payments</h1>
@@ -285,6 +286,6 @@ export default function ProviderPayments() {
           </section>
         </>
       )}
-    </div>
+    </Page>
   )
 }

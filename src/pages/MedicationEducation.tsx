@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Page from '../components/Page'
 
 import { PEPTIDE_EDUCATION, peptideAnchorId } from '../data/peptideEducation'
 
@@ -12,7 +13,7 @@ function ext(url: string) {
 
 export default function MedicationEducation() {
   return (
-    <div className="page" style={{ maxWidth: 920 }}>
+    <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Medication Education</h1>
@@ -271,7 +272,7 @@ export default function MedicationEducation() {
           </li>
         </ul>
       </section>
-    </div>
+    </Page>
   )
 }
 

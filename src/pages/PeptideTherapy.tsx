@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 import { apiPost } from '../api/client'
+import Page from '../components/Page'
 import { MARKETING_ONLY } from '../config/mode'
 import { PRACTICE_PUBLIC_NAME, PUBLIC_INQUIRY_EMAIL } from '../config/provider'
 import { PEPTIDE_EDUCATION, type PeptideId, peptideAnchorId } from '../data/peptideEducation'
@@ -90,7 +91,7 @@ export default function PeptideTherapy() {
   }, [waitEmail, waitName, ackInfo, ackLegal])
 
   return (
-    <div className="page peptidePage">
+    <Page className="peptidePage" variant="prose">
       <header className="peptideHero">
         <p className="peptideEyebrow">Wheatfill Precision Health</p>
         <h1 style={{ margin: '0 0 10px' }}>Advanced Peptide Therapy</h1>
@@ -450,6 +451,6 @@ export default function PeptideTherapy() {
           </Link>
         </div>
       </section>
-    </div>
+    </Page>
   )
 }

@@ -4,6 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
+import Page from '../components/Page'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import {
@@ -190,7 +191,7 @@ export default function Landing() {
   }, [])
 
   return (
-    <div className="page pageLanding">
+    <Page className="pageLanding" variant="wide">
       <div className="twoCol twoColLanding">
         <section className="landingGridHeroCatalog" aria-label="Welcome">
           <div className="landingHeroIntro">
@@ -530,6 +531,6 @@ export default function Landing() {
           </section>
         </section>
       </div>
-    </div>
+    </Page>
   )
 }

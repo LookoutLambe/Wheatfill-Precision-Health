@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
+import Page from '../components/Page'
 
 export default function Privacy() {
   return (
-    <div className="page">
+    <Page variant="prose">
       <div>
         <h1 style={{ margin: 0 }}>Privacy Policy</h1>
         <p className="muted pageSubtitle">Website &amp; SMS — messaging and marketing data practices</p>
@@ -88,7 +89,7 @@ export default function Privacy() {
           If you have questions about this policy, please contact us via the <Link to="/contact">Contact</Link> page.
         </p>
       </section>
-    </div>
+    </Page>
   )
 }
 

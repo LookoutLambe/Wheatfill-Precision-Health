@@ -41,6 +41,24 @@ html {
   --heading: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
   --mono: ui-monospace, Consolas, monospace;
 
+  /* Layout system */
+  --container-max: 1120px;
+  --container-max-wide: 1240px;
+  --container-gutter: clamp(12px, 3vw, 24px);
+  --measure: 70ch;
+
+  /* Spacing scale (8px rhythm) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light;
@@ -54,6 +72,15 @@ html {
   @media (max-width: 1024px) {
     font-size: 16px;
   }
+}
+
+/* Standard centered content container */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-gutter);
+  box-sizing: border-box;
 }
 
 #root {

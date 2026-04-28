@@ -37,3 +37,13 @@ export function requireRole(roles: Array<'patient' | 'provider' | 'admin'>) {
   }
 }
 
+export function requireApprover() {
+  return async (req: FastifyRequest, reply: FastifyReply) => {
+    const role = (req.user as any)?.role as string | undefined
+    const username = String((req.user as any)?.username || '').trim().toLowerCase()
+    if (role === 'admin') return
+    if (username === 'brett' || username === 'bridgette' || username === 'admin') return
+    return reply.forbidden('Approval permission required.')
+  }
+}
+

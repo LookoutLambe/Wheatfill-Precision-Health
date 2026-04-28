@@ -6,7 +6,9 @@ import { getMarketingIntegrations } from '../marketing/providerStore'
 import { getScheduleConfig, bookAppointment, getPortalState, slotsForDate, subscribePortalState, type ScheduleConfigV1 } from '../data/portalStore'
 import { apiPost } from '../api/client'
 import ApiConnectionHint from '../components/ApiConnectionHint'
-import type { UiApptType } from '../medplum/scheduling'
+import Page from '../components/Page'
+
+type UiApptType = 'New Patient Consultation' | 'Follow-Up Consultation'
 
 type Slot = { date: string; time: string }
 
@@ -223,17 +225,17 @@ export default function BookOnline() {
 
   if (publicBookingFull) {
     return (
-      <div className="page" style={{ padding: 32, maxWidth: 560 }}>
+      <Page variant="prose" style={{ padding: 32 }}>
         <h1 style={{ margin: 0 }}>Book Online</h1>
         <p className="muted" style={{ marginTop: 12, lineHeight: 1.55 }}>
           {COMPLETE_BOOKING_ON_EXTERNAL_SITE_LINE} We&rsquo;re taking you to that page now&hellip;
         </p>
-      </div>
+      </Page>
     )
   }
 
   return (
-    <div className="page">
+    <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Book Online</h1>
@@ -742,6 +744,6 @@ export default function BookOnline() {
           </div>
         </details>
       ) : null}
-    </div>
+    </Page>
   )
 }

@@ -11,6 +11,13 @@ test.describe('public smoke', () => {
     await expect(page.getByRole('heading', { name: /Order Now Catalog/i })).toBeVisible({ timeout: 30_000 })
   })
 
+  test('legacy pharmacy link redirects to order-now slug', async ({ page }) => {
+    // Note: `/pharmacy/mountain-view` is a dedicated page and will not hit the legacy redirect.
+    await page.goto('/pharmacy/legacy-partner')
+    await expect(page).toHaveURL(/\/order-now\/legacy-partner$/)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 30_000 })
+  })
+
   test('contact page loads', async ({ page }) => {
     await page.goto('/contact')
     await expect(page.getByRole('heading', { name: /^Contact$/i })).toBeVisible({ timeout: 30_000 })

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { apiPost } from '../api/client'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
+import Page from '../components/Page'
 
 const ORDER_REQUEST_PRESETS: { id: string; label: string; line: string }[] = [
   { id: 'refill', label: 'Refill', line: 'Refill request' },
@@ -118,7 +119,7 @@ export default function OrderingPortal() {
   }, [])
 
   return (
-    <div className="page">
+    <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Order Requests</h1>
@@ -465,7 +466,7 @@ export default function OrderingPortal() {
           ) : null}
         </section>
       </div>
-    </div>
+    </Page>
   )
 }
 

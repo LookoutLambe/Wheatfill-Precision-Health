@@ -4,7 +4,6 @@ import '../App.css'
 import AuthStatus from './AuthStatus'
 import brandMarkImg from '../assets/wheatfill-mark.png'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
-import { USE_MEDPLUM_PROVIDER_PORTAL } from '../config/providerAuth'
 
 function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
   // Safari < 14 uses addListener/removeListener instead of addEventListener/removeEventListener.
@@ -84,43 +83,26 @@ export default function ProviderShell() {
           <NavLink to="/" onClick={closeMenu}>
             Public site
           </NavLink>
-          {USE_MEDPLUM_PROVIDER_PORTAL ? (
-            <>
-              <NavLink to="/provider" onClick={closeMenu}>
-                Dashboard
-              </NavLink>
-              <NavLink to="/provider/orders" onClick={closeMenu}>
-                All orders
-              </NavLink>
-              <NavLink to="/provider/integrations" onClick={closeMenu}>
-                Integrations
-              </NavLink>
-              <NavLink to="/provider/payments" onClick={closeMenu}>
-                Payments
-              </NavLink>
-            </>
-          ) : (
-            <>
-              <NavLink to="/provider" onClick={closeMenu}>
-                Workspace
-              </NavLink>
-              <NavLink to="/provider/orders" onClick={closeMenu}>
-                All orders
-              </NavLink>
-              <NavLink to="/provider/integrations" onClick={closeMenu}>
-                Integrations
-              </NavLink>
-              <NavLink to="/provider/payments" onClick={closeMenu}>
-                Payments
-              </NavLink>
-              <NavLink to="/provider/security" onClick={closeMenu}>
-                Security
-              </NavLink>
-              <NavLink to="/provider/staff" onClick={closeMenu}>
-                Staff users
-              </NavLink>
-            </>
-          )}
+          <>
+            <NavLink to="/provider" onClick={closeMenu}>
+              Workspace
+            </NavLink>
+            <NavLink to="/provider/orders" onClick={closeMenu}>
+              All orders
+            </NavLink>
+            <NavLink to="/provider/integrations" onClick={closeMenu}>
+              Integrations
+            </NavLink>
+            <NavLink to="/provider/payments" onClick={closeMenu}>
+              Payments
+            </NavLink>
+            <NavLink to="/provider/security" onClick={closeMenu}>
+              Security
+            </NavLink>
+            <NavLink to="/provider/staff" onClick={closeMenu}>
+              Staff users
+            </NavLink>
+          </>
           <AuthStatus onMenuClose={closeMenu} />
         </nav>
       </div>

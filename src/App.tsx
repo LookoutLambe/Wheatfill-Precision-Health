@@ -1,10 +1,9 @@
 import { Suspense, lazy, useEffect } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import Shell from './components/Shell'
 import ProviderShell from './components/ProviderShell'
 import ProviderGuard from './components/ProviderGuard'
-import PatientGuard from './components/PatientGuard'
 import Landing from './pages/Landing'
 const PeptideTherapy = lazy(() => import('./pages/PeptideTherapy'))
 const PeptideHub = lazy(() => import('./pages/PeptideHub'))
@@ -22,21 +21,13 @@ const PharmacyPartner = lazy(() => import('./pages/PharmacyPartner'))
 const MountainViewPharmacy = lazy(() => import('./pages/MountainViewPharmacy'))
 const HallandalePharmacy = lazy(() => import('./pages/HallandalePharmacy'))
 const OrderNowSummary = lazy(() => import('./pages/OrderNowSummary'))
-const PatientBackendLogin = lazy(() => import('./pages/PatientBackendLogin'))
-const PatientPortal = lazy(() => import('./pages/PatientPortal'))
 const PatientPortalInfo = lazy(() => import('./pages/PatientPortalInfo'))
-const ProviderPortal = lazy(() => import('./pages/ProviderPortal'))
 import SignIn from './pages/SignIn'
 const ProviderLogin = lazy(() => import('./pages/ProviderLogin'))
-const ProviderOrderingTest = lazy(() => import('./pages/ProviderOrderingTest'))
 const ProviderPayments = lazy(() => import('./pages/ProviderPayments'))
-const ProviderIntegrations = lazy(() => import('./pages/ProviderIntegrations'))
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import NotFound from './pages/NotFound'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
-import { PATIENT_USES_MEDPLUM } from './config/patientFeatures'
-import { USE_MEDPLUM_PROVIDER_PORTAL } from './config/providerAuth'
-const MarketingProviderLogin = lazy(() => import('./pages/MarketingProviderLogin'))
 const MarketingProviderAdmin = lazy(() => import('./pages/MarketingProviderAdmin'))
 const MarketingProviderSecurity = lazy(() => import('./pages/MarketingProviderSecurity'))
 const ProviderVbmsWorkspace = lazy(() => import('./pages/ProviderVbmsWorkspace'))
@@ -77,6 +68,12 @@ function MarketingLeaveToFullApp({ path }: { path: string }) {
   )
 }
 
+function PharmacySlugRedirect() {
+  const { slug } = useParams()
+  if (!slug) return <Navigate to="/order-now" replace />
+  return <Navigate to={`/order-now/${encodeURIComponent(slug)}`} replace />
+}
+
 export default function App() {
   const fallback = (
     <div className="page">
@@ -113,7 +110,7 @@ export default function App() {
           <Route path="/pharmacy/hallandale" element={<HallandalePharmacy />} />
           <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
-          <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
+          <Route path="/pharmacy/:slug" element={<PharmacySlugRedirect />} />
           <Route path="/signin" element={<MarketingLeaveToFullApp path="/signin" />} />
           <Route path="/patient" element={<MarketingLeaveToFullApp path="/patient" />} />
           <Route path="/patient/login" element={<MarketingLeaveToFullApp path="/patient/login" />} />
@@ -122,7 +119,7 @@ export default function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        <Route path="/provider/login" element={<MarketingProviderLogin />} />
+        <Route path="/provider/login" element={<ProviderLogin />} />
         <Route
           element={
             <ProviderGuard>
@@ -169,27 +166,15 @@ export default function App() {
         <Route path="/pharmacy/hallandale" element={<HallandalePharmacy />} />
         <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
-        <Route path="/pharmacy/:slug" element={<Navigate to="/order-now/:slug" replace />} />
+        <Route path="/pharmacy/:slug" element={<PharmacySlugRedirect />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/npp" element={<NoticeOfPrivacyPractices />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/patient/login" element={<PatientBackendLogin />} />
         {/* Staff entry (shared privately) */}
         <Route path="/staff" element={<Navigate to="/provider" replace />} />
-        <Route
-          path="/patient"
-          element={
-            PATIENT_USES_MEDPLUM ? (
-              <PatientGuard>
-                <PatientPortal />
-              </PatientGuard>
-            ) : (
-              <PatientPortalInfo />
-            )
-          }
-        />
+        <Route path="/patient" element={<PatientPortalInfo />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 
@@ -202,27 +187,17 @@ export default function App() {
           </ProviderGuard>
         }
       >
-        {USE_MEDPLUM_PROVIDER_PORTAL ? (
-          <>
-            <Route path="/provider" element={<ProviderPortal />} />
-            <Route path="/provider/pharmacy/:slug" element={<ProviderOrderingTest />} />
-            <Route path="/provider/payments" element={<ProviderPayments />} />
-            <Route path="/provider/integrations" element={<ProviderIntegrations />} />
-          </>
-        ) : (
-          <>
-            <Route path="/provider" element={<ProviderVbmsWorkspace />} />
-            <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
-            <Route path="/provider/orders" element={<ProviderOrderHistory />} />
-            <Route path="/provider/schedule" element={<ProviderSchedule />} />
-            <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
-            <Route path="/provider/security" element={<MarketingProviderSecurity />} />
-            <Route path="/provider/payments" element={<ProviderVbmsWorkspace />} />
-            <Route path="/provider/pharmacy/:slug" element={<ProviderOrderingTest />} />
-            <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
-            <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
-          </>
-        )}
+        <>
+          <Route path="/provider" element={<ProviderVbmsWorkspace />} />
+          <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
+          <Route path="/provider/orders" element={<ProviderOrderHistory />} />
+          <Route path="/provider/schedule" element={<ProviderSchedule />} />
+          <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
+          <Route path="/provider/security" element={<MarketingProviderSecurity />} />
+          <Route path="/provider/payments" element={<ProviderPayments />} />
+          <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
+          <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
+        </>
       </Route>
 
       <Route path="/storefront" element={<StripeConnectStorefront />} />

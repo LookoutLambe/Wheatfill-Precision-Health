@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { PRACTICE_PUBLIC_NAME, PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
+import Page from '../components/Page'
 
 export default function TermsOfService() {
   const year = new Date().getFullYear()
   const states = PROVIDER_LICENSED_STATES.join(', ')
   return (
-    <div className="page">
+    <Page variant="prose">
       <div>
         <h1 style={{ margin: 0 }}>Terms of Service</h1>
         <p className="muted pageSubtitle">Use of this website and related communications</p>
@@ -119,6 +120,6 @@ export default function TermsOfService() {
           .
         </p>
       </section>
-    </div>
+    </Page>
   )
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { apiPost, setApiSessionHint } from '../api/client'
+import Page from '../components/Page'
 
 export default function PatientBackendLogin() {
   const navigate = useNavigate()
@@ -14,7 +15,7 @@ export default function PatientBackendLogin() {
   const [busy, setBusy] = useState(false)
 
   return (
-    <div className="page">
+    <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Patient Sign-In</h1>
@@ -102,6 +103,6 @@ export default function PatientBackendLogin() {
           </Link>
         </div>
       </section>
-    </div>
+    </Page>
   )
 }

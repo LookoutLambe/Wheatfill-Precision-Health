@@ -91,11 +91,12 @@ body {
 
 .topNavInner {
   width: 100%;
-  margin: 0;
+  margin: 0 auto;
+  max-width: var(--container-max);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 14px var(--container-gutter);
   box-sizing: border-box;
   gap: 14px;
   position: relative;
@@ -366,7 +367,7 @@ html.pharmacyCartOpen body {
 .main {
   width: 100%;
   margin: 0;
-  padding: 28px 16px 64px;
+  padding: var(--space-7) 0 var(--space-10);
   box-sizing: border-box;
   background: var(--bg);
   position: relative;
@@ -375,17 +376,28 @@ html.pharmacyCartOpen body {
   min-height: 0;
 }
 
-/* Landing: center the constrained content block (flex parent + align-items is reliable vs margin:auto on nested flex). */
-.main:has(.pageLanding) {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
 .page {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-gutter);
+  box-sizing: border-box;
+}
+
+.page--wide {
+  max-width: var(--container-max-wide);
+}
+
+.page--prose {
+  max-width: var(--measure);
+}
+
+.page--full {
+  max-width: none;
+  padding-inline: 0;
 }
 
 /**
@@ -1459,13 +1471,13 @@ html:has(.peptidePage) {
   }
 
   .twoCol.twoColLanding .landingGridAccordion {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 2;
   }
 
   .twoCol.twoColLanding .landingGridProfileColumn {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1;
     align-self: start;
     justify-self: center;
     width: auto;
@@ -1686,6 +1698,8 @@ html:has(.peptidePage) {
   align-items: center;
   text-align: center;
   gap: 6px;
+  padding-inline: var(--container-gutter);
+  box-sizing: border-box;
 }
 
 .footerLine {
@@ -1897,7 +1911,7 @@ html:has(.peptidePage) {
   }
 
   .main {
-    padding: 18px 12px 48px;
+    padding: var(--space-6) 0 var(--space-9);
   }
 
   .pageHeaderRow {
@@ -1911,7 +1925,7 @@ html:has(.peptidePage) {
     flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    padding-right: 12px;
+    padding-right: 0;
   }
 
   .topNav {

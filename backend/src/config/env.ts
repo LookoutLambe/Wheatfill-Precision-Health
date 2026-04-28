@@ -11,6 +11,9 @@ const envSchema = z
     DATABASE_URL: z.string().optional(),
     /** Comma-separated browser origins allowed for credentialed CORS (required in production). */
     FRONTEND_ORIGIN: z.string().optional(),
+    SUPABASE_URL: z.string().optional(),
+    SUPABASE_ANON_KEY: z.string().optional(),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   })
   .passthrough()
 
@@ -36,6 +39,13 @@ export function loadAndValidateEnv(): ParsedEnv {
         '[env] FRONTEND_ORIGIN must be set in production (comma-separated HTTPS origins for the static site). Refusing to start.',
       )
     }
+
+    const supabaseUrl = (env.SUPABASE_URL || '').trim()
+    const supabaseAnon = (env.SUPABASE_ANON_KEY || '').trim()
+    const supabaseSrv = (env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
+    if (!supabaseUrl) throw new Error('[env] SUPABASE_URL is required in production. Refusing to start.')
+    if (!supabaseAnon) throw new Error('[env] SUPABASE_ANON_KEY is required in production. Refusing to start.')
+    if (!supabaseSrv) throw new Error('[env] SUPABASE_SERVICE_ROLE_KEY is required in production. Refusing to start.')
   }
   return env
 }

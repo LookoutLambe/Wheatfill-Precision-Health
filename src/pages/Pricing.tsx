@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { BookVisitCta } from '../components/CharmMarketingCtas'
+import Page from '../components/Page'
 
 export default function Pricing() {
   return (
-    <div className="page pricingPage" style={{ gap: 22 }}>
+    <Page className="pricingPage" style={{ gap: 22 }}>
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>Transparent Pricing</h1>
@@ -189,7 +190,7 @@ export default function Pricing() {
           Book your consultation
         </BookVisitCta>
       </section>
-    </div>
+    </Page>
   )
 }
 
