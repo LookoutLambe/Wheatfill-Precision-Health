@@ -10,10 +10,7 @@
 
 create table if not exists public.provider_profiles (
   id uuid primary key default gen_random_uuid(),
-  -- NOTE: do NOT add a foreign key to auth.users.
-  -- Supabase keeps auth tables in the `auth` schema and Prisma will crash with P4002
-  -- when it detects cross-schema FK references during `prisma db push`.
-  auth_user_id uuid unique,
+  auth_user_id uuid unique references auth.users(id) on delete cascade,
   username text unique not null,
   email text unique not null,
   display_name text not null,
