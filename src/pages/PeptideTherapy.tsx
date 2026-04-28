@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 import { apiPost } from '../api/client'
 import Page from '../components/Page'
+import { SiteLogoPageBadge } from '../components/SiteLogo'
 import { MARKETING_ONLY } from '../config/mode'
 import { PRACTICE_PUBLIC_NAME, PUBLIC_INQUIRY_EMAIL } from '../config/provider'
 import {
@@ -108,7 +109,7 @@ export default function PeptideTherapy() {
   return (
     <Page className="peptidePage" variant="prose">
       <header className="peptideHero">
-        <p className="peptideEyebrow">Wheatfill Precision Health</p>
+        <SiteLogoPageBadge />
         <h1 style={{ margin: '0 0 10px' }}>Advanced Peptide Therapy</h1>
         <p className="peptideTagline">Precision-driven optimization. Elevated human performance.</p>
         <div className="peptideHeroBody">

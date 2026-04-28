@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import '../App.css'
 import AuthStatus from './AuthStatus'
-import brandMarkImg from '../assets/wheatfill-mark.png'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
+import { SiteLogo } from './SiteLogo'
 
 function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
   // Safari < 14 uses addListener/removeListener instead of addEventListener/removeEventListener.
@@ -54,12 +54,7 @@ export default function ProviderShell() {
               className="brand brandWithMark isProviderBrand"
               aria-label={`Wheatfill Precision Health — ${PROVIDER_TEAM_LABEL} workspace`}
             >
-              <img src={brandMarkImg} alt="" className="brandMarkImg" decoding="async" />
-              <span className="brandDivider" aria-hidden="true" />
-              <span className="brandLockup">
-                <span className="brandPrimary">Wheatfill</span>
-                <span className="brandProviderLine">Team Workspace</span>
-              </span>
+              <SiteLogo mode="provider" presentation="nav" />
             </div>
 
             <button

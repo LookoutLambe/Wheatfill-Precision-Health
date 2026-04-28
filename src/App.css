@@ -221,6 +221,7 @@ html.pharmacyCartOpen body {
   width: 44px;
   height: 44px;
   object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(10, 30, 63, 0.12));
 }
 
 .brandDivider {
@@ -295,6 +296,61 @@ html.pharmacyCartOpen body {
   min-width: 0;
 }
 
+/* Slightly more open subline on in-page badge (same words, calmer read) */
+.brandSub--page {
+  letter-spacing: 0.11em;
+  opacity: 0.9;
+}
+
+/* In-content logo: same lockup as the header, packaged so it’s read as a mark—not a sentence */
+.brandLockup--page {
+  gap: 4px;
+}
+
+.brandMarkImg--page {
+  width: 40px;
+  height: 40px;
+}
+
+.siteLogoPageBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 14px;
+  padding: 12px 20px 14px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  box-sizing: border-box;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(10, 30, 63, 0.05) 100%);
+  border: 1px solid rgba(10, 30, 63, 0.1);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 10px 32px -18px rgba(10, 30, 63, 0.28);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.siteLogoPageBadge:hover {
+  border-color: rgba(10, 30, 63, 0.16);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 14px 36px -16px rgba(10, 30, 63, 0.32);
+}
+
+.siteLogoPageBadge:active {
+  transform: translateY(0.5px);
+}
+
+.siteLogoPageBadge:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
 .brandProviderLine {
   font-family: var(--brand-wordmark-sans);
   font-weight: 600;
@@ -315,6 +371,11 @@ html.pharmacyCartOpen body {
   .brandMarkImg {
     width: 56px;
     height: 56px;
+  }
+
+  .brandMarkImg--page {
+    width: 50px;
+    height: 50px;
   }
 
   .brandDivider {
@@ -444,9 +505,11 @@ html.pharmacyCartOpen body {
   text-align: start;
 }
 .main .peptidePage > .peptideHero .peptideEyebrow,
+.main .peptidePage > .peptideHero .siteLogoPageBadge,
 .main .peptidePage > .peptideHero h1,
 .main .peptidePage > .peptideHero .peptideTagline,
 .main .peptideHubPage > .peptideHero .peptideEyebrow,
+.main .peptideHubPage > .peptideHero .siteLogoPageBadge,
 .main .peptideHubPage > .peptideHero h1,
 .main .peptideHubPage > .peptideHero .peptideTagline {
   text-align: center;
@@ -1934,6 +1997,16 @@ a.btn:focus-visible {
   .isProviderBrand .brandProviderLine {
     font-size: 9px;
     letter-spacing: 0.04em;
+  }
+
+  .siteLogoPageBadge {
+    padding: 10px 14px 12px;
+    margin-bottom: 12px;
+  }
+
+  .siteLogoPageBadge .brandMarkImg--page {
+    width: 36px;
+    height: 36px;
   }
 
   .navDrawerTop {

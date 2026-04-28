@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Page from '../components/Page'
+import { SiteLogoPageBadge } from '../components/SiteLogo'
 
 import { PEPTIDE_EDUCATION, peptideAnchorId } from '../data/peptideEducation'
 
@@ -16,6 +17,7 @@ export default function MedicationEducation() {
     <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
+          <SiteLogoPageBadge />
           <h1 style={{ margin: 0 }}>Medication Education</h1>
           <p className="muted pageSubtitle" style={{ marginTop: 8 }}>
             General education (not medical advice). Your clinician will review your history and decide what is appropriate for you.

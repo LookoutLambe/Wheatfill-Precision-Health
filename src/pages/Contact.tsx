@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
-import { MARKETING_ONLY } from '../config/mode'
 import Page from '../components/Page'
+import { SiteLogoPageBadge } from '../components/SiteLogo'
+import { MARKETING_ONLY } from '../config/mode'
+import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 
 const CONTACT_DRAFT_KEY = 'wph_contact_draft_v2'
 const CONTACT_TO_EMAIL = 'brett.wheatfill@gmail.com'
@@ -94,12 +95,15 @@ export default function Contact() {
 
   return (
     <Page variant="prose">
-      <div>
-        <h1 style={{ margin: 0 }}>Contact</h1>
-        <p className="muted pageSubtitle">
-          Fill this out on the website, then we’ll open an email draft for you to send.
-          For privacy, don’t send sensitive medical details over email. {TYPICAL_INBOX_REPLY_LINE}
-        </p>
+      <div className="pageHeaderRow">
+        <div>
+          <SiteLogoPageBadge />
+          <h1 style={{ margin: 0 }}>Contact</h1>
+          <p className="muted pageSubtitle">
+            Fill this out on the website, then we’ll open an email draft for you to send. For privacy, don’t send
+            sensitive medical details over email. {TYPICAL_INBOX_REPLY_LINE}
+          </p>
+        </div>
       </div>
 
       <div className="cardGrid" style={{ gridTemplateColumns: '1fr' }}>

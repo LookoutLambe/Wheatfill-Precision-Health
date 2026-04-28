@@ -11,9 +11,10 @@ import {
   isMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import StickyShareDock from './StickyShareDock'
+import { SITE_LOGO_ARIA_LABEL_HOME } from '../config/branding'
 import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
-import brandMarkImg from '../assets/wheatfill-mark.png'
+import { SiteLogo } from './SiteLogo'
 
 function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
   // Safari < 14 uses addListener/removeListener instead of addEventListener/removeEventListener.
@@ -182,19 +183,9 @@ export default function Shell() {
               to="/"
               className="brand brandWithMark"
               onClick={closeMenu}
-              aria-label="Wheatfill Precision Health — Home"
+              aria-label={SITE_LOGO_ARIA_LABEL_HOME}
             >
-              <img src={brandMarkImg} alt="" className="brandMarkImg" decoding="async" />
-              <span className="brandDivider" aria-hidden="true" />
-              <span className="brandLockup">
-                <span className="brandPrimary">Wheatfill</span>
-                <span className="brandSecondaryRow">
-                  <span className="brandSecondaryLine" aria-hidden="true" />
-                  <span className="brandSecondary">Precision Health</span>
-                  <span className="brandSecondaryLine" aria-hidden="true" />
-                </span>
-                <span className="brandSub">Telehealth • Optimization • Longevity</span>
-              </span>
+              <SiteLogo mode="marketing" presentation="nav" />
             </NavLink>
 
             <div className="topNavRight">

@@ -6,6 +6,7 @@ import {
   publicSchedulingUrlForFullApp,
 } from '../config/patientFeatures'
 import Page from '../components/Page'
+import { SiteLogoPageBadge } from '../components/SiteLogo'
 
 /**
  * Customer hub (DTC / consumer site—not a hospital portal). Everything important is on this site.
@@ -18,6 +19,7 @@ export default function PatientPortalInfo() {
     <Page className="orderNowHubPage" variant="wide">
       <div className="pageHeaderRow">
         <div>
+          <SiteLogoPageBadge />
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>For patients</h1>
           <p className="muted pageSubtitle" style={{ marginTop: 8 }}>
             Shop the catalog, book a time, and message the team—right here, like a modern consumer brand. When you’re

@@ -1,19 +1,21 @@
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
-import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import Page from '../components/Page'
+import { SiteLogoPageBadge } from '../components/SiteLogo'
+import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
 export default function About() {
   return (
     <Page>
       <div className="aboutHeader">
+        <SiteLogoPageBadge />
         <h1 style={{ margin: 0 }}>About</h1>
       </div>
 
       <section className="card cardAccentRed aboutMissionBlock">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Mission</h2>
-          <span className="pill pillRed">Elevated living</span>
+          <span className="pill pillRed">Elevated Living</span>
         </div>
         <p className="muted">
           Personalized, evidence-based care designed to optimize your health, performance, and
