@@ -1,18 +1,10 @@
-html {
-  scroll-padding-top: 112px;
-}
-
-@media (max-width: 900px) {
-  html {
-    scroll-padding-top: 124px;
-  }
-}
-
 :root {
   /* Wheatfill Precision Health theme (light) */
   --text: #1f2937; /* slate-800 */
   --text-h: #0b1220; /* near-navy for headings */
-  --bg: #ffffff;
+  /* Flat page background (warm light ivory — no gradients) */
+  --ivory-mid: #f8f4ec;
+  --bg: var(--ivory-mid);
   --border: rgba(10, 30, 63, 0.14); /* navy tint */
   --code-bg: rgba(10, 30, 63, 0.06);
 
@@ -39,6 +31,8 @@ html {
 
   --sans: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
   --heading: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
+  /* Practice slogan — readable script (similar vibe to casual handwriting; not a licensed retail font) */
+  --font-slogan: 'Dancing Script', 'Segoe Script', 'Bradley Hand', cursive;
   --mono: ui-monospace, Consolas, monospace;
 
   /* Layout system */
@@ -63,7 +57,6 @@ html {
   letter-spacing: 0.18px;
   color-scheme: light;
   color: var(--text);
-  background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -71,6 +64,19 @@ html {
 
   @media (max-width: 1024px) {
     font-size: 16px;
+  }
+}
+
+html {
+  scroll-padding-top: 112px;
+  min-height: 100dvh;
+  min-height: 100svh;
+  background: var(--ivory-mid);
+}
+
+@media (max-width: 900px) {
+  html {
+    scroll-padding-top: 124px;
   }
 }
 
@@ -91,10 +97,12 @@ html {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  background: transparent;
 }
 
 body {
   margin: 0;
+  background: transparent;
 }
 
 h1,
