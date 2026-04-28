@@ -1,6 +1,18 @@
 import { Link } from 'react-router-dom'
 import { BookVisitCta } from '../components/CharmMarketingCtas'
 import Page from '../components/Page'
+import { PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { PEPTIDE_EDUCATION, PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER, peptideAnchorId } from '../data/peptideEducation'
+import { WHEATFILL_PEPTIDE_PRICE_LIST } from '../data/wheatfillPeptidePriceList'
+
+function renderBoldSegments(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, i) => {
+    const inner = /^\*\*([^*]+)\*\*$/.exec(part)
+    if (inner) return <strong key={i}>{inner[1]}</strong>
+    return <span key={i}>{part}</span>
+  })
+}
 
 export default function Pricing() {
   return (
@@ -22,7 +34,7 @@ export default function Pricing() {
         <div className="divider" />
 
       <div className="cardGrid pricingConsultGrid">
-        <section className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
+        <section className="card cardAccentNavy">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>New Patient</h2>
             <span className="pill pillRed">$110</span>
@@ -43,7 +55,7 @@ export default function Pricing() {
           </BookVisitCta>
         </section>
 
-        <section className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+        <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Established Patient</h2>
             <span className="pill">$85</span>
@@ -77,7 +89,7 @@ export default function Pricing() {
         <div className="divider" />
 
         <div className="cardGrid">
-          <div className="card cardAccentNavy" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentNavy">
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Semaglutide</h2>
               <span className="pill">$180+</span>
@@ -86,7 +98,7 @@ export default function Pricing() {
               Monthly medication cost varies by dose and vial size.
             </p>
           </div>
-          <div className="card cardAccentRed" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentRed">
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Tirzepatide</h2>
               <span className="pill">$260+</span>
@@ -107,18 +119,41 @@ export default function Pricing() {
         </div>
       </section>
 
-      <section className="card">
+      <section className="card" id="peptide-pricing" style={{ scrollMarginTop: 88 }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Peptide therapy pricing</h2>
-          <span className="pill">Education</span>
+          <span className="pill">Wheatfill list</span>
         </div>
         <p className="muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
-          Peptide programs vary by peptide, dose, and what your clinician prescribes. Our{' '}
+          Typical cash-pay peptide program fees when prescribed through <strong>{PRACTICE_PUBLIC_NAME}</strong>—same
+          amounts as on our{' '}
           <Link to="/peptides" style={{ fontWeight: 650 }}>
-            peptide education page
+            peptide education
           </Link>{' '}
-          shows the <strong>Wheatfill price list</strong> for each peptide plus <strong>educational dosing</strong>
-          background—final totals are confirmed at visit. Open each peptide&apos;s <strong>Read full profile</strong>.
+          page. For <strong>how protocols are discussed</strong> (education only) and science links, open{' '}
+          <strong>Read full profile</strong> there. Consult visit fees are above; labs may be extra.
+        </p>
+        <div className="divider" />
+        <div className="cardGrid" style={{ alignItems: 'stretch' }}>
+          {PEPTIDE_EDUCATION.map((p) => (
+            <div key={p.id} className="card cardAccentSoft" style={{ margin: 0 }}>
+              <div className="cardTitle">
+                <h3 style={{ margin: 0, fontSize: 'clamp(16px, 1.8vw, 18px)' }}>{p.title}</h3>
+                <span className="pill">{p.pill}</span>
+              </div>
+              <p className="muted" style={{ marginTop: 10, marginBottom: 0, lineHeight: 1.55, fontSize: 14 }}>
+                {renderBoldSegments(WHEATFILL_PEPTIDE_PRICE_LIST[p.id])}
+              </p>
+              <p className="muted" style={{ marginTop: 12, marginBottom: 0, fontSize: 13 }}>
+                <Link to={`/peptides#${peptideAnchorId(p.id)}`} style={{ fontWeight: 650 }}>
+                  Dosing &amp; details on Peptide Therapy
+                </Link>
+              </p>
+            </div>
+          ))}
+        </div>
+        <p className="muted" style={{ marginTop: 16, marginBottom: 0, fontSize: 13, lineHeight: 1.5 }}>
+          {PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER}
         </p>
       </section>
 
@@ -143,7 +178,7 @@ export default function Pricing() {
         <div className="divider" />
 
         <div className="cardGrid" style={{ marginTop: 12 }}>
-          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft">
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               Does insurance cover these services?
             </div>
@@ -155,7 +190,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft">
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               How often will I need follow-up appointments?
             </div>
@@ -168,7 +203,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft">
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>Can medication prices change?</div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">
@@ -179,7 +214,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div className="card cardAccentSoft" style={{ gridColumn: 'span 6' }}>
+          <div className="card cardAccentSoft">
             <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>
               How does payment work?
             </div>

@@ -3992,6 +3992,22 @@ html:has(.peptidePage) {
   gap: 16px;
 }
 
+/* Pricing: consultation cards were forced to span-6 via inline styles, breaking the global
+   .card stack at 900px. Nested CTAs as inline-level in ultra-narrow columns clipped the
+   navy fill around wrapped label text—force block + normal wrapping on small viewports. */
+@media (max-width: 900px) {
+  .pricingPage .card .btn {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.35;
+    padding: 12px 16px;
+  }
+}
+
 @media (max-width: 560px) {
   .orderNowProductTop {
     grid-template-columns: 1fr;
