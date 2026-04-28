@@ -10,6 +10,7 @@ import {
 import { registerBillingWebhookRoutes } from './routes/billingWebhooks.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
+import { startPaymentCleanup } from './jobs/paymentCleanup.js'
 import Fastify from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
@@ -315,6 +316,9 @@ const app = Fastify({
   logger: true,
   trustProxy: TRUST_PROXY_ENABLED,
 })
+
+// Periodically clean up abandoned Stripe checkouts so admin views stay tidy.
+const stopPaymentCleanup = startPaymentCleanup(app.log)
 
 await app.register(cookie)
 await app.register(helmet, {
@@ -2236,4 +2240,7 @@ app.log.info(
   { trustProxy: TRUST_PROXY_ENABLED, jwtExpiresIn: JWT_EXPIRES_IN },
   'wph API ready (trustProxy affects req.ip / rate-limit keys behind proxies)',
 )
+
+process.on('SIGTERM', () => stopPaymentCleanup())
+process.on('SIGINT', () => stopPaymentCleanup())
 
