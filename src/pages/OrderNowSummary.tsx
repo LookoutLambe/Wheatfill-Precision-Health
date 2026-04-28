@@ -6,7 +6,7 @@ import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../dat
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
-import { apiGet, apiPost, getToken } from '../api/client'
+import { apiGet, apiPost, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
@@ -41,8 +41,15 @@ export default function OrderNowSummary() {
   const [shipState, setShipState] = useState('')
   const [shipZip, setShipZip] = useState('')
   const [contactEmail, setContactEmail] = useState('')
+  const [apiSession, setApiSession] = useState<ApiSessionSnapshot | null>(null)
 
-  const hasLegacyToken = Boolean(getToken()?.trim())
+  useEffect(() => {
+    fetchApiSession().then(setApiSession)
+  }, [])
+
+  /** Patient JWT/session only — not “any legacy token” (providers/admins would hit 403 on /v1/patient/*). */
+  const isPatientSession =
+    Boolean(apiSession?.ok && apiSession.authenticated && apiSession.role === 'patient')
   const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
 
   useEffect(() => {
@@ -126,34 +133,35 @@ export default function OrderNowSummary() {
       setCheckoutError('Please type your name as a signature to continue.')
       return
     }
-    if (!hasLegacyToken && !emailOk(contactEmail)) {
+    if (!isPatientSession && !emailOk(contactEmail)) {
       setCheckoutError('Please enter a valid email so we can confirm your order and reach you if needed.')
       return
     }
 
-    const tok = getToken()
+    setCheckoutBusy(true)
+    ;(async () => {
+      try {
+        const session = await fetchApiSession()
+        const patientOk = session.ok && session.authenticated && session.role === 'patient'
 
-    if (tok) {
-      setCheckoutBusy(true)
-      ;(async () => {
-        try {
-          const body = {
-            partnerSlug: partner.slug,
-            items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-            agreedToShippingTerms: agree,
-            contactPermission: contactOk,
-            signatureName: sigName.trim(),
-            signatureDate: sigDate,
-            shippingInsurance: insurance,
-            shippingAddress1: shipStreet.trim(),
-            shippingCity: shipCity.trim(),
-            shippingState: shipState.trim(),
-            shippingPostalCode: shipZip.trim(),
-          }
+        const body = {
+          partnerSlug: partner.slug,
+          items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
+          agreedToShippingTerms: agree,
+          contactPermission: contactOk,
+          signatureName: sigName.trim(),
+          signatureDate: sigDate,
+          shippingInsurance: insurance,
+          shippingAddress1: shipStreet.trim(),
+          shippingCity: shipCity.trim(),
+          shippingState: shipState.trim(),
+          shippingPostalCode: shipZip.trim(),
+        }
+
+        if (patientOk) {
           const res = await apiPost<{ checkoutUrl: string | null; orderId?: string; totalCents?: number }>(
             '/v1/patient/orders/pharmacy',
             body,
-            tok,
           )
           if (res.checkoutUrl) {
             window.location.href = res.checkoutUrl
@@ -166,51 +174,29 @@ export default function OrderNowSummary() {
               ? `Order received (ref ${res.orderId}). No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active payment method. Your care team can still collect payment.`
               : 'Order submitted. No payment page opened (Stripe may not be configured on the server). Your care team will follow up with next steps.',
           )
-        } catch (e: any) {
-          setCheckoutError(String(e?.message || e))
-        } finally {
-          setCheckoutBusy(false)
+          return
         }
-      })()
-    } else {
-      setCheckoutBusy(true)
-      ;(async () => {
-        try {
-          const common = {
-            partnerSlug: partner.slug,
-            items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-            agreedToShippingTerms: agree,
-            contactPermission: contactOk,
-            signatureName: sigName.trim(),
-            signatureDate: sigDate,
-            shippingInsurance: insurance,
-            shippingAddress1: shipStreet.trim(),
-            shippingCity: shipCity.trim(),
-            shippingState: shipState.trim(),
-            shippingPostalCode: shipZip.trim(),
-            contactEmail: contactEmail.trim(),
-          }
-          const res = await apiPost<{ orderId: string; totalCents: number; checkoutUrl: string | null }>(
-            '/v1/public/orders/pharmacy',
-            common,
-            '',
-          )
-          if (res.checkoutUrl) {
-            window.location.href = res.checkoutUrl
-            return
-          }
-          writeCartForSlug(slug, {})
-          setCheckoutError(null)
-          alert(
-            `Order received. Reference: ${res.orderId}. No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active method in provider settings. Your care team can still collect payment.`,
-          )
-        } catch (e: any) {
-          setCheckoutError(String(e?.message || e))
-        } finally {
-          setCheckoutBusy(false)
+
+        const res = await apiPost<{ orderId: string; totalCents: number; checkoutUrl: string | null }>(
+          '/v1/public/orders/pharmacy',
+          { ...body, contactEmail: contactEmail.trim() },
+          '',
+        )
+        if (res.checkoutUrl) {
+          window.location.href = res.checkoutUrl
+          return
         }
-      })()
-    }
+        writeCartForSlug(slug, {})
+        setCheckoutError(null)
+        alert(
+          `Order received. Reference: ${res.orderId}. No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active method in provider settings. Your care team can still collect payment.`,
+        )
+      } catch (e: unknown) {
+        setCheckoutError(String((e as Error)?.message || e))
+      } finally {
+        setCheckoutBusy(false)
+      }
+    })()
   }
 
   const catalogPath = `/order-now/${encodeURIComponent(slug)}`
@@ -222,7 +208,7 @@ export default function OrderNowSummary() {
     shipState &&
     shipZip.trim() &&
     sigName.trim() &&
-    (hasLegacyToken || emailOk(contactEmail))
+    (isPatientSession || emailOk(contactEmail))
   const itemsSummaryText = items.map((it) => `${it.product.name} (x${it.quantity})`).join(', ')
 
   return (
@@ -389,7 +375,7 @@ export default function OrderNowSummary() {
                 <p className="muted" style={{ fontSize: 13, margin: '0 0 12px' }}>
                   Where to ship — used when your order is processed.
                 </p>
-                {hasLegacyToken ? null : (
+                {isPatientSession ? null : (
                   <label>
                     <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                       Email <span style={{ color: 'var(--accent-rose)' }}>*</span>
