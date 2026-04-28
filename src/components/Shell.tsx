@@ -10,6 +10,7 @@ import {
   getMarketingIntegrations,
   isMarketingProviderAuthed,
 } from '../marketing/providerStore'
+import StickyShareDock from './StickyShareDock'
 import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
 import brandMarkImg from '../assets/wheatfill-mark.png'
@@ -318,6 +319,8 @@ export default function Shell() {
       <main id="wph-main" className="main" tabIndex={-1}>
         <Outlet />
       </main>
+
+      <StickyShareDock />
 
       {showMobilePatientDock ? (
         <nav className="mobilePatientDock" aria-label="Quick patient actions">
