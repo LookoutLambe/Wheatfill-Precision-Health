@@ -135,6 +135,7 @@ export default function App() {
           <Route path="/provider/schedule" element={<ProviderSchedule />} />
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
+          <Route path="/provider/payments" element={<ProviderPayments />} />
           <Route path="/provider/staff" element={<ProviderStaffUsers />} />
           <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
           <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
