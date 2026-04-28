@@ -80,52 +80,10 @@ async function readResponseBody<T>(res: Response): Promise<T> {
 }
 
 const SESSION_HINT_KEY = 'wph_api_session_hint_v1'
-const TOKEN_KEY = 'wph_token_v1'
-
-function readCookie(name: string): string {
-  if (typeof document === 'undefined') return ''
-  const v = document.cookie
-    .split(';')
-    .map((s) => s.trim())
-    .find((s) => s.toLowerCase().startsWith(`${name.toLowerCase()}=`))
-  if (!v) return ''
-  return decodeURIComponent(v.slice(name.length + 1))
-}
-
-function writeCookie(name: string, value: string) {
-  if (typeof document === 'undefined') return
-  const secure = window.location.protocol === 'https:' ? '; Secure' : ''
-  // 30 days; JS-accessible token cookie is a fallback when storage is blocked.
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${30 * 86400}; SameSite=Lax${secure}`
-}
-
-function clearCookie(name: string) {
-  if (typeof document === 'undefined') return
-  const secure = window.location.protocol === 'https:' ? '; Secure' : ''
-  document.cookie = `${name}=; Path=/; Max-Age=0; SameSite=Lax${secure}`
-}
 
 /** Legacy Bearer token (migrating off localStorage); prefer httpOnly cookie set by POST /auth/login. */
 export function getToken() {
-  try {
-    const t = localStorage.getItem(TOKEN_KEY) || ''
-    if (t.trim()) return t
-  } catch {
-    // ignore
-  }
-  return readCookie(TOKEN_KEY) || ''
-}
-
-export function persistToken(token: string | null | undefined) {
-  const t = String(token || '').trim()
-  try {
-    if (t) localStorage.setItem(TOKEN_KEY, t)
-    else localStorage.removeItem(TOKEN_KEY)
-  } catch {
-    // ignore
-  }
-  if (t) writeCookie(TOKEN_KEY, t)
-  else clearCookie(TOKEN_KEY)
+  return localStorage.getItem('wph_token_v1') || ''
 }
 
 export function setApiSessionHint() {
@@ -230,11 +188,10 @@ export async function apiLogout() {
     // ignore
   }
   try {
-    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem('wph_token_v1')
   } catch {
     // ignore
   }
-  clearCookie(TOKEN_KEY)
   clearApiSessionHint()
 }
 
