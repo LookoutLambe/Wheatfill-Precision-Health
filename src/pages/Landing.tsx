@@ -196,7 +196,7 @@ export default function Landing() {
         <section className="landingGridTop" aria-label="Welcome and care team">
           <section className="landingGridHeroCatalog" aria-label="Welcome">
             <div className="landingHeroIntro">
-              <span className="pill">Precision health. Elevated living.</span>
+              <span className="pill landingHeroEyebrow">Precision health. Elevated living.</span>
               <h1 className="heroHeadline">
                 Personalized, evidence-based care designed to optimize your health, performance, and
                 longevity.

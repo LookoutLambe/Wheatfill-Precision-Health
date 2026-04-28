@@ -1523,6 +1523,22 @@ html:has(.peptidePage) {
   text-wrap: balance;
 }
 
+.landingHeroEyebrow {
+  align-self: center;
+  margin: 0 auto 10px;
+  font-size: 14px;
+  font-weight: 750;
+  padding: 8px 14px;
+  letter-spacing: 0.02em;
+}
+
+@media (min-width: 901px) {
+  .landingHeroEyebrow {
+    font-size: 15px;
+    padding: 9px 16px;
+  }
+}
+
 @media (max-width: 900px) {
   .heroHeadline {
     line-height: 1.5 !important;
