@@ -213,6 +213,16 @@ async function providerProfileByUsername(usernameRaw: string): Promise<ProviderP
   return (data as ProviderProfile | null) ?? null
 }
 
+async function providerProfileByLogin(loginRaw: string): Promise<ProviderProfile | null> {
+  const login = loginRaw.trim().toLowerCase()
+  if (!login) return null
+  const sb = supabaseServiceRole()
+  const q = sb.from('provider_profiles').select('*')
+  const { data, error } = login.includes('@') ? await q.eq('email', login).maybeSingle() : await q.eq('username', login).maybeSingle()
+  if (error) throw new Error(error.message)
+  return (data as ProviderProfile | null) ?? null
+}
+
 async function ensureDefaultProviderProfiles() {
   // Optional helper to bootstrap the 3 core usernames if missing.
   // This does NOT set passwords; Supabase Auth passwords are managed in Supabase.
@@ -861,7 +871,7 @@ app.post('/auth/signup', async (req, reply) => {
 })
 
 const LoginBody = z.object({
-  username: z.string().min(2).max(50).transform((s) => s.trim().toLowerCase()),
+  username: z.string().min(2).max(120).transform((s) => s.trim().toLowerCase()),
   password: z.string().min(1).max(200),
 })
 
@@ -870,7 +880,7 @@ app.post('/auth/login', async (req, reply) => {
   // If Supabase is configured, use it as the source of truth for provider/admin credentials.
   const supabaseConfigured = Boolean((process.env.SUPABASE_URL || '').trim() && (process.env.SUPABASE_ANON_KEY || '').trim() && (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim())
   if (supabaseConfigured) {
-    const prof = await providerProfileByUsername(body.username)
+    const prof = await providerProfileByLogin(body.username)
     if (!prof) return reply.unauthorized('Invalid username or password.')
     if (!prof.approved) return reply.status(403).send('Account is pending approval.')
 
