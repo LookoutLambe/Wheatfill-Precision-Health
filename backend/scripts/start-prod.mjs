@@ -89,7 +89,12 @@ if (isTruthy(env.WPH_SKIP_PRISMA)) {
     // no failed migration to mark rolled back
   }
 
-  runStep('prisma db push', 'npx prisma db push', { inherit: true })
+  const acceptDataLoss = isTruthy(env.WPH_ACCEPT_DATA_LOSS)
+  runStep(
+    'prisma db push',
+    `npx prisma db push${acceptDataLoss ? ' --accept-data-loss' : ''}`,
+    { inherit: true }
+  )
 
   const child = spawn('node', [path.join(root, 'dist', 'server.js')], { stdio: 'inherit', env, shell: true })
   child.on('exit', (code) => process.exit(code ?? 0))
