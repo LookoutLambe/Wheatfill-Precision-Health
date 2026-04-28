@@ -303,6 +303,8 @@ export default function Landing() {
               </div>
             </section>
 
+            <div className="divider" />
+
             <section
               className="card cardAccentSoft landingWhyUs"
               aria-labelledby="landing-why-us-heading"
@@ -382,6 +384,8 @@ export default function Landing() {
             </p>
           </div>
 
+          <div className="divider" />
+
           <div className="portrait" style={{ marginTop: 8 }}>
             <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
           </div>
@@ -411,6 +415,8 @@ export default function Landing() {
           </div>
           </aside>
         </section>
+
+        <div className="divider" />
 
         <section className="landingGridCatalog" aria-label="Order Now catalog highlight">
           <section className="landingCatalogSection" aria-labelledby="landing-catalog-heading">
@@ -452,8 +458,9 @@ export default function Landing() {
           </section>
         </section>
 
+        <div className="divider" />
+
         <section className="landingGridAccordion" aria-label="Services">
-          <div className="divider" />
           <div className="cardGrid landingAccordionGrid" role="presentation">
             {ACCORDION_ITEMS.map((item) => {
               const isOpen = openId === item.id
