@@ -4,7 +4,6 @@ import CatalogCartDrawer, { type CartLineProduct } from './CatalogCartDrawer'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { apiGet } from '../api/client'
 import '../App.css'
-import AuthStatus from './AuthStatus'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
 import {
   getMarketingIntegrations,
