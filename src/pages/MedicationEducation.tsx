@@ -210,7 +210,9 @@ export default function MedicationEducation() {
 
       <section className="card cardAccentSoft" style={{ marginTop: 12 }}>
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>How GLP-1 / dual incretin medications work (high level)</h2>
+          <h2 className="widgetTitleRaw" style={{ margin: 0 }}>
+            How GLP-1 / Dual Incretin Medications Work (High Level)
+          </h2>
           <span className="pill">Mechanism</span>
         </div>
         <ul className="muted" style={{ margin: '10px 0 0', paddingLeft: 18, lineHeight: 1.6 }}>

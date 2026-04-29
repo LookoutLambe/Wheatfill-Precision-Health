@@ -1450,6 +1450,31 @@ a.btn:focus-visible {
   min-width: 0;
 }
 
+/* ——— Widget title case (root): capitalize each word on card / band headings ——— */
+.page .cardTitle > :is(h1, h2, h3):not(.widgetTitleRaw) {
+  text-transform: capitalize;
+}
+
+.page .landingStepTitle,
+.page .landingWhyUsItemTitle,
+.page .landingConsultTitle,
+.page .landingAccordionSubhead,
+.page .landingAccordionToggle,
+.page .aboutBioTagline,
+.page .landingCatalogStartingLabel,
+.page .landingCatalogStartingLineLabel,
+.page .landingFaqSummary {
+  text-transform: capitalize;
+}
+
+.pageLanding .btnRow .btn {
+  text-transform: capitalize;
+}
+
+.page .preserveWidgetCase {
+  text-transform: none;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;

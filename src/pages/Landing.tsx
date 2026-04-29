@@ -648,7 +648,7 @@ export default function Landing() {
           <section className="card cardAccentSoft" aria-labelledby={`${faqBaseId}-heading`}>
             <div className="cardTitle">
               <h2 id={`${faqBaseId}-heading`} style={{ margin: 0 }}>
-                FAQ
+                <span className="preserveWidgetCase">FAQ</span>
               </h2>
               <span className="pill">Common Questions</span>
             </div>
@@ -669,7 +669,9 @@ export default function Landing() {
             </details>
 
             <details className="landingFaqItem">
-              <summary className="landingFaqSummary">Can you prescribe GLP-1 medications?</summary>
+              <summary className="landingFaqSummary">
+                Can you prescribe <span className="preserveWidgetCase">GLP-1</span> medications?
+              </summary>
               <div className="landingFaqBody muted">
                 We discuss evidence-based medication options when clinically appropriate. Prescribing depends on your history, risk factors, and applicable state rules.
               </div>

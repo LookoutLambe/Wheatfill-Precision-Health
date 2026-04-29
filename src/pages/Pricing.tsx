@@ -174,7 +174,9 @@ export default function Pricing() {
 
       <section className="card">
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Pricing FAQ</h2>
+          <h2 style={{ margin: 0 }}>
+            Pricing <span className="preserveWidgetCase">FAQ</span>
+          </h2>
           <span className="pill">FAQ</span>
         </div>
         <div className="divider" />
