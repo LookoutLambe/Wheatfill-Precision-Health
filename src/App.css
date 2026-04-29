@@ -2029,6 +2029,12 @@ a.btn:focus-visible {
     -webkit-overflow-scrolling: touch;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .navLinks {
+      transition: none;
+    }
+  }
+
   .topNavShell:not(.isMenuOpen) .navLinks {
     pointer-events: none;
     visibility: hidden;

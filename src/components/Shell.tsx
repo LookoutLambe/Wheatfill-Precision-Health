@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import CatalogCartDrawer, { type CartLineProduct } from './CatalogCartDrawer'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
@@ -63,6 +63,10 @@ export default function Shell() {
   const headerCartSlug = useMemo(() => headerCatalogSlugForPath(location.pathname), [location.pathname])
   const [headerCartProducts, setHeaderCartProducts] = useState<CartLineProduct[]>([])
   const [mobileUi, setMobileUi] = useState(false)
+  const navToggleRef = useRef<HTMLButtonElement | null>(null)
+  const navCloseRef = useRef<HTMLButtonElement | null>(null)
+  const navLinksRef = useRef<HTMLElement | null>(null)
+  const lastFocusRef = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     if (headerCartSlug === DEFAULT_CATALOG_PARTNER_SLUG) {
@@ -127,6 +131,50 @@ export default function Shell() {
     else document.documentElement.classList.remove('navMenuOpen')
     return () => document.documentElement.classList.remove('navMenuOpen')
   }, [menuOpen])
+
+  useEffect(() => {
+    if (menuOpen && mobileUi) {
+      lastFocusRef.current = (document.activeElement as HTMLElement | null) || null
+      const id = window.setTimeout(() => navCloseRef.current?.focus(), 0)
+      return () => window.clearTimeout(id)
+    }
+    if (!menuOpen && mobileUi) {
+      const toRestore =
+        lastFocusRef.current && document.contains(lastFocusRef.current) ? lastFocusRef.current : navToggleRef.current
+      toRestore?.focus?.()
+      lastFocusRef.current = null
+    }
+  }, [menuOpen, mobileUi])
+
+  const onNavKeyDown = (e: ReactKeyboardEvent<HTMLElement>) => {
+    if (!menuOpen || !mobileUi) return
+    if (e.key !== 'Tab') return
+    const root = navLinksRef.current
+    if (!root) return
+    const focusables = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1 && el.offsetParent !== null)
+    if (focusables.length === 0) return
+
+    const first = focusables[0]
+    const last = focusables[focusables.length - 1]
+    const active = document.activeElement as HTMLElement | null
+
+    if (e.shiftKey) {
+      if (!active || active === first || !root.contains(active)) {
+        e.preventDefault()
+        last.focus()
+      }
+      return
+    }
+
+    if (!active || active === last || !root.contains(active)) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 
   useEffect(() => {
     const sync = () => setMarketingProviderAuthedState(isMarketingProviderAuthed())
@@ -220,8 +268,11 @@ export default function Shell() {
                 aria-controls="primary-navigation"
                 aria-label={menuOpen ? 'Close menu' : 'Open menu'}
                 onClick={() => setMenuOpen((o) => !o)}
+                ref={navToggleRef}
               >
-                ☰
+                <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                  <path d="M3 5.5h14M3 10h14M3 14.5h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
               </button>
             </div>
           </div>
@@ -231,7 +282,22 @@ export default function Shell() {
           <button type="button" className="navScrim" aria-label="Close menu" tabIndex={-1} onClick={closeMenu} />
         ) : null}
 
-        <nav className="navLinks" id="primary-navigation" aria-label="Primary navigation">
+        <nav
+          className="navLinks"
+          id="primary-navigation"
+          aria-label="Primary navigation"
+          ref={(el) => {
+            navLinksRef.current = el
+          }}
+          onKeyDown={onNavKeyDown}
+        >
+          <div className="navDrawerTop">
+            <div className="navDrawerTitle">Menu</div>
+            <button type="button" className="navDrawerClose" aria-label="Close menu" onClick={closeMenu} ref={navCloseRef}>
+              <span aria-hidden="true">×</span>
+              <span className="srOnly">Close</span>
+            </button>
+          </div>
           <NavLink to="/" onClick={closeMenu}>
               Home
             </NavLink>
@@ -303,7 +369,6 @@ export default function Shell() {
                 For patients
               </NavLink>
             )}
-          {MARKETING_ONLY ? null : <AuthStatus onMenuClose={closeMenu} />}
         </nav>
       </div>
 
