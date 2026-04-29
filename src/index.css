@@ -71,7 +71,7 @@ html {
   scroll-padding-top: 112px;
   min-height: 100dvh;
   min-height: 100svh;
-  background: var(--ivory-mid);
+  background: #fff;
 }
 
 @media (max-width: 900px) {
@@ -98,11 +98,29 @@ html {
   flex-direction: column;
   box-sizing: border-box;
   background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 body {
   margin: 0;
   background: transparent;
+  position: relative;
+}
+
+/* Render the (very light) silk image as a fixed layer so it’s actually visible on white. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('./assets/bg-silk-wave.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.55;
+  pointer-events: none;
+  /* Must be >= 0 or it can end up behind the html background and disappear */
+  z-index: 0;
 }
 
 h1,

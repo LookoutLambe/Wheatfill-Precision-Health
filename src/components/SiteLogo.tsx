@@ -12,7 +12,9 @@ type SiteLogoProps = {
 export function SiteLogo({ mode = 'marketing' }: SiteLogoProps) {
   return (
     <>
-      <img src={brandMarkImg} alt="" className="brandMarkImg" decoding="async" />
+      <span className="brandMarkCrop" aria-hidden="true">
+        <img src={brandMarkImg} alt="" className="brandMarkImg" decoding="async" />
+      </span>
       <span className="brandDivider" aria-hidden="true" />
       {mode === 'provider' ? (
         <span className="brandLockup">
