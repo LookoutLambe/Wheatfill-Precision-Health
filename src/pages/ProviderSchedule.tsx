@@ -169,7 +169,7 @@ export default function ProviderSchedule() {
       <section className="card cardAccentSoft providerScheduleSettings">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Schedule Settings</h2>
-          <span className="pill">Hours + slot size</span>
+          <span className="pill">Hours + Slot Size</span>
         </div>
         <p className="muted" style={{ marginTop: 6 }}>
           These settings control the slots patients can request on the booking page and the times shown below.

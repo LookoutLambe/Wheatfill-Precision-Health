@@ -78,7 +78,7 @@ const ACCORDION_ITEMS: AccordionItem[] = [
   {
     id: 'metabolic',
     title: 'Metabolic Optimization',
-    pill: 'Evidence-based',
+    pill: 'Evidence-Based',
     pillRed: true,
     accent: 'red',
     summary:
@@ -149,7 +149,7 @@ const ACCORDION_ITEMS: AccordionItem[] = [
   {
     id: 'longevity',
     title: 'Performance + Longevity',
-    pill: 'Long-term',
+    pill: 'Long-Term',
     pillRed: true,
     accent: 'soft',
     summary:
@@ -232,7 +232,7 @@ export default function Landing() {
                   <h2 id="landing-start-here-heading" style={{ margin: 0 }}>
                     Start here
                   </h2>
-                  <span className="pill">Patient paths</span>
+                  <span className="pill">Patient Paths</span>
                 </div>
                 <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
                   Pick the path that matches what you need—booking, medication education, refill-style requests, or the storefront catalog.
@@ -263,7 +263,7 @@ export default function Landing() {
                 <h2 id="landing-how-it-works-heading" style={{ margin: 0 }}>
                   How it works
                 </h2>
-                <span className="pill">Simple steps</span>
+                <span className="pill">Simple Steps</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
                 A clear path from your first request to follow-up. If you are unsure where to start, book a visit.
@@ -315,7 +315,7 @@ export default function Landing() {
                 <h2 id="landing-why-us-heading" style={{ margin: 0 }}>
                   Why {PRACTICE_PUBLIC_NAME}?
                 </h2>
-                <span className="pill">Why us</span>
+                <span className="pill">Why Us</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
                 A care model built for busy adults who want real planning—not generic handouts—so you can improve
@@ -506,15 +506,15 @@ export default function Landing() {
             <div className="landingConsultInner">
               <div className="landingConsultCopy">
                 <h2 id={`${consultBaseId}-heading`} className="landingConsultTitle">
-                  Request a consultation
+                  Request a Consultation
                 </h2>
                 <p className="muted landingConsultLead">
                   Submit the form to initiate a detailed discussion regarding objectives, timelines, and
                   customized service options.
                 </p>
                 <div className="landingConsultMeta">
-                  <span className="pill">Secure request</span>
-                  <span className="pill pillRed">Response in 1 business day</span>
+                  <span className="pill">Secure Request</span>
+                  <span className="pill pillRed">Response in 1 Business Day</span>
                 </div>
               </div>
 
@@ -564,7 +564,7 @@ export default function Landing() {
                 <div className="landingConsultFormGrid">
                   <label>
                     <div className="muted landingConsultLabel">
-                      First name <span aria-hidden="true">(required)</span>
+                      First Name <span aria-hidden="true">(required)</span>
                     </div>
                     <input
                       className="input"
@@ -576,7 +576,7 @@ export default function Landing() {
                   </label>
                   <label>
                     <div className="muted landingConsultLabel">
-                      Last name <span aria-hidden="true">(required)</span>
+                      Last Name <span aria-hidden="true">(required)</span>
                     </div>
                     <input
                       className="input"
@@ -650,7 +650,7 @@ export default function Landing() {
               <h2 id={`${faqBaseId}-heading`} style={{ margin: 0 }}>
                 FAQ
               </h2>
-              <span className="pill">Common questions</span>
+              <span className="pill">Common Questions</span>
             </div>
             <div className="divider" />
 

@@ -124,7 +124,7 @@ export default function Pricing() {
       <section className="card" id="peptide-pricing" style={{ scrollMarginTop: 88 }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Peptide therapy pricing</h2>
-          <span className="pill">Wheatfill list</span>
+          <span className="pill">Wheatfill List</span>
         </div>
         <p className="muted" style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.55 }}>
           Typical cash-pay peptide program fees when prescribed through <strong>{PRACTICE_PUBLIC_NAME}</strong>—same

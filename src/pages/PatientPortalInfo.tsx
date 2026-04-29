@@ -83,7 +83,7 @@ export default function PatientPortalInfo() {
       <section className="card cardAccentNavy" style={{ width: '100%' }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Contact</h2>
-          <span className="pill">Reach us</span>
+          <span className="pill">Reach Us</span>
         </div>
         <p className="muted" style={{ marginTop: 0 }}>
           Questions and non-urgent messages go through the Contact page. {TYPICAL_INBOX_REPLY_LINE} For emergencies,

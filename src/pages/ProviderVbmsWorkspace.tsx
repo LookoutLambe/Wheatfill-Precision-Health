@@ -806,7 +806,7 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentNavy cardSpan12">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Requests</h2>
-            {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} new</span> : <span className="pill">Queue</span>}
+            {ordersNewCount > 0 ? <span className="pill pillRed">{ordersNewCount} New</span> : <span className="pill">Queue</span>}
           </div>
           <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
             Quick links for day-to-day requests from patients: booking/time requests, order requests, and the full weekly schedule.

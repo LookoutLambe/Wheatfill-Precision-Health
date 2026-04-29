@@ -91,7 +91,7 @@ export default function MarketingProviderDemoDashboard() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Inbox</h2>
-            {newCount > 0 ? <span className="pill pillRed">{newCount} new</span> : <span className="pill">Inbox</span>}
+            {newCount > 0 ? <span className="pill pillRed">{newCount} New</span> : <span className="pill">Inbox</span>}
           </div>
           <div className="divider" />
           {msgs.length === 0 ? (

@@ -644,7 +644,7 @@ export default function BookOnline() {
                               ? 'white'
                               : inMonth
                                 ? 'var(--text-h)'
-                                : 'rgba(31, 41, 55, 0.45)',
+                                : '#000000',
                           fontWeight: isSelected ? 900 : 700,
                           boxShadow: isToday ? 'rgba(10, 30, 63, 0.18) 0 10px 18px -14px' : undefined,
                         }}

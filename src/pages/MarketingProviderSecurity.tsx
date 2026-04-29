@@ -81,7 +81,7 @@ export default function MarketingProviderSecurity() {
         <section className="card cardAccentSoft" style={{ maxWidth: 980, marginBottom: 18 }}>
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Change Sign-In Username</h2>
-            <span className="pill">Sign-in</span>
+            <span className="pill">Sign-In</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 12, fontSize: 14 }}>

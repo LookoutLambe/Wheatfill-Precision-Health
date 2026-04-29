@@ -143,7 +143,7 @@ export default function StickyShareDock() {
               <span className="stickyShareDockPillIcon" aria-hidden="true">
                 ⧉
               </span>
-              <span className="stickyShareDockPillLabel">{copied ? 'Copied' : 'Copy link'}</span>
+              <span className="stickyShareDockPillLabel">{copied ? 'Copied' : 'Copy Link'}</span>
             </button>
             {typeof navigator !== 'undefined' && typeof navigator.share === 'function' ? (
               <button type="button" className="stickyShareDockPill stickyShareDockPill--native" onClick={() => void nativeShare()}>

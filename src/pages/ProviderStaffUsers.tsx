@@ -193,7 +193,7 @@ export default function ProviderStaffUsers() {
       <section className="card cardAccentNavy" style={{ maxWidth: 980 }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Create staff login</h2>
-          <span className="pill">{canManage ? 'Admin' : 'Read-only'}</span>
+          <span className="pill">{canManage ? 'Admin' : 'Read-Only'}</span>
         </div>
         <div className="divider" />
 

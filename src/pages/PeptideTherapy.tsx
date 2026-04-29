@@ -267,7 +267,7 @@ export default function PeptideTherapy() {
                     <p className="peptideEduKicker muted" style={{ marginTop: 12, marginBottom: 4, fontSize: 12, fontWeight: 750 }}>
                       Why use it
                     </p>
-                    <p className="muted" style={{ marginTop: 0, marginBottom: 0, fontSize: 12, lineHeight: 1.45, opacity: 0.9 }}>
+                    <p className="muted" style={{ marginTop: 0, marginBottom: 0, fontSize: 12, lineHeight: 1.45 }}>
                       Typical goals and settings people connect to this name in discussion—not a personal prescription.
                     </p>
                     <p className="muted landingAccordionPara" style={{ marginTop: 8 }}>
@@ -289,7 +289,7 @@ export default function PeptideTherapy() {
                       <p className="muted landingAccordionPara" style={{ marginTop: 0, marginBottom: 10, lineHeight: 1.55 }}>
                         {renderBoldSegments(item.typicalProtocolDiscussed)}
                       </p>
-                      <p className="muted" style={{ margin: 0, fontSize: 12, lineHeight: 1.45, opacity: 0.88 }}>
+                      <p className="muted" style={{ margin: 0, fontSize: 12, lineHeight: 1.45 }}>
                         {PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER}
                       </p>
                     </div>

@@ -1,7 +1,8 @@
 :root {
   /* Wheatfill Precision Health theme (light) */
-  --text: #1f2937; /* slate-800 */
-  --text-h: #0b1220; /* near-navy for headings */
+  --text: #000000;
+  --text-h: #000000;
+  --text-m: #000000;
   /* Flat page background (warm light ivory — no gradients) */
   --ivory-mid: #f8f4ec;
   --bg: var(--ivory-mid);
@@ -31,8 +32,8 @@
 
   --sans: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
   --heading: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
-  /* Practice slogan — readable script (similar vibe to casual handwriting; not a licensed retail font) */
-  --font-slogan: 'Dancing Script', 'Segoe Script', 'Bradley Hand', cursive;
+  /* Practice slogan — Caveat has clear 400–700 masters so lead vs emphasized line reads on screen */
+  --font-slogan: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
   --mono: ui-monospace, Consolas, monospace;
 
   /* Layout system */

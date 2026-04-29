@@ -5,8 +5,8 @@
   --vbms-border-strong: rgba(10, 30, 63, 0.3);
   --vbms-surface: #ffffff;
   --vbms-surface-2: rgba(10, 30, 63, 0.06);
-  --vbms-text: #0b1220;
-  --vbms-text-muted: rgba(31, 41, 55, 0.7);
+  --vbms-text: #000000;
+  --vbms-text-muted: #000000;
 }
 
 .vbmsApp {
