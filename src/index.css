@@ -187,3 +187,20 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/*
+ * Dev-only (see main.tsx): compare justified paragraphs vs default left alignment.
+ * Scoped to main column copy — headings, nav, and UI controls keep normal alignment from App.css.
+ */
+html.wph-local-justify-prose main.main p,
+html.wph-local-justify-prose main.main li {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  text-wrap: pretty;
+}
+
+html.wph-local-justify-prose main.main th,
+html.wph-local-justify-prose main.main td {
+  text-align: start;
+}

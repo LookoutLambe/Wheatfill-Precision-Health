@@ -4682,3 +4682,22 @@ html.hasMobilePatientDock .stickyShareDock {
     display: none !important;
   }
 }
+
+/* Local dev only (`wph-local-justify-prose` on `<html>` from main.tsx): preview justified copy.
+   Landing forces left alignment above — this block loads after so it wins. Production has no class. */
+html.wph-local-justify-prose .pageLanding .pageSubtitle,
+html.wph-local-justify-prose .pageLanding p,
+html.wph-local-justify-prose .pageLanding li,
+html.wph-local-justify-prose .pageLanding .muted {
+  text-align: justify !important;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  text-wrap: pretty;
+}
+
+html.wph-local-justify-prose .pageLanding .landingConsultLead {
+  text-align: justify !important;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  text-wrap: pretty;
+}

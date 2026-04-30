@@ -7,6 +7,11 @@ import { assertNoSecretsInPublicEnv } from './config/publicEnv'
 
 assertNoSecretsInPublicEnv()
 
+// Local preview: justified body copy in `<main>` (paragraphs + list items). Production builds omit this.
+if (import.meta.env.DEV) {
+  document.documentElement.classList.add('wph-local-justify-prose')
+}
+
 // Production: register the app shell SW so Chrome on Android can treat the site as an installable PWA
 // (manifest + SW + HTTPS). Bump CACHE in public/sw.js after hosting or asset-path changes to avoid stale shells.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
