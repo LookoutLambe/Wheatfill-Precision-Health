@@ -1514,6 +1514,67 @@ a.btn:focus-visible {
   border-color: var(--pill-positive-border);
 }
 
+/* Clickable pills — calendar slots, nav chips as links, etc. */
+a.pill,
+button.pill {
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 0.14s ease,
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
+}
+
+button.pill {
+  font: inherit;
+}
+
+a.pill:visited {
+  color: var(--pill-default-fg);
+}
+
+a.pill.pillRed:visited {
+  color: var(--pill-accent-fg);
+}
+
+a.pill.pillGreen:visited {
+  color: var(--pill-positive-fg);
+}
+
+a.pill:hover,
+button.pill:hover {
+  box-shadow: 0 2px 10px rgba(10, 30, 63, 0.08);
+}
+
+a.pill:not(.pillRed):not(.pillGreen):hover,
+button.pill:not(.pillRed):not(.pillGreen):hover {
+  background: #e3dcd6;
+  border-color: rgba(10, 30, 63, 0.28);
+}
+
+a.pill.pillRed:hover,
+button.pill.pillRed:hover {
+  background: #eddfe2;
+  border-color: rgba(122, 15, 28, 0.34);
+}
+
+a.pill.pillGreen:hover,
+button.pill.pillGreen:hover {
+  background: #dce8e2;
+  border-color: rgba(20, 61, 48, 0.36);
+}
+
+a.pill:focus-visible,
+button.pill:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+a.pill:active,
+button.pill:active {
+  box-shadow: none;
+}
+
 .divider {
   height: 1px;
   background: var(--border);

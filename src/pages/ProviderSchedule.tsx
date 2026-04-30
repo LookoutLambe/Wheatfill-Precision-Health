@@ -334,7 +334,6 @@ export default function ProviderSchedule() {
                             <button
                               type="button"
                               className="pill pillRed"
-                              style={{ border: 'none', cursor: 'pointer' }}
                               onClick={() => setSelected({ kind: 'closed', date: dateKey })}
                               title="Click to manage blackout"
                             >

@@ -924,7 +924,7 @@ export default function ProviderVbmsWorkspace() {
         <section className="card cardAccentSoft" id="wph-schedule">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
-            <Link to="/provider/schedule" className="pill pillRed" style={{ textDecoration: 'none' }} title="Open calendar">
+            <Link to="/provider/schedule" className="pill pillRed" title="Open calendar">
               Calendar
             </Link>
           </div>
