@@ -109,16 +109,16 @@ body {
   position: relative;
 }
 
-/* Render the (very light) silk image as a fixed layer so it’s actually visible on white. */
+/* Fixed subtle texture behind content (high-key white wood/plaster detail). */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url('./assets/bg-silk-wave.png');
+  background-image: url('./assets/bg-page-texture.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  opacity: 0.55;
+  opacity: 0.62;
   pointer-events: none;
   /* Must be >= 0 or it can end up behind the html background and disappear */
   z-index: 0;
