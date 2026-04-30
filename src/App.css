@@ -640,35 +640,34 @@ html.pharmacyCartOpen body {
   margin-top: 10px;
 }
 
-/* Sticky table headers only inside scroll regions — not on short tables (e.g. Availability / Time off),
-   or thead will overlap the first tbody row when the page scrolls. */
+/* Table headers: panel scrolling is disabled (use browser scrollbar only). */
 .teamWorkspacePage .teamWidgetScroll thead th {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 1px 0 rgba(10, 30, 63, 0.08);
+  position: static;
+  top: auto;
+  z-index: auto;
+  background: transparent;
+  box-shadow: none;
 }
 
-/* Team Workspace mobile scroll fixes:
+/* Team Workspace scroll fixes:
    - Prevent horizontal scroll on the page
-   - Allow vertical swipe to bubble unless user is inside a widget list */
+   - Use only the browser scrollbar (no nested widget scrollbars) */
 .teamWorkspacePage {
   overflow-x: hidden;
 }
 
 .teamWorkspacePage .teamWidgetScroll {
-  max-height: min(44svh, 520px);
-  overflow-y: auto;
+  max-height: none;
+  overflow-y: visible;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+  overscroll-behavior: auto;
+  touch-action: auto;
 }
 
 @media (max-width: 900px) {
   .teamWorkspacePage .teamWidgetScroll {
-    max-height: min(52svh, 620px);
+    max-height: none;
   }
 }
 
