@@ -1,3 +1,5 @@
+import { vitePublicEnv } from './publicEnv'
+
 export const PROVIDER_DISPLAY_NAME = 'Brett Wheatfill, FNP-C'
 
 /** Patient-facing practice name for ordering and policy copy. */
@@ -15,4 +17,4 @@ export const PUBLIC_INQUIRY_EMAIL = ''
 export const PROVIDER_TEAM_LABEL = 'Brett & Bridget — team'
 
 /** Stripe Payment Link (the only supported payment rail). */
-export const STRIPE_CHECKOUT_URL = (import.meta.env.VITE_STRIPE_CHECKOUT_URL?.toString() || '').trim()
+export const STRIPE_CHECKOUT_URL = (vitePublicEnv.VITE_STRIPE_CHECKOUT_URL?.toString() || '').trim()
