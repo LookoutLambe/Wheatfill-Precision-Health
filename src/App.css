@@ -1702,7 +1702,7 @@ a.btn:focus-visible {
   /* Keep top margin inside content box so global h1 margins cannot collapse up under the sticky bar. */
   margin: 0 0 12px;
   padding-top: 14px;
-  font-size: clamp(32px, 3.6vw, 46px) !important;
+  font-size: clamp(28px, 3.2vw, 40px) !important;
   line-height: 1.55 !important;
   letter-spacing: 0px !important;
   text-wrap: balance;
@@ -1717,7 +1717,7 @@ a.btn:focus-visible {
 
 @media (max-width: 520px) {
   .heroHeadline {
-    font-size: clamp(22px, 6.8vw, 32px) !important;
+    font-size: clamp(20px, 6.2vw, 28px) !important;
     line-height: 1.4 !important;
   }
 
