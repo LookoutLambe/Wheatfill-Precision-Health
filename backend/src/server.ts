@@ -2532,6 +2532,25 @@ await app.register(async (protectedScope) => {
     },
   )
 
+  /** Aggregate counts across all audit rows (authenticated providers only). */
+  protectedScope.get(
+    '/v1/provider/audit/summary',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async () => {
+      const [total, grouped] = await Promise.all([
+        prisma.auditLog.count(),
+        prisma.auditLog.groupBy({
+          by: ['entityType'],
+          _count: { id: true },
+        }),
+      ])
+      const byEntityType = grouped
+        .map((g) => ({ entityType: g.entityType, count: g._count.id }))
+        .sort((a, b) => a.entityType.localeCompare(b.entityType))
+      return { total, byEntityType }
+    },
+  )
+
   protectedScope.post(
     '/v1/patient/orders/pharmacy',
     { preHandler: requireRole(['patient']) },

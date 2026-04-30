@@ -119,8 +119,9 @@ export default function ProviderAuditLog() {
           <div>
             <h1 style={{ margin: 0 }}>Audit log</h1>
             <p className="muted" style={{ margin: '6px 0 0', maxWidth: 640 }}>
-              Compliance trail for actions recorded by the API (orders, visits, inbox, blackouts, profile changes, etc.).
-              Filter by entity type or search within the loaded page.
+              Compliance trail for actions recorded by the API (orders, visits, inbox, blackouts, profile changes, etc.). This
+              table loads the <strong>most recent</strong> events (paged by the server). For <strong>all-time</strong> counts, use
+              the Audit log card on <Link to="/provider#wph-audit">Team Workspace</Link>.
             </p>
             {who ? (
               <div className="pill" style={{ marginTop: 8, width: 'fit-content' }}>

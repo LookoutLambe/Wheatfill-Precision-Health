@@ -91,16 +91,6 @@ type ProviderOrderRow = {
   pharmacyPartner: { id: string; name: string; slug: string } | null
 }
 
-type ProviderAuditEventRow = {
-  id: string
-  entityType: string
-  entityId: string
-  action: string
-  ip: string | null
-  createdAt: string
-  actor: { id: string; username: string; role: string; displayName: string | null } | null
-}
-
 function auditEntityLabel(entityType: string) {
   const map: Record<string, string> = {
     order: 'Orders',
@@ -192,7 +182,10 @@ export default function ProviderVbmsWorkspace() {
   const [orders, setOrders] = useState<ProviderOrderRow[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState<string | null>(null)
-  const [auditEvents, setAuditEvents] = useState<ProviderAuditEventRow[]>([])
+  const [auditSummary, setAuditSummary] = useState<{
+    total: number
+    byEntityType: Array<{ entityType: string; count: number }>
+  } | null>(null)
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditError, setAuditError] = useState<string | null>(null)
   const [msgs, setMsgs] = useState<DemoMsg[]>([])
@@ -455,13 +448,13 @@ export default function ProviderVbmsWorkspace() {
     setAuditLoading(true)
     setAuditError(null)
     try {
-      const r = await apiGetWithSessionWarmup<{ events: ProviderAuditEventRow[] }>('/v1/provider/audit?take=200')
-      setAuditEvents(
-        (r.events || []).map((e) => ({
-          ...e,
-          createdAt: typeof e.createdAt === 'string' ? e.createdAt : String((e as { createdAt: string }).createdAt),
-        })),
+      const r = await apiGetWithSessionWarmup<{ total: number; byEntityType: Array<{ entityType: string; count: number }> }>(
+        '/v1/provider/audit/summary',
       )
+      setAuditSummary({
+        total: typeof r.total === 'number' ? r.total : 0,
+        byEntityType: Array.isArray(r.byEntityType) ? r.byEntityType : [],
+      })
     } catch (e: any) {
       const msg = String(e?.message || e)
       if (/401|unauthorized|Unauthorized/i.test(msg)) {
@@ -477,7 +470,7 @@ export default function ProviderVbmsWorkspace() {
       } else {
         setAuditError(msg)
       }
-      setAuditEvents([])
+      setAuditSummary(null)
     } finally {
       setAuditLoading(false)
     }
@@ -555,15 +548,6 @@ export default function ProviderVbmsWorkspace() {
   const ordersClosedCount = orders.filter((o) => o.status === 'closed').length
   const ordersDeclinedCount = orders.filter((o) => o.status === 'declined').length
   const ordersTotalCount = orders.length
-
-  const auditCountsByType = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const e of auditEvents) {
-      const t = e.entityType || 'unknown'
-      m.set(t, (m.get(t) ?? 0) + 1)
-    }
-    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-  }, [auditEvents])
 
   /**
    * Inbox rows for Quick schedule patient picker.
@@ -1332,8 +1316,8 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Summaries use the <strong>200 most recent</strong> audit events from the API. Open the full log to search, filter by
-            type, and load more rows.
+            Counts below are <strong>all-time</strong> totals from the database (provider-authenticated API only). Open the full
+            log to browse recent events, search, and filter by type.
           </p>
           <div className="divider" />
           {auditError ? (
@@ -1341,20 +1325,19 @@ export default function ProviderVbmsWorkspace() {
               {auditError}
             </p>
           ) : null}
-          {hasApiCredential() && !auditLoading && auditEvents.length === 0 ? (
+          {hasApiCredential() && !auditLoading && auditSummary !== null && auditSummary.total === 0 ? (
             <p className="muted" style={{ margin: 0 }}>
-              No audit events in the latest fetch. Actions such as order updates, inbox handling, schedule changes, and profile
-              edits appear here once recorded by the server.
+              No audit events yet. Actions such as order updates, inbox handling, schedule changes, and profile edits appear here
+              once recorded by the server.
             </p>
           ) : null}
-          {auditEvents.length > 0 ? (
+          {auditSummary !== null && auditSummary.total > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.45 }}>
-                <strong>{auditEvents.length}</strong> events in this sample
-                {auditEvents.length >= 200 ? ' (capped at 200; older events exist in the full log)' : ''}.
+                <strong>{auditSummary.total}</strong> audit events all-time.
               </p>
               <ul style={{ margin: 0, paddingLeft: '1.1em', lineHeight: 1.65 }}>
-                {auditCountsByType.map(([entityType, n]) => (
+                {auditSummary.byEntityType.map(({ entityType, count: n }) => (
                   <li key={entityType}>
                     <Link
                       to={`/provider/audit?entityType=${encodeURIComponent(entityType)}`}
