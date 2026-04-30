@@ -72,7 +72,6 @@ function requireProductionSecrets() {
     ['TEAM_BRETT_PASSWORD', TEAM_BRETT_PASSWORD],
     ['TEAM_BRIDGETTE_PASSWORD', TEAM_BRIDGETTE_PASSWORD],
     ['TEAM_ADMIN_PASSWORD', TEAM_ADMIN_PASSWORD],
-    ['DEFAULT_PATIENT_PASSWORD', DEFAULT_PATIENT_PASSWORD],
   ]
   for (const [name, value] of seededDefaults) {
     if (!String(value || '').trim() || String(value) === 'wheatfill' || String(value) === 'demonstration') {
@@ -279,7 +278,7 @@ async function ensureProviderSeed() {
   const existing = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
   if (existing) {
     providerSeeded = true
-    await ensureDemoPatientSeed()
+    if (!IS_PRODUCTION) await ensureDemoPatientSeed()
     await ensureMarketingTeamLogins()
     return
   }
@@ -293,7 +292,7 @@ async function ensureProviderSeed() {
     },
   })
   providerSeeded = true
-  await ensureDemoPatientSeed()
+  if (!IS_PRODUCTION) await ensureDemoPatientSeed()
   await ensureMarketingTeamLogins()
   try {
     if ((process.env.SUPABASE_URL || '').trim()) {
