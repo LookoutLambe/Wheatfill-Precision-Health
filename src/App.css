@@ -1485,9 +1485,9 @@ a.btn:focus-visible {
   font-size: 12px;
   font-weight: 650;
   line-height: 1.2;
-  color: var(--navy);
-  background: rgba(10, 30, 63, 0.08);
-  border: 1px solid rgba(10, 30, 63, 0.16);
+  color: var(--pill-default-fg);
+  background: var(--pill-default-bg);
+  border: 1px solid var(--pill-default-border);
   /* Allow 2-line pills on small screens without looking broken */
   white-space: normal;
   text-wrap: balance;
@@ -1503,15 +1503,15 @@ a.btn:focus-visible {
 }
 
 .pillRed {
-  color: var(--red);
-  background: rgba(122, 15, 28, 0.08);
-  border-color: rgba(122, 15, 28, 0.16);
+  color: var(--pill-accent-fg);
+  background: var(--pill-accent-bg);
+  border-color: var(--pill-accent-border);
 }
 
 .pillGreen {
-  color: #14532d;
-  background: rgba(20, 83, 45, 0.10);
-  border-color: rgba(20, 83, 45, 0.18);
+  color: var(--pill-positive-fg);
+  background: var(--pill-positive-bg);
+  border-color: var(--pill-positive-border);
 }
 
 .divider {

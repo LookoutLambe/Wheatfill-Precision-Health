@@ -27,6 +27,19 @@
   --accent-border: rgba(10, 30, 63, 0.45);
   --social-bg: rgba(10, 30, 63, 0.05);
   --focus: rgba(122, 15, 28, 0.45);
+
+  /* Pills (.pill / .pillRed / .pillGreen in App.css) — taupe, blush, sage; all harmonize with header + navy */
+  --pill-default-fg: var(--navy-2);
+  --pill-default-bg: #ebe6e1;
+  --pill-default-border: rgba(10, 30, 63, 0.2);
+
+  --pill-accent-fg: var(--red-2);
+  --pill-accent-bg: #f4e9eb;
+  --pill-accent-border: rgba(122, 15, 28, 0.24);
+
+  --pill-positive-fg: #143d30;
+  --pill-positive-bg: #e9f1ec;
+  --pill-positive-border: rgba(20, 61, 48, 0.26);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
