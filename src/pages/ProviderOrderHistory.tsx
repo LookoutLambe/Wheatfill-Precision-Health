@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { apiDelete, apiGetWithSessionWarmup, apiPatch, fetchApiSession, hasApiCredential, setApiSessionHint } from '../api/client'
 import {
@@ -80,14 +80,23 @@ function orderSubtotalCents(o: ProviderOrderRow) {
   return o.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0)
 }
 
+type OrderFilter = 'all' | 'new' | 'in_review' | 'ordered' | 'closed' | 'declined'
+
+function parseOrderFilterParam(raw: string | null): OrderFilter | null {
+  if (raw === 'all' || raw === 'new' || raw === 'in_review' || raw === 'ordered' || raw === 'closed' || raw === 'declined')
+    return raw
+  return null
+}
+
 export default function ProviderOrderHistory() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const who = getMarketingProviderLoginDisplay()
   const [orders, setOrders] = useState<ProviderOrderRow[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState<string | null>(null)
   const [orderQuery, setOrderQuery] = useState('')
-  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed' | 'declined'>('all')
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>('all')
   const [toast, setToast] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -142,6 +151,11 @@ export default function ProviderOrderHistory() {
     if (!isMarketingProviderAuthed()) return
     void loadOrders()
   }, [loadOrders])
+
+  useEffect(() => {
+    const next = parseOrderFilterParam(searchParams.get('orderFilter'))
+    setOrderFilter(next ?? 'all')
+  }, [searchParams])
 
   const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed' | 'declined') => {
     setOrdersError(null)
@@ -262,7 +276,19 @@ export default function ProviderOrderHistory() {
                 <select
                   className="select"
                   value={orderFilter}
-                  onChange={(e) => setOrderFilter(e.target.value as 'all' | 'new' | 'in_review' | 'ordered' | 'closed' | 'declined')}
+                  onChange={(e) => {
+                    const v = e.target.value as OrderFilter
+                    setOrderFilter(v)
+                    setSearchParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev)
+                        if (v === 'all') next.delete('orderFilter')
+                        else next.set('orderFilter', v)
+                        return next
+                      },
+                      { replace: true },
+                    )
+                  }}
                 >
                   <option value="all">All statuses</option>
                   <option value="new">new</option>

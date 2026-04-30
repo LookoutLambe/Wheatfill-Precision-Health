@@ -159,37 +159,6 @@ export default function ProviderVbmsWorkspace() {
     navigate('/', { replace: true })
   }, [navigate])
 
-  const [toast, setToast] = useState<string | null>(null)
-  useEffect(() => {
-    if (!toast) return
-    const t = window.setTimeout(() => setToast(null), 1400)
-    return () => window.clearTimeout(t)
-  }, [toast])
-
-  const copyText = useCallback(async (text: string) => {
-    const s = String(text || '').trim()
-    if (!s) return
-    try {
-      await navigator.clipboard.writeText(s)
-      setToast('Copied.')
-    } catch {
-      // Fallback: best-effort for older browsers.
-      const ta = document.createElement('textarea')
-      ta.value = s
-      ta.style.position = 'fixed'
-      ta.style.left = '-9999px'
-      document.body.appendChild(ta)
-      ta.focus()
-      ta.select()
-      try {
-        document.execCommand('copy')
-        setToast('Copied.')
-      } finally {
-        ta.remove()
-      }
-    }
-  }, [])
-
   const demoPatients = useMemo(() => seedWorkspacePatients(), [])
   const initialWs = useMemo(() => loadMarketingWorkspaceState(), [])
   const [appts, setAppts] = useState<DemoAppt[]>(() =>
@@ -217,23 +186,16 @@ export default function ProviderVbmsWorkspace() {
 
   const [inboxQuery, setInboxQuery] = useState(() => readPersisted('wph_provider_inbox_query', ''))
   const [inboxFilter, setInboxFilter] = useState<'all' | 'new' | 'handled'>(() => readPersisted('wph_provider_inbox_filter', 'new'))
-  const [orderQuery, setOrderQuery] = useState(() => readPersisted('wph_provider_orders_query', ''))
-  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'in_review' | 'ordered' | 'closed' | 'declined'>(() =>
-    readPersisted('wph_provider_orders_filter', 'new'),
-  )
   const [apptQuery, setApptQuery] = useState(() => readPersisted('wph_provider_appt_query', ''))
   const [apptFilter, setApptFilter] = useState<'all' | 'Scheduled' | 'Completed' | 'Cancelled'>(() =>
     readPersisted('wph_provider_appt_filter', 'Scheduled'),
   )
 
-  // Deep links from header stat pills (?apptFilter= / ?orderFilter= / ?inboxFilter=)
+  // Deep links from header stat pills (?apptFilter= / ?inboxFilter=)
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const af = sp.get('apptFilter')
     if (af === 'Scheduled' || af === 'Completed' || af === 'Cancelled' || af === 'all') setApptFilter(af as typeof apptFilter)
-    const of = sp.get('orderFilter')
-    if (of === 'new' || of === 'in_review' || of === 'ordered' || of === 'closed' || of === 'declined' || of === 'all')
-      setOrderFilter(of as typeof orderFilter)
     const iff = sp.get('inboxFilter')
     if (iff === 'new' || iff === 'handled' || iff === 'all') setInboxFilter(iff as typeof inboxFilter)
   }, [location.search])
@@ -253,14 +215,12 @@ export default function ProviderVbmsWorkspace() {
     try {
       localStorage.setItem('wph_provider_inbox_query', JSON.stringify(inboxQuery))
       localStorage.setItem('wph_provider_inbox_filter', JSON.stringify(inboxFilter))
-      localStorage.setItem('wph_provider_orders_query', JSON.stringify(orderQuery))
-      localStorage.setItem('wph_provider_orders_filter', JSON.stringify(orderFilter))
       localStorage.setItem('wph_provider_appt_query', JSON.stringify(apptQuery))
       localStorage.setItem('wph_provider_appt_filter', JSON.stringify(apptFilter))
     } catch {
       // ignore
     }
-  }, [apptFilter, apptQuery, inboxFilter, inboxQuery, orderFilter, orderQuery])
+  }, [apptFilter, apptQuery, inboxFilter, inboxQuery])
 
   const [qsPatient, setQsPatient] = useState(initialWs.qsPatient)
   const [qsCustomName, setQsCustomName] = useState(initialWs.qsCustomName)
@@ -270,10 +230,7 @@ export default function ProviderVbmsWorkspace() {
   const [qsTime, setQsTime] = useState('09:00')
 
   const inboxSearchRef = useRef<HTMLInputElement | null>(null)
-  const ordersSearchRef = useRef<HTMLInputElement | null>(null)
   const scheduleSearchRef = useRef<HTMLInputElement | null>(null)
-
-  // Keyboard shortcuts are wired after loadOrders/loadTeamInbox declarations (see below).
 
   const workspacePersistRef = useRef({ appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache })
   workspacePersistRef.current = { appts, blackouts, qsPatient, qsCustomName, qsType, qsWhen, inboxNameCache }
@@ -532,7 +489,10 @@ export default function ProviderVbmsWorkspace() {
   const cancelledCount = appts.filter((a) => a.status === 'Cancelled').length
   const ordersNewCount = orders.filter((o) => o.status === 'new').length
   const ordersInReviewCount = orders.filter((o) => o.status === 'in_review').length
+  const ordersOrderedCount = orders.filter((o) => o.status === 'ordered').length
+  const ordersClosedCount = orders.filter((o) => o.status === 'closed').length
   const ordersDeclinedCount = orders.filter((o) => o.status === 'declined').length
+  const ordersTotalCount = orders.length
 
   /**
    * Inbox rows for Quick schedule patient picker.
@@ -579,66 +539,6 @@ export default function ProviderVbmsWorkspace() {
 
   const rowPatientLabel = (a: DemoAppt) => (a.patientName?.trim() ? a.patientName.trim() : labelForPatientId(a.patientId))
 
-  const formatOrderPatient = (o: ProviderOrderRow) => {
-    const p = o.patient
-    const n = [p?.firstName, p?.lastName].filter(Boolean).join(' ').trim()
-    if (n) return n
-    if (p?.displayName?.trim()) return p.displayName.trim()
-    if (p?.email?.trim()) return p.email.trim()
-    return p?.id ? `${p.id.slice(0, 8)}…` : '—'
-  }
-
-  const formatShipTo = (o: ProviderOrderRow) => {
-    const line1 = (o.shippingAddress1 || '').trim()
-    const line2 = (o.shippingAddress2 || '').trim()
-    const citySt = [o.shippingCity, o.shippingState, o.shippingPostalCode].filter((x) => (x || '').trim()).join(', ')
-    const parts = [line1, line2, citySt, (o.shippingCountry || '').trim() && o.shippingCountry !== 'US' ? o.shippingCountry : ''].filter(
-      Boolean,
-    ) as string[]
-    return parts.length ? parts.join(' · ') : '—'
-  }
-
-  const orderLineItemsSummary = (o: ProviderOrderRow) =>
-    o.items.length
-      ? o.items.map((it) => `${it.name} (×${it.quantity})`).join(' · ')
-      : o.request || o.item || '—'
-
-  const orderSubtotalCents = (o: ProviderOrderRow) =>
-    o.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0)
-
-  const [orderDeleteId, setOrderDeleteId] = useState<string | null>(null)
-
-  const updateOrderStatus = async (id: string, status: 'new' | 'in_review' | 'ordered' | 'closed' | 'declined') => {
-    setOrdersError(null)
-    try {
-      await apiPatch(`/v1/provider/orders/${encodeURIComponent(id)}/status`, { status })
-      await loadOrders()
-    } catch (e: any) {
-      setOrdersError(String(e?.message || e))
-    }
-  }
-
-  const removeOrderFromList = async (o: ProviderOrderRow) => {
-    if (o.status !== 'closed' && o.status !== 'declined') return
-    if (
-      !window.confirm(
-        'Remove this order from the list? It will no longer appear here. A compliance audit entry is still kept on the server.',
-      )
-    )
-      return
-    setOrdersError(null)
-    setOrderDeleteId(o.id)
-    try {
-      await apiDelete(`/v1/provider/orders/${encodeURIComponent(o.id)}`)
-      setToast('Order removed from list.')
-      await loadOrders()
-    } catch (e: any) {
-      setOrdersError(String(e?.message || e))
-    } finally {
-      setOrderDeleteId(null)
-    }
-  }
-
   useEffect(() => {
     if (allPatientOptions.some((p) => p.id === qsPatient)) return
     setQsPatient(allPatientOptions[0]?.id || 'p1')
@@ -655,28 +555,6 @@ export default function ProviderVbmsWorkspace() {
       includesAll([m.from, m.category, m.when, m.body].filter(Boolean).join(' | '), inboxTokens),
     )
   }, [inboxFilter, inboxTokens, msgs])
-
-  const orderTokens = useMemo(() => norm(orderQuery).split(' ').filter(Boolean), [orderQuery])
-  const filteredOrders = useMemo(() => {
-    const base = orderFilter === 'all' ? orders : orders.filter((o) => o.status === orderFilter)
-    if (orderTokens.length === 0) return base
-    return base.filter((o) =>
-      includesAll(
-        [
-          orderLineItemsSummary(o),
-          formatOrderPatient(o),
-          o.patient?.email || '',
-          formatShipTo(o),
-          o.status,
-          o.pharmacyPartner?.name || '',
-          o.createdAt,
-        ]
-          .filter(Boolean)
-          .join(' | '),
-        orderTokens,
-      ),
-    )
-  }, [orderFilter, orderTokens, orders])
 
   const apptTokens = useMemo(() => norm(apptQuery).split(' ').filter(Boolean), [apptQuery])
   const filteredAppts = useMemo(() => {
@@ -751,26 +629,35 @@ export default function ProviderVbmsWorkspace() {
             </Link>
           </div>
           <div className="pill teamWorkspaceStatPill" title="Patient orders (API)">
-            <Link to="/provider?orderFilter=all#wph-orders" className="teamWorkspaceStatPillLink">
+            <Link to="/provider/orders" className="teamWorkspaceStatPillLink">
               Orders:
             </Link>
-            <Link to="/provider?orderFilter=new#wph-orders" className="teamWorkspaceStatPillLink">
+            <Link to="/provider/orders" className="teamWorkspaceStatPillLink">
               {' '}
+              <b>{ordersTotalCount}</b> total
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider/orders?orderFilter=new" className="teamWorkspaceStatPillLink">
               <b>{ordersNewCount}</b> new
             </Link>
             <span className="teamWorkspaceStatPillSep"> · </span>
-            <Link to="/provider?orderFilter=in_review#wph-orders" className="teamWorkspaceStatPillLink">
+            <Link to="/provider/orders?orderFilter=in_review" className="teamWorkspaceStatPillLink">
               {ordersInReviewCount} in review
             </Link>
             <span className="teamWorkspaceStatPillSep"> · </span>
-            <Link to="/provider?orderFilter=declined#wph-orders" className="teamWorkspaceStatPillLink">
+            <Link to="/provider/orders?orderFilter=ordered" className="teamWorkspaceStatPillLink">
+              {ordersOrderedCount} ordered
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider/orders?orderFilter=closed" className="teamWorkspaceStatPillLink">
+              {ordersClosedCount} closed
+            </Link>
+            <span className="teamWorkspaceStatPillSep"> · </span>
+            <Link to="/provider/orders?orderFilter=declined" className="teamWorkspaceStatPillLink">
               {ordersDeclinedCount} declined
             </Link>
           </div>
         </div>
-        <p className="muted" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.4 }}>
-          Tip: press <b>/</b> to focus search · <b>r</b> to refresh (inbox/orders)
-        </p>
         <div className="teamWorkspaceToolbar" role="toolbar" aria-label="Workspace shortcuts">
           <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
             Public site
@@ -796,12 +683,6 @@ export default function ProviderVbmsWorkspace() {
         </div>
       </header>
 
-      {toast ? (
-        <div style={{ position: 'sticky', top: 86, zIndex: 20, alignSelf: 'flex-end' }}>
-          <span className="pill pillGreen">{toast}</span>
-        </div>
-      ) : null}
-
       <div className="cardGrid">
         <section className="card cardAccentNavy cardSpan12">
           <div className="cardTitle">
@@ -813,7 +694,7 @@ export default function ProviderVbmsWorkspace() {
           </p>
           <div className="divider" />
           <div className="btnRow">
-            <Link to="/provider#wph-orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+            <Link to="/provider/orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
               View order requests
             </Link>
             <Link to="/provider/inbox" className="btn" style={{ textDecoration: 'none' }}>
@@ -1408,168 +1289,43 @@ export default function ProviderVbmsWorkspace() {
             </p>
           ) : null}
           {orders.length > 0 ? (
-            <>
-              <div className="formRow" style={{ gridTemplateColumns: '1.6fr 1fr', alignItems: 'end' }}>
-                <label>
-                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                    Search
-                  </div>
-                  <input
-                    className="input"
-                    value={orderQuery}
-                    onChange={(e) => setOrderQuery(e.target.value)}
-                    placeholder="Patient, address, SKU, keyword…"
-                    ref={ordersSearchRef}
-                  />
-                </label>
-                <label>
-                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                    Filter
-                  </div>
-                  <select className="select" value={orderFilter} onChange={(e) => setOrderFilter(e.target.value as any)}>
-                    <option value="new">new</option>
-                    <option value="in_review">in review</option>
-                    <option value="ordered">ordered</option>
-                    <option value="closed">closed</option>
-                    <option value="declined">declined</option>
-                    <option value="all">all</option>
-                  </select>
-                </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.45 }}>
+                Status labels below match the internal workflow on <strong>All orders</strong>. Open the full list to search, copy
+                details, and update status.
+              </p>
+              <ul style={{ margin: 0, paddingLeft: '1.1em', lineHeight: 1.65 }}>
+                <li>
+                  <Link to="/provider/orders?orderFilter=new" className="teamWorkspaceStatPillLink" style={{ fontWeight: 700 }}>
+                    {ordersNewCount} new (pending invoice / triage)
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/provider/orders?orderFilter=in_review" className="teamWorkspaceStatPillLink" style={{ fontWeight: 700 }}>
+                    {ordersInReviewCount} authorized / in review
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/provider/orders?orderFilter=ordered" className="teamWorkspaceStatPillLink" style={{ fontWeight: 700 }}>
+                    {ordersOrderedCount} invoice sent (ordered)
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/provider/orders?orderFilter=closed" className="teamWorkspaceStatPillLink" style={{ fontWeight: 700 }}>
+                    {ordersClosedCount} closed
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/provider/orders?orderFilter=declined" className="teamWorkspaceStatPillLink" style={{ fontWeight: 700 }}>
+                    {ordersDeclinedCount} declined
+                  </Link>
+                </li>
+              </ul>
+              <div className="btnRow" style={{ marginTop: 4 }}>
+                <Link to="/provider/orders" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+                  Open all orders
+                </Link>
               </div>
-              <div className="btnRow" style={{ marginTop: 12 }}>
-                <span className="pill">
-                  Showing: <b>{filteredOrders.length}</b>
-                </span>
-              </div>
-              <div className="divider" />
-            </>
-          ) : null}
-          {filteredOrders.length > 0 ? (
-            <div
-              className="vbmsOrderList"
-              style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}
-            >
-              {filteredOrders.map((o) => (
-                <div
-                  key={o.id}
-                  className="card cardAccentSoft"
-                  style={{ margin: 0, boxShadow: 'none', border: '1px solid rgba(10, 30, 63, 0.12)' }}
-                >
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <div>
-                      <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>{orderLineItemsSummary(o)}</div>
-                      <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                        {new Date(o.createdAt).toLocaleString()} · {o.pharmacyPartner ? o.pharmacyPartner.name : o.request}
-                      </div>
-                    </div>
-                    <div className="btnRow" style={{ margin: 0, gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                      <button type="button" className="btn" onClick={() => void copyText(orderLineItemsSummary(o))}>
-                        Copy items
-                      </button>
-                      <button type="button" className="btn" onClick={() => void copyText(formatShipTo(o))}>
-                        Copy ship-to
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => {
-                          const bits = [formatOrderPatient(o), o.patient?.email || '', o.patient?.phone || '']
-                            .map((x) => String(x || '').trim())
-                            .filter(Boolean)
-                          void copyText(bits.join(' · '))
-                        }}
-                      >
-                        Copy patient
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        title="Mark this order as declined (not fulfilled)"
-                        disabled={o.status === 'declined' || o.status === 'closed' || ordersLoading}
-                        onClick={() => void updateOrderStatus(o.id, 'declined')}
-                      >
-                        Decline
-                      </button>
-                      {(o.status === 'closed' || o.status === 'declined') && (
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
-                          title="Hide this order from the list (closed or declined only)"
-                          disabled={ordersLoading || orderDeleteId !== null}
-                          onClick={() => void removeOrderFromList(o)}
-                        >
-                          {orderDeleteId === o.id ? 'Removing…' : 'Remove from list'}
-                        </button>
-                      )}
-                    </div>
-                    <label className="muted" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}>
-                      Status
-                      <select
-                        className="select"
-                        value={o.status}
-                        onChange={(e) =>
-                          void updateOrderStatus(
-                            o.id,
-                            e.target.value as 'new' | 'in_review' | 'ordered' | 'closed' | 'declined',
-                          )
-                        }
-                        aria-label={`Status for order ${o.id}`}
-                      >
-                        <option value="new">new</option>
-                        <option value="in_review">in review</option>
-                        <option value="ordered">ordered</option>
-                        <option value="closed">closed</option>
-                        <option value="declined">declined</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div className="divider" style={{ margin: '12px 0' }} />
-                  <div className="muted" style={{ fontSize: 14, lineHeight: 1.5 }}>
-                    <div>
-                      <strong>Patient</strong> — {formatOrderPatient(o)}
-                      {o.patient?.email ? (
-                        <span>
-                          {' '}
-                          · <a href={`mailto:${o.patient.email}`}>{o.patient.email}</a>
-                        </span>
-                      ) : null}
-                      {o.patient?.phone ? <span> · {o.patient.phone}</span> : null}
-                    </div>
-                    {o.items.length > 0 ? (
-                      <div style={{ marginTop: 8 }}>
-                        <strong>Subtotal (listed)</strong> —{' '}
-                        {(orderSubtotalCents(o) / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
-                        {o.shippingInsuranceCents > 0 ? (
-                          <span> · insurance {(o.shippingInsuranceCents / 100).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}</span>
-                        ) : null}
-                      </div>
-                    ) : null}
-                    <div style={{ marginTop: 8 }}>
-                      <strong>Ship to</strong> — {formatShipTo(o)}
-                    </div>
-                    <div style={{ marginTop: 10, padding: '10px 12px', background: 'rgba(10, 30, 63, 0.04)', borderRadius: 8 }}>
-                      <div style={{ fontWeight: 800, marginBottom: 6, fontSize: 13, color: 'var(--navy)' }}>
-                        Consents and signature (for fulfillment)
-                      </div>
-                      <ul style={{ margin: 0, paddingLeft: '1.1em', lineHeight: 1.5 }}>
-                        <li>
-                          Medication shipping terms: <strong>{o.agreedToShippingTerms ? 'Agreed' : '—'}</strong>
-                        </li>
-                        <li>
-                          Contact for order: <strong>{o.contactPermission ? 'Authorized' : '—'}</strong>
-                        </li>
-                        <li>
-                          Typed signature: <strong>{(o.signatureName || '').trim() || '—'}</strong>
-                          {o.signatureDate
-                            ? ` · ${new Date(o.signatureDate).toLocaleDateString()}`
-                            : ' · (no date)'}
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           ) : null}
         </section>
