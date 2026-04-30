@@ -85,6 +85,9 @@ export default function ProviderShell() {
             <NavLink to="/provider/orders" onClick={closeMenu}>
               All orders
             </NavLink>
+            <NavLink to="/provider/audit" onClick={closeMenu}>
+              Audit log
+            </NavLink>
             <NavLink to="/provider/integrations" onClick={closeMenu}>
               Integrations
             </NavLink>
