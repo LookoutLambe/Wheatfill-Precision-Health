@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { Stripe } from 'stripe'
 import { prisma } from '../db.js'
 import { shippingCentsForPartnerSlug } from './pharmacy-seed.js'
+import { notifyOrderEmail } from '../integrations/orderEmail.js'
 
 export const CreatePharmacyOrderBody = z.object({
   partnerSlug: z.string().min(2).max(80),
@@ -118,6 +119,17 @@ export async function runPharmacyOrderCheckout(input: {
       },
     },
     include: { items: true },
+  })
+
+  // Best-effort: optionally notify by email (never blocks the order flow).
+  void notifyOrderEmail({
+    kind: 'order_created',
+    orderId: order.id,
+    partnerName: partner.name,
+    totalCents: total,
+    patientName: [patient.firstName, patient.lastName].filter(Boolean).join(' ') || undefined,
+    patientEmail: guestContactEmail || patient.email || undefined,
+    shipTo: `${hasShip ? body.shippingAddress1!.trim() : patient.address1 || ''}, ${hasShip ? body.shippingCity!.trim() : patient.city || ''}, ${hasShip ? body.shippingState!.trim() : patient.state || ''} ${hasShip ? body.shippingPostalCode!.trim() : patient.postalCode || ''}`.trim(),
   })
 
   const providerRow = await prisma.user.findUnique({

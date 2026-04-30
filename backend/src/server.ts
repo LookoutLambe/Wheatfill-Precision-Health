@@ -27,6 +27,7 @@ import { registerAuth, requireApprover, requireRole } from './auth/authz.js'
 import { clearJwtCookie, injectJwtFromCookie, JWT_COOKIE_NAME, setJwtCookie } from './security/jwtCookie.js'
 import { rateLimitHit } from './security/simpleRateLimit.js'
 import { supabaseAnon, supabaseServiceRole, type ProviderProfile } from './integrations/supabase.js'
+import { notifyOrderEmail } from './integrations/orderEmail.js'
 
 loadAndValidateEnv()
 
@@ -814,6 +815,17 @@ app.post('/v1/public/orders/pharmacy/request', async (req, reply) => {
         totalCents,
       }),
     },
+  })
+
+  // Best-effort: optionally notify by email (never blocks the request flow).
+  void notifyOrderEmail({
+    kind: 'order_request',
+    orderId: order.id,
+    partnerName: partner.name,
+    totalCents,
+    patientName: (order.patient.displayName || body.signatureName).trim(),
+    patientEmail: contactEmail.trim().toLowerCase(),
+    shipTo: `${body.shippingAddress1!.trim()}, ${body.shippingCity!.trim()}, ${body.shippingState!.trim()} ${body.shippingPostalCode!.trim()}`.trim(),
   })
 
   return { ok: true, orderId: order.id, totalCents }
