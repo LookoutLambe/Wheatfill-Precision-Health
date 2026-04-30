@@ -3,7 +3,7 @@ const EVENT = 'wph_provider_auth_changed'
 const PASS_KEY = 'wph_provider_password_v1'
 
 const DEFAULT_USERNAME = 'brett'
-const DEFAULT_PASSWORD = 'wheatfill'
+const DEFAULT_PASSWORD = ''
 
 export function isProviderAuthed() {
   return localStorage.getItem(KEY) === 'true'
@@ -20,6 +20,8 @@ export function getProviderUsername() {
 
 export function getProviderPassword() {
   const saved = localStorage.getItem(PASS_KEY)
+  // In production builds, never fall back to a baked-in demo password.
+  if ((import.meta as any).env?.PROD) return saved && saved.trim() ? saved : ''
   return saved && saved.trim() ? saved : DEFAULT_PASSWORD
 }
 

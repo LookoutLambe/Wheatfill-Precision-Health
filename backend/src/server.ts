@@ -35,6 +35,7 @@ const PORT = Number(process.env.PORT || 8080)
 const FRONTEND_ORIGIN =
   process.env.FRONTEND_ORIGIN ||
   'http://localhost:5176,https://wheatfillprecisionhealth.com,https://www.wheatfillprecisionhealth.com'
+const IS_PRODUCTION = (process.env.NODE_ENV || '').toLowerCase() === 'production'
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_change_me'
 const JWT_ISSUER = process.env.JWT_ISSUER || 'wph-backend'
 const JWT_AUDIENCE = process.env.JWT_AUDIENCE || 'wph-web'
@@ -52,12 +53,42 @@ const SYNC_TEAM_PASSWORDS =
   (process.env.SYNC_TEAM_PASSWORDS || '0').trim() === '1' ||
   (process.env.SYNC_TEAM_PASSWORDS || '').trim().toLowerCase() === 'true'
 const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || DEFAULT_JWT_EXPIRES_IN).trim() || DEFAULT_JWT_EXPIRES_IN
-const IS_PRODUCTION = (process.env.NODE_ENV || '').toLowerCase() === 'production'
 const TRUST_PROXY_ENABLED = resolveTrustProxy()
 const PUBLIC_POST_RATE_MAX = Math.max(5, Number(process.env.PUBLIC_POST_RATE_MAX || 40) || 40)
 const PUBLIC_POST_RATE_WINDOW_MS = Math.max(60_000, Number(process.env.PUBLIC_POST_RATE_WINDOW_MS || 3_600_000) || 3_600_000)
 const DEFAULT_PATIENT_USERNAME = (process.env.DEFAULT_PATIENT_USERNAME || 'demo').trim().toLowerCase()
 const DEFAULT_PATIENT_PASSWORD = process.env.DEFAULT_PATIENT_PASSWORD || 'wheatfill'
+
+function requireProductionSecrets() {
+  if (!IS_PRODUCTION) return
+  const problems: string[] = []
+  const trimmedJwt = (process.env.JWT_SECRET || '').trim()
+  if (!trimmedJwt || trimmedJwt === 'dev_only_change_me') problems.push('JWT_SECRET')
+
+  // These are only used for bootstrap-seeding accounts. In production we refuse to run with the demo defaults
+  // so a misconfigured deployment never ships with known credentials.
+  const seededDefaults: Array<[string, string]> = [
+    ['DEFAULT_PROVIDER_PASSWORD', DEFAULT_PROVIDER_PASSWORD],
+    ['TEAM_BRETT_PASSWORD', TEAM_BRETT_PASSWORD],
+    ['TEAM_BRIDGETTE_PASSWORD', TEAM_BRIDGETTE_PASSWORD],
+    ['TEAM_ADMIN_PASSWORD', TEAM_ADMIN_PASSWORD],
+    ['DEFAULT_PATIENT_PASSWORD', DEFAULT_PATIENT_PASSWORD],
+  ]
+  for (const [name, value] of seededDefaults) {
+    if (!String(value || '').trim() || String(value) === 'wheatfill' || String(value) === 'demonstration') {
+      problems.push(name)
+    }
+  }
+  if (problems.length) {
+    throw new Error(
+      `[security] Refusing to start in production with default/empty credentials. Set: ${[
+        ...new Set(problems),
+      ].join(', ')}`,
+    )
+  }
+}
+
+requireProductionSecrets()
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
 const STRIPE_CONNECT_CLIENT_ID = process.env.STRIPE_CONNECT_CLIENT_ID || ''
