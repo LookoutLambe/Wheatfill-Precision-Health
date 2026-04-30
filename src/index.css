@@ -113,12 +113,14 @@ body {
 body::before {
   content: '';
   position: fixed;
-  inset: 0;
+  /* Pull past viewport so a light blur doesn’t show a hard clipped edge */
+  inset: -18px;
   background-image: url('./assets/bg-page-texture.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
   opacity: 0.62;
+  filter: blur(1.25px);
   pointer-events: none;
   /* Must be >= 0 or it can end up behind the html background and disappear */
   z-index: 0;
