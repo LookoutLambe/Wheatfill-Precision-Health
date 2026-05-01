@@ -206,7 +206,7 @@ export default function Landing() {
     <Page className="pageLanding" variant="wide">
       <div className="twoCol twoColLanding">
         <section className="landingGridTop" aria-label="Welcome and care team">
-          <section className="landingGridHeroCatalog" aria-label="Welcome">
+          <section className="landingGridHeroBand" aria-label="Welcome">
             <div className="landingHeroIntro">
               <BrandSlogan />
               <h1 className="heroHeadline">
@@ -218,43 +218,78 @@ export default function Landing() {
                 therapies.
               </p>
 
-              <div className="divider" />
-
               <div className="btnRow">
                 <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
                 <PatientPortalCta className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }} />
               </div>
-
-              <div className="divider" />
-
-              <section className="card cardAccentNavy" aria-labelledby="landing-start-here-heading" style={{ marginTop: 12 }}>
-                <div className="cardTitle">
-                  <h2 id="landing-start-here-heading" style={{ margin: 0 }}>
-                    Start here
-                  </h2>
-                  <span className="pill">Patient Paths</span>
-                </div>
-                <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                  Pick the path that matches what you need—booking, medication education, refill-style requests, or the storefront catalog.
-                </p>
-                <div className="divider" />
-                <div className="btnRow" style={{ flexWrap: 'wrap' }}>
-                  <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
-                  <NavLink to="/medications" className="btn" style={{ textDecoration: 'none' }}>
-                    Medication education
-                  </NavLink>
-                  <NavLink to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
-                    Order requests
-                  </NavLink>
-                  <NavLink to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
-                    Order Now catalog
-                  </NavLink>
-                  <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
-                    Contact
-                  </Link>
-                </div>
-              </section>
             </div>
+          </section>
+
+          <aside className="landingGridProfileColumn" aria-label="About the care team">
+            <div className="portrait">
+              <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
+            </div>
+            <div className="card cardAccentNavy landingBioCard">
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
+                <span className="pill">Founder</span>
+              </div>
+              <p className="landingBioCardSeeProfile">
+                <Link to="/about#brett-bio" className="landingSeeProfileLink">
+                  See Profile
+                </Link>
+              </p>
+            </div>
+
+            <div className="divider" />
+
+            <div className="portrait" style={{ marginTop: 8 }}>
+              <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
+            </div>
+            <div className="card cardAccentNavy landingBioCard">
+              <div className="cardTitle">
+                <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
+                <span className="pill">Clinician</span>
+              </div>
+              <p className="landingBioCardSeeProfile">
+                <Link to="/about#bridgette-bio" className="landingSeeProfileLink">
+                  See Profile
+                </Link>
+              </p>
+            </div>
+          </aside>
+
+          <div className="divider landingHeroFullDivider" aria-hidden="true" />
+
+          <section className="landingGridHeroCatalog" aria-label="Patient paths and overview">
+            <section className="card cardAccentNavy" aria-labelledby="landing-start-here-heading" style={{ marginTop: 0 }}>
+              <div className="cardTitle">
+                <h2 id="landing-start-here-heading" style={{ margin: 0 }}>
+                  Start here
+                </h2>
+                <span className="pill">Patient Paths</span>
+              </div>
+              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+                Pick the path that matches what you need—booking, medication education, refill-style requests, or the
+                storefront catalog.
+              </p>
+              <div className="divider" />
+              <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
+                <NavLink to="/medications" className="btn" style={{ textDecoration: 'none' }}>
+                  Medication education
+                </NavLink>
+                <NavLink to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
+                  Order requests
+                </NavLink>
+                <NavLink to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
+                  Order Now catalog
+                </NavLink>
+                <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+                  Contact
+                </Link>
+              </div>
+            </section>
 
             <div className="divider" />
 
@@ -363,40 +398,6 @@ export default function Landing() {
               </div>
             </section>
           </section>
-
-          <aside className="landingGridProfileColumn" aria-label="About the care team">
-          <div className="portrait">
-            <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
-          </div>
-          <div className="card cardAccentNavy landingBioCard">
-            <div className="cardTitle">
-              <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
-              <span className="pill">Founder</span>
-            </div>
-            <p className="landingBioCardSeeProfile">
-              <Link to="/about#brett-bio" className="landingSeeProfileLink">
-                See Profile
-              </Link>
-            </p>
-          </div>
-
-          <div className="divider" />
-
-          <div className="portrait" style={{ marginTop: 8 }}>
-            <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
-          </div>
-          <div className="card cardAccentNavy landingBioCard">
-            <div className="cardTitle">
-              <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
-              <span className="pill">Clinician</span>
-            </div>
-            <p className="landingBioCardSeeProfile">
-              <Link to="/about#bridgette-bio" className="landingSeeProfileLink">
-                See Profile
-              </Link>
-            </p>
-          </div>
-          </aside>
         </section>
 
         <section className="landingGridCatalog" aria-label="Order Now catalog highlight">

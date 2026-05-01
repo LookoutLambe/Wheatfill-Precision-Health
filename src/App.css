@@ -1723,6 +1723,10 @@ button.pill:active {
   align-items: stretch;
 }
 
+.landingGridHeroBand .landingHeroIntro .btnRow {
+  margin-top: 18px;
+}
+
 .landingHeroIntro .brandSlogan {
   align-self: center;
 }
@@ -1733,9 +1737,10 @@ button.pill:active {
     align-items: start;
   }
 
-  .landingGridTop .landingGridHeroCatalog {
+  .landingGridTop .landingGridHeroBand {
     grid-column: 1;
     grid-row: 1;
+    min-width: 0;
   }
 
   .landingGridTop .landingGridProfileColumn {
@@ -1747,6 +1752,19 @@ button.pill:active {
     justify-self: stretch;
     width: 100%;
     max-width: none;
+  }
+
+  /* One hairline under both hero columns (row height follows the taller column). */
+  .landingGridTop > .landingHeroFullDivider {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-block: 0;
+  }
+
+  .landingGridTop .landingGridHeroCatalog {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    min-width: 0;
   }
 }
 
