@@ -266,7 +266,7 @@ export default function Landing() {
                 </h2>
                 <span className="pill">Simple Steps</span>
               </div>
-              <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
+              <p className="muted landingHowItWorksLead" style={{ marginTop: 6, marginBottom: 0 }}>
                 A clear path from your first request to follow-up. If you are unsure where to start, book a visit.
               </p>
               <div className="divider" />

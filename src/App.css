@@ -721,6 +721,10 @@ html.pharmacyCartOpen body {
   text-align: left;
 }
 
+.pageLanding .landingHowItWorksLead {
+  text-align: center;
+}
+
 /* Sidebar team bio cards: link row — must beat `.pageLanding p { text-align: left }` above */
 .pageLanding .landingBioCard .landingBioCardSeeProfile {
   margin: 0;
@@ -4815,6 +4819,13 @@ html.wph-local-justify-prose .pageLanding .muted {
 
 html.wph-local-justify-prose .pageLanding .landingBioCard .landingBioCardSeeProfile {
   text-align: center !important;
+}
+
+html.wph-local-justify-prose .pageLanding .landingHowItWorksLead {
+  text-align: center !important;
+  hyphens: none;
+  -webkit-hyphens: none;
+  text-wrap: balance;
 }
 
 html.wph-local-justify-prose .pageLanding .landingConsultLead {
