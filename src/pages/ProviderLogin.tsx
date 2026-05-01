@@ -58,7 +58,7 @@ export default function ProviderLogin() {
         // Required for provider workspace routing (marketing provider session gate).
         // Token alone is not enough; the workspace uses this flag to avoid showing provider UI on public devices.
         try {
-          setMarketingProviderAuthed(true, u)
+          setMarketingProviderAuthed(true, res.user.username)
         } catch {
           // ignore
         }
@@ -124,7 +124,7 @@ export default function ProviderLogin() {
           <div className="formRow" style={{ marginTop: 12 }}>
             <label>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                Username
+                {mode === 'signin' ? 'Username or first name' : 'Username'}
               </div>
               <input className="input" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
             </label>

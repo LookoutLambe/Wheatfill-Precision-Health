@@ -35,3 +35,5 @@ Run Prisma migrations against the same DB (`npm run prisma:migrate` / deploy pip
 ## 4. Bootstrap admins
 
 With service role configured, the API seeds or updates rows for usernames `brett`, `bridgette`, and `admin` in `provider_profiles` on boot (email/display name come from the `TEAM_*_EMAIL` variables). **Passwords live only in Supabase Auth** — create or invite users there using the **same emails** as in Render, or sign-in will fail.
+
+Staff can sign in with their **`username`** or the **first word of `display_name`** (case-insensitive), as long as it matches exactly one profile — otherwise they must use their assigned username.

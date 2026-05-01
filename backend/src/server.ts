@@ -11,6 +11,7 @@ import { registerBillingWebhookRoutes } from './routes/billingWebhooks.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
 import { startPaymentCleanup } from './jobs/paymentCleanup.js'
+import type { User } from '@prisma/client'
 import Fastify from 'fastify'
 import cookie from '@fastify/cookie'
 import cors from '@fastify/cors'
@@ -268,17 +269,50 @@ function isProviderProfilesTableMissingError(message: string): boolean {
   )
 }
 
-async function providerProfileByUsername(usernameRaw: string): Promise<ProviderProfile | null> {
-  const username = usernameRaw.trim().toLowerCase()
-  if (!username) return null
+/** Lowercase first whitespace-delimited word — used so staff can sign in with a first name when it matches uniquely. */
+function firstDisplayNameToken(displayName: string): string {
+  const t = displayName.trim().split(/\s+/)[0] || ''
+  return t.toLowerCase()
+}
+
+/** Escape `%` / `_` / `\` for a literal prefix inside Postgres `ILIKE`. */
+function escapeForILikePrefix(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+}
+
+type ProviderProfileLookup = { profile: ProviderProfile | null; ambiguous: boolean }
+
+async function providerProfileForLogin(identifierRaw: string): Promise<ProviderProfileLookup> {
+  const username = identifierRaw.trim().toLowerCase()
+  if (!username) return { profile: null, ambiguous: false }
   const sb = supabaseServiceRole()
-  const { data, error } = await sb
+  const { data: row, error } = await sb.from('provider_profiles').select('*').eq('username', username).maybeSingle()
+  if (error) throw new Error(error.message)
+  if (row) return { profile: row as ProviderProfile, ambiguous: false }
+
+  const safePat = escapeForILikePrefix(username)
+  const { data: cand, error: e2 } = await sb
     .from('provider_profiles')
     .select('*')
-    .eq('username', username)
-    .maybeSingle()
-  if (error) throw new Error(error.message)
-  return (data as ProviderProfile | null) ?? null
+    .ilike('display_name', `${safePat}%`)
+  if (e2) throw new Error(e2.message)
+  const matches = (cand || []).filter((r: ProviderProfile) => firstDisplayNameToken(r.display_name) === username)
+  if (matches.length > 1) return { profile: null, ambiguous: true }
+  if (matches.length === 1) return { profile: matches[0], ambiguous: false }
+  return { profile: null, ambiguous: false }
+}
+
+async function prismaUserForStaffLogin(identifier: string): Promise<{ user: User | null; ambiguous: boolean }> {
+  const normalized = identifier.trim().toLowerCase()
+  const staff = await prisma.user.findMany({
+    where: { deletedAt: null, role: { in: ['provider', 'admin'] } },
+  })
+  const byUsername = staff.find((u) => u.username === normalized)
+  if (byUsername) return { user: byUsername, ambiguous: false }
+  const firstNameMatches = staff.filter((u) => firstDisplayNameToken(u.displayName) === normalized)
+  if (firstNameMatches.length > 1) return { user: null, ambiguous: true }
+  if (firstNameMatches.length === 1) return { user: firstNameMatches[0], ambiguous: false }
+  return { user: null, ambiguous: false }
 }
 
 /**
@@ -1185,7 +1219,13 @@ app.post('/auth/login', async (req, reply) => {
   if (supabaseConfigured) {
     let prof: ProviderProfile | null = null
     try {
-      prof = await providerProfileByUsername(body.username)
+      const lookedUp = await providerProfileForLogin(body.username)
+      if (lookedUp.ambiguous) {
+        return reply
+          .status(400)
+          .send('Multiple staff accounts share that first name. Sign in with your assigned username instead.')
+      }
+      prof = lookedUp.profile
     } catch (e) {
       const msg = String((e as Error)?.message || e)
       if (isProviderProfilesTableMissingError(msg)) {
@@ -1194,7 +1234,7 @@ app.post('/auth/login', async (req, reply) => {
           'public.provider_profiles missing in Supabase — falling back to Prisma login. Apply infra/supabase/provider_profiles.sql in the Supabase SQL editor.',
         )
       } else {
-        app.log.error({ err: e }, 'providerProfileByUsername failed')
+        app.log.error({ err: e }, 'providerProfileForLogin failed')
         return reply.status(500).send(
           'Provider directory lookup failed. Check API logs. If you enabled USE_SUPABASE_AUTH, ensure public.provider_profiles exists (see infra/supabase/README.md).',
         )
@@ -1226,8 +1266,17 @@ app.post('/auth/login', async (req, reply) => {
     // Patients (and Prisma-only providers) keep using `User` rows — no `provider_profiles` row for their username.
   }
 
-  // Legacy local dev fallback (Prisma users)
-  const user = await prisma.user.findUnique({ where: { username: body.username } })
+  // Legacy local dev fallback (Prisma users). Patients match `username` only; staff may also match first display-name token.
+  let user = await prisma.user.findUnique({ where: { username: body.username } })
+  if (!user) {
+    const staffLookup = await prismaUserForStaffLogin(body.username)
+    if (staffLookup.ambiguous) {
+      return reply
+        .status(400)
+        .send('Multiple staff accounts share that first name. Sign in with your assigned username instead.')
+    }
+    user = staffLookup.user
+  }
   if (!user) return reply.unauthorized('Invalid username or password.')
   const ok = await verifyPassword(body.password, user.passwordHash)
   if (!ok) return reply.unauthorized('Invalid username or password.')
