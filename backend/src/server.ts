@@ -52,7 +52,7 @@ const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'wheatfill'
  * Defaults stay in sync with `src/config/provider.ts` forwarding addresses.
  */
 const TEAM_BRETT_EMAIL = (process.env.TEAM_BRETT_EMAIL || 'brett.wheatfill@gmail.com').trim().toLowerCase()
-const TEAM_BRIDGETTE_EMAIL = (process.env.TEAM_BRIDGETTE_EMAIL || 'bridgette.wheatfill@gmail.com')
+const TEAM_BRIDGETTE_EMAIL = (process.env.TEAM_BRIDGETTE_EMAIL || 'fewox03@gmail.com')
   .trim()
   .toLowerCase()
 const TEAM_ADMIN_EMAIL = (process.env.TEAM_ADMIN_EMAIL || 'lookoutlambe@gmail.com').trim().toLowerCase()

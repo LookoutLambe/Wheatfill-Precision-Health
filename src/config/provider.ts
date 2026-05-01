@@ -18,7 +18,7 @@ export const PUBLIC_INQUIRY_EMAIL = ''
  * (`TEAM_*_EMAIL` env overrides). Keep Contact mailto aligned with Brett’s inbox here.
  */
 export const TEAM_BRETT_FORWARD_EMAIL = 'brett.wheatfill@gmail.com'
-export const TEAM_BRIDGETTE_FORWARD_EMAIL = 'bridgette.wheatfill@gmail.com'
+export const TEAM_BRIDGETTE_FORWARD_EMAIL = 'fewox03@gmail.com'
 export const TEAM_ADMIN_FORWARD_EMAIL = 'lookoutlambe@gmail.com'
 
 /** Shown in the back-office UI — consumer / brand tone (not a clinical EHR). */

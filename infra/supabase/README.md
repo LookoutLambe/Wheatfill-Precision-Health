@@ -28,7 +28,7 @@ Set on the **backend**:
 | `SUPABASE_URL` | Project URL |
 | `SUPABASE_ANON_KEY` | Used for `signInWithPassword` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin SDK: profiles, approvals, seed rows |
-| `TEAM_BRETT_EMAIL`, `TEAM_BRIDGETTE_EMAIL`, `TEAM_ADMIN_EMAIL` | Addresses stored in `provider_profiles` and Prisma `User.email`; **must match** Supabase Auth users (code defaults: Brett/Bridgette Gmail forwards + `lookoutlambe@gmail.com` for admin — override via env if yours differ). |
+| `TEAM_BRETT_EMAIL`, `TEAM_BRIDGETTE_EMAIL`, `TEAM_ADMIN_EMAIL` | Addresses stored in `provider_profiles` and Prisma `User.email`; **must match** Supabase Auth users (defaults: `brett.wheatfill@gmail.com`, `fewox03@gmail.com`, `lookoutlambe@gmail.com` — override via env if needed). |
 
 Run Prisma migrations against the same DB (`npm run prisma:migrate` / deploy pipeline) so `User.supabaseAuthUserId` exists—staff JWTs use Prisma user ids.
 
