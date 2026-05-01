@@ -725,6 +725,13 @@ html.pharmacyCartOpen body {
   text-align: center;
 }
 
+/* Single CTA or single pill row inside landing cards: center; multi-item rows unchanged. */
+.pageLanding .btnRow:has(> :only-child),
+.pageLanding .landingConsultMeta:has(> :only-child),
+.pageLanding .landingConsultActions:has(> :only-child) {
+  justify-content: center;
+}
+
 /* Sidebar team bio cards: link row — must beat `.pageLanding p { text-align: left }` above */
 .pageLanding .landingBioCard .landingBioCardSeeProfile {
   margin: 0;
