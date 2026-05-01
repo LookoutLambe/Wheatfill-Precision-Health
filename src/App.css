@@ -704,13 +704,13 @@ html.pharmacyCartOpen body {
   text-align: center;
 }
 
-.pageLanding .card .cardTitle {
-  justify-content: center;
-  text-align: center;
-}
-
+/* Widget headers: heading + pill centered as a row or wrapped pair */
+.pageLanding .card .cardTitle,
 .pageLanding .landingCatalogSection > .cardTitle {
   justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-wrap: wrap;
 }
 
 .pageLanding .landingConsultTitle {
@@ -725,10 +725,18 @@ html.pharmacyCartOpen body {
   text-align: center;
 }
 
-/* Single CTA or single pill row inside landing cards: center; multi-item rows unchanged. */
-.pageLanding .btnRow:has(> :only-child),
-.pageLanding .landingConsultMeta:has(> :only-child),
-.pageLanding .landingConsultActions:has(> :only-child) {
+/* Trust / meta pills and primary actions */
+.pageLanding .landingConsultMeta {
+  justify-content: center;
+}
+
+.pageLanding .landingConsultBand .landingConsultActions {
+  justify-content: center;
+}
+
+/* CTA groups inside cards and catalog strip */
+.pageLanding .card .btnRow,
+.pageLanding .landingCatalogSection .btnRow {
   justify-content: center;
 }
 
