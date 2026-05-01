@@ -2,6 +2,10 @@
 
 The web API uses **Prisma** against your Postgres `DATABASE_URL` for application data. Optional **Supabase Auth** backs provider/staff passwords; approval lives in `public.provider_profiles` (not Prisma).
 
+### If login shows `Could not find the table 'public.provider_profiles' in the schema cache`
+
+The table has not been created in **this** Supabase project. In the Supabase dashboard → **SQL Editor**, paste and run the full script from **`provider_profiles.sql`** in this folder (step 2 below). Reload the API login page after PostgREST picks up the schema (usually immediate).
+
 ## 1. Database URL
 
 Point `DATABASE_URL` / `DIRECT_URL` at the same Supabase project (or any Postgres) per `backend/.env.example`.

@@ -232,6 +232,14 @@ async function ensureMarketingTeamLogins() {
  *
  * Approval gate: provider_profiles.approved must be true to issue a session.
  */
+function isProviderProfilesTableMissingError(message: string): boolean {
+  const m = message.toLowerCase()
+  return (
+    m.includes('provider_profiles') &&
+    (m.includes('schema cache') || m.includes('could not find the table') || m.includes('does not exist'))
+  )
+}
+
 async function providerProfileByUsername(usernameRaw: string): Promise<ProviderProfile | null> {
   const username = usernameRaw.trim().toLowerCase()
   if (!username) return null
@@ -1033,8 +1041,16 @@ app.post('/auth/staff-request', async (req, reply) => {
     .select('id')
     .or(`username.eq.${body.username},email.eq.${body.email}`)
     .maybeSingle()
-  if (exErr && !/Results contain 0 rows/i.test(String(exErr.message || exErr))) {
-    // ignore 0 rows; supabase may still represent as null without error
+  if (exErr) {
+    const em = String(exErr.message || exErr)
+    if (isProviderProfilesTableMissingError(em)) {
+      return reply.status(503).send(
+        'Staff signup is not configured: create public.provider_profiles in Supabase. Open SQL Editor and run the file infra/supabase/provider_profiles.sql from the Wheatfill repo, then redeploy if needed.',
+      )
+    }
+    if (!/Results contain 0 rows/i.test(em)) {
+      return reply.status(500).send(em)
+    }
   }
   if (existing?.id) return reply.conflict('That username or email is already in use.')
 
@@ -1132,7 +1148,23 @@ app.post('/auth/login', async (req, reply) => {
         (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
     )
   if (supabaseConfigured) {
-    const prof = await providerProfileByUsername(body.username)
+    let prof: ProviderProfile | null = null
+    try {
+      prof = await providerProfileByUsername(body.username)
+    } catch (e) {
+      const msg = String((e as Error)?.message || e)
+      if (isProviderProfilesTableMissingError(msg)) {
+        app.log.warn(
+          { err: msg },
+          'public.provider_profiles missing in Supabase — falling back to Prisma login. Apply infra/supabase/provider_profiles.sql in the Supabase SQL editor.',
+        )
+      } else {
+        app.log.error({ err: e }, 'providerProfileByUsername failed')
+        return reply.status(500).send(
+          'Provider directory lookup failed. Check API logs. If you enabled USE_SUPABASE_AUTH, ensure public.provider_profiles exists (see infra/supabase/README.md).',
+        )
+      }
+    }
     if (prof) {
       if (!prof.approved) return reply.status(403).send('Account is pending approval.')
 
