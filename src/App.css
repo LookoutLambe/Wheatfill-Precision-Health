@@ -1710,7 +1710,25 @@ button.pill:active {
   min-width: 0;
 }
 
-.landingGridProfileColumn {
+.landingTeamBand {
+  margin: 0;
+  min-width: 0;
+}
+
+.landingTeamGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 640px) {
+  .landingTeamGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.landingTeamMember {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1732,41 +1750,9 @@ button.pill:active {
   align-self: center;
 }
 
-@media (min-width: 901px) {
-  .landingGridTop {
-    grid-template-columns: 1.2fr 0.8fr;
-    align-items: start;
-  }
-
-  .landingGridTop .landingGridHeroBand {
-    grid-column: 1;
-    grid-row: 1;
-    min-width: 0;
-  }
-
-  .landingGridTop .landingGridProfileColumn {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: start;
-    /* Stretch to fill the right grid column so the whole top section aligns with
-       the full-width sections below (avoid a narrow centered bio column). */
-    justify-self: stretch;
-    width: 100%;
-    max-width: none;
-  }
-
-  /* One hairline under both hero columns (row height follows the taller column). */
-  .landingGridTop > .landingHeroFullDivider {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    margin-block: 0;
-  }
-
-  .landingGridTop .landingGridHeroCatalog {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    min-width: 0;
-  }
+/* Full-width hairline between hero and Start here (single-column top stack). */
+.landingGridTop > .landingHeroFullDivider {
+  margin-block: 0;
 }
 
 @media (max-width: 900px) {
@@ -1784,7 +1770,7 @@ button.pill:active {
   }
 
   .landingCatalogSection .cardTitle,
-  .landingGridProfileColumn .card .cardTitle {
+  .landingTeamMember .card .cardTitle {
     flex-direction: column;
     align-items: center;
     text-align: center;
@@ -1843,38 +1829,34 @@ button.pill:active {
   height: auto;
 }
 
-/* Landing: portrait + bio share width; portraits slightly narrower than full column */
+/* Landing team row: portrait + bio per column */
 @media (min-width: 901px) {
-  .landingGridProfileColumn > .landingBioCard {
-    align-self: flex-start;
+  .landingTeamMember > .landingBioCard {
+    align-self: stretch;
     width: 100%;
     max-width: none;
     box-sizing: border-box;
   }
 
-  .landingGridProfileColumn .portrait {
+  .landingTeamMember .portrait {
     align-self: center;
     width: 100%;
-    max-width: min(300px, 92%);
+    max-width: min(300px, 100%);
     box-sizing: border-box;
   }
 
-  .landingGridProfileColumn .landingBioCard .cardTitle {
+  .landingTeamMember .landingBioCard .cardTitle {
     align-items: center;
   }
 
-  .landingGridProfileColumn .landingBioCard .cardTitle h2 {
+  .landingTeamMember .landingBioCard .cardTitle h2 {
     line-height: 1.2;
   }
 }
 
 @media (min-width: 1200px) {
-  .landingGridProfileColumn > .landingBioCard {
-    max-width: none;
-  }
-
-  .landingGridProfileColumn .portrait {
-    max-width: min(320px, 88%);
+  .landingTeamMember .portrait {
+    max-width: min(320px, 100%);
   }
 }
 
