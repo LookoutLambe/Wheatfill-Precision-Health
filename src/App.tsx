@@ -31,7 +31,7 @@ import NotFound from './pages/NotFound'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
 const MarketingProviderAdmin = lazy(() => import('./pages/MarketingProviderAdmin'))
 const MarketingProviderSecurity = lazy(() => import('./pages/MarketingProviderSecurity'))
-const ProviderVbmsWorkspace = lazy(() => import('./pages/ProviderVbmsWorkspace'))
+const ProviderTwpWorkspace = lazy(() => import('./pages/ProviderTwpWorkspace'))
 const ProviderSchedule = lazy(() => import('./pages/ProviderSchedule'))
 const ProviderTeamInbox = lazy(() => import('./pages/ProviderTeamInbox'))
 const ProviderOrderHistory = lazy(() => import('./pages/ProviderOrderHistory'))
@@ -130,7 +130,7 @@ export default function App() {
             </ProviderGuard>
           }
         >
-          <Route path="/provider" element={<ProviderVbmsWorkspace />} />
+          <Route path="/provider" element={<ProviderTwpWorkspace />} />
           <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
           <Route path="/provider/orders" element={<ProviderOrderHistory />} />
           <Route path="/provider/audit" element={<ProviderAuditLog />} />
@@ -194,7 +194,7 @@ export default function App() {
         }
       >
         <>
-          <Route path="/provider" element={<ProviderVbmsWorkspace />} />
+          <Route path="/provider" element={<ProviderTwpWorkspace />} />
           <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
           <Route path="/provider/orders" element={<ProviderOrderHistory />} />
           <Route path="/provider/audit" element={<ProviderAuditLog />} />

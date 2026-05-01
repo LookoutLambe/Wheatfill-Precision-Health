@@ -121,7 +121,7 @@ export default function ProviderAuditLog() {
             <p className="muted" style={{ margin: '6px 0 0', maxWidth: 640 }}>
               Compliance trail for actions recorded by the API (orders, visits, inbox, blackouts, profile changes, etc.). This
               table loads the <strong>most recent</strong> events (paged by the server). For <strong>all-time</strong> counts, use
-              the Audit log card on <Link to="/provider#wph-audit">Team Workspace</Link>.
+              the Audit log card on <Link to="/provider#twp-audit">Team Workspace</Link>.
             </p>
             {who ? (
               <div className="pill" style={{ marginTop: 8, width: 'fit-content' }}>
@@ -130,7 +130,7 @@ export default function ProviderAuditLog() {
             ) : null}
           </div>
           <ProviderSubpageNavActions className="btnRow" style={{ flexWrap: 'wrap' }}>
-            <Link to="/provider#wph-audit" className="btn" style={{ textDecoration: 'none' }}>
+            <Link to="/provider#twp-audit" className="btn" style={{ textDecoration: 'none' }}>
               Open audit on workspace
             </Link>
             <button type="button" className="btn btnPrimary" disabled={loading} onClick={() => void loadEvents()}>

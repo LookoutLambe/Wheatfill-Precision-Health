@@ -1,23 +1,23 @@
 :root {
-  --vbms-header: #0a1e3f;
-  --vbms-header-2: #081732;
-  --vbms-border: rgba(10, 30, 63, 0.18);
-  --vbms-border-strong: rgba(10, 30, 63, 0.3);
-  --vbms-surface: #ffffff;
-  --vbms-surface-2: rgba(10, 30, 63, 0.06);
-  --vbms-text: #000000;
-  --vbms-text-muted: #000000;
+  --twp-header: #0a1e3f;
+  --twp-header-2: #081732;
+  --twp-border: rgba(10, 30, 63, 0.18);
+  --twp-border-strong: rgba(10, 30, 63, 0.3);
+  --twp-surface: #ffffff;
+  --twp-surface-2: rgba(10, 30, 63, 0.06);
+  --twp-text: #000000;
+  --twp-text-muted: #000000;
 }
 
-.vbmsApp {
+.twpApp {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
 }
 
-.vbmsTopbar {
+.twpTopbar {
   height: 46px;
-  background: linear-gradient(0deg, var(--vbms-header-2), var(--vbms-header));
+  background: linear-gradient(0deg, var(--twp-header-2), var(--twp-header));
   color: white;
   border-bottom: 1px solid rgba(0, 0, 0, 0.25);
   display: flex;
@@ -26,7 +26,7 @@
   gap: 10px;
 }
 
-.vbmsBrand {
+.twpBrand {
   font-weight: 850;
   letter-spacing: 0.3px;
   font-size: 12px;
@@ -35,14 +35,14 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-.vbmsMenu {
+.twpMenu {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.vbmsMenu a,
-.vbmsMenu button {
+.twpMenu a,
+.twpMenu button {
   color: white;
   padding: 6px 8px;
   border-radius: 4px;
@@ -54,12 +54,12 @@
   font: inherit;
 }
 
-.vbmsMenu a:hover,
-.vbmsMenu button:hover {
+.twpMenu a:hover,
+.twpMenu button:hover {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.vbmsTopRight {
+.twpTopRight {
   margin-left: auto;
   display: flex;
   gap: 10px;
@@ -68,48 +68,48 @@
   opacity: 0.95;
 }
 
-.vbmsShellMain {
+.twpShellMain {
   flex: 1 1 auto;
   display: grid;
   place-items: center;
   padding: 22px 12px 44px;
 }
 
-.vbmsLoginCard {
+.twpLoginCard {
   width: 520px;
   max-width: 100%;
-  border: 1px solid var(--vbms-border);
-  background: var(--vbms-surface);
+  border: 1px solid var(--twp-border);
+  background: var(--twp-surface);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: rgba(10, 30, 63, 0.18) 0 24px 36px -28px;
 }
 
-.vbmsLoginHeader {
+.twpLoginHeader {
   padding: 12px 14px;
-  background: var(--vbms-surface-2);
-  border-bottom: 1px solid var(--vbms-border);
+  background: var(--twp-surface-2);
+  border-bottom: 1px solid var(--twp-border);
   font-weight: 800;
-  color: var(--vbms-text);
+  color: var(--twp-text);
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
 }
 
-.vbmsLoginBody {
+.twpLoginBody {
   padding: 14px;
 }
 
-.vbmsFieldLabel {
+.twpFieldLabel {
   font-size: 12px;
-  color: var(--vbms-text-muted);
+  color: var(--twp-text-muted);
   margin-bottom: 4px;
 }
 
-.vbmsInput {
+.twpInput {
   width: 100%;
-  border: 1px solid var(--vbms-border);
+  border: 1px solid var(--twp-border);
   border-radius: 6px;
   padding: 9px 10px;
   font-size: 13px;
@@ -117,14 +117,14 @@
   box-sizing: border-box;
 }
 
-.vbmsInput:focus {
+.twpInput:focus {
   outline: 2px solid rgba(122, 15, 28, 0.35);
   outline-offset: 2px;
   border-color: rgba(122, 15, 28, 0.35);
 }
 
-.vbmsBtn {
-  border: 1px solid var(--vbms-border-strong);
+.twpBtn {
+  border: 1px solid var(--twp-border-strong);
   background: white;
   padding: 8px 10px;
   border-radius: 6px;
@@ -133,36 +133,36 @@
   font-weight: 700;
 }
 
-.vbmsBtnPrimary {
+.twpBtnPrimary {
   background: #0a1e3f;
   color: white;
   border-color: rgba(255, 255, 255, 0.25);
 }
 
-.vbmsBtnPrimary:hover {
+.twpBtnPrimary:hover {
   background: #0f2e5a;
 }
 
-.vbmsBtn:disabled {
+.twpBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.vbmsRow {
+.twpRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
 @media (max-width: 640px) {
-  .vbmsRow {
+  .twpRow {
     grid-template-columns: 1fr;
   }
 }
 
-.vbmsHint {
+.twpHint {
   margin-top: 10px;
   font-size: 12px;
-  color: var(--vbms-text-muted);
+  color: var(--twp-text-muted);
 }
 

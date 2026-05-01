@@ -143,7 +143,7 @@ function parseInboxBodyForQuickSchedule(body: string) {
   return { visitType, whenText }
 }
 
-export default function ProviderVbmsWorkspace() {
+export default function ProviderTwpWorkspace() {
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -346,7 +346,7 @@ export default function ProviderVbmsWorkspace() {
     }
     navigate(`${location.pathname}${location.search}${location.hash}`, { replace: true, state: {} })
     requestAnimationFrame(() => {
-      document.getElementById('wph-quick-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      document.getElementById('twp-quick-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
   }, [location.state, location.pathname, location.search, location.hash, navigate])
 
@@ -686,11 +686,11 @@ export default function ProviderVbmsWorkspace() {
           </div>
           <div className="pill teamWorkspaceStatPill" title="Scheduled & completed on this workspace">
             <span style={{ fontWeight: 700 }}>Visits: </span>
-            <Link to="/provider?apptFilter=Scheduled#wph-schedule" className="teamWorkspaceStatPillLink">
+            <Link to="/provider?apptFilter=Scheduled#twp-schedule" className="teamWorkspaceStatPillLink">
               <b>{scheduledCount}</b> scheduled
             </Link>
             <span className="teamWorkspaceStatPillSep"> · </span>
-            <Link to="/provider?apptFilter=Completed#wph-schedule" className="teamWorkspaceStatPillLink">
+            <Link to="/provider?apptFilter=Completed#twp-schedule" className="teamWorkspaceStatPillLink">
               {completedCount} completed
             </Link>
           </div>
@@ -775,7 +775,7 @@ export default function ProviderVbmsWorkspace() {
           </div>
         </section>
 
-        <section className="card cardAccentSoft" id="wph-inbox">
+        <section className="card cardAccentSoft" id="twp-inbox">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Inbox</h2>
             <Link
@@ -876,7 +876,7 @@ export default function ProviderVbmsWorkspace() {
                                   setQsType(visitType)
                                   if (whenText) setQsWhen(whenText)
                                 }
-                                document.getElementById('wph-quick-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                                document.getElementById('twp-quick-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
                               }}
                             >
                               Preselect
@@ -932,7 +932,7 @@ export default function ProviderVbmsWorkspace() {
           ) : null}
         </section>
 
-        <section className="card cardAccentSoft" id="wph-schedule">
+        <section className="card cardAccentSoft" id="twp-schedule">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Scheduled & completed</h2>
             <Link to="/provider/schedule" className="pill pillRed" title="Open calendar">
@@ -1058,7 +1058,7 @@ export default function ProviderVbmsWorkspace() {
           )}
         </section>
 
-        <section className="card cardAccentNavy cardSpan12" id="wph-quick-schedule">
+        <section className="card cardAccentNavy cardSpan12" id="twp-quick-schedule">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Quick schedule</h2>
             <span className="pill">Add</span>
@@ -1312,7 +1312,7 @@ export default function ProviderVbmsWorkspace() {
 
         {/* Payments panel removed. */}
 
-        <section className="card cardAccentSoft" id="wph-audit">
+        <section className="card cardAccentSoft" id="twp-audit">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Audit log</h2>
             <div className="btnRow" style={{ margin: 0, flexWrap: 'wrap' }}>
@@ -1369,7 +1369,7 @@ export default function ProviderVbmsWorkspace() {
           ) : null}
         </section>
 
-        <section className="card cardAccentRed" id="wph-orders">
+        <section className="card cardAccentRed" id="twp-orders">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <div className="btnRow" style={{ margin: 0, flexWrap: 'wrap' }}>

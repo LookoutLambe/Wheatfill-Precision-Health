@@ -227,7 +227,7 @@ export default function ProviderOrderHistory() {
             ) : null}
           </div>
             <ProviderSubpageNavActions className="btnRow" style={{ flexWrap: 'wrap' }}>
-              <Link to="/provider#wph-orders" className="btn" style={{ textDecoration: 'none' }}>
+              <Link to="/provider#twp-orders" className="btn" style={{ textDecoration: 'none' }}>
                 Open orders on workspace
               </Link>
               <button type="button" className="btn btnPrimary" disabled={ordersLoading} onClick={() => void loadOrders()}>
@@ -303,7 +303,7 @@ export default function ProviderOrderHistory() {
           </>
         ) : null}
         {filteredOrders.length > 0 ? (
-          <div className="vbmsOrderList" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}>
+          <div className="twpOrderList" style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}>
             {filteredOrders.map((o) => (
               <div
                 key={o.id}

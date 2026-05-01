@@ -74,13 +74,13 @@ export function useTeamInboxPolling() {
               const row = detail.newSinceLast[0]
               new Notification('Wheatfill — new request', {
                 body: `${formatInboxKind(row.kind)} · ${row.fromName}`.slice(0, 180),
-                tag: `wph-inbox-${row.id}`,
+                tag: `twp-inbox-${row.id}`,
               })
             } else {
               const kinds = detail.newSinceLast.map((r) => formatInboxKind(r.kind))
               new Notification(`Wheatfill — ${detail.newSinceLast.length} new requests`, {
                 body: [...new Set(kinds)].join(' · ').slice(0, 180),
-                tag: 'wph-inbox-batch',
+                tag: 'twp-inbox-batch',
               })
             }
           } catch {
