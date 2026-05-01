@@ -450,6 +450,12 @@ html.pharmacyCartOpen body {
   max-width: var(--container-max-wide);
 }
 
+/* Home: edge-to-edge content band (gutter only); two-column top grid uses full main width. */
+.page.pageLanding.page--wide {
+  max-width: none;
+  width: 100%;
+}
+
 .page--prose {
   max-width: var(--measure);
 }
@@ -713,6 +719,12 @@ html.pharmacyCartOpen body {
 
 .pageLanding .landingConsultLead {
   text-align: left;
+}
+
+/* Sidebar team bio cards: link row — must beat `.pageLanding p { text-align: left }` above */
+.pageLanding .landingBioCard .landingBioCardSeeProfile {
+  margin: 0;
+  text-align: center;
 }
 
 /* —— Advanced peptide therapy (/peptides) —— */
@@ -1845,11 +1857,6 @@ button.pill:active {
   .landingGridProfileColumn .portrait {
     max-width: min(320px, 88%);
   }
-}
-
-.landingBioCardSeeProfile {
-  margin: 0;
-  text-align: center;
 }
 
 .landingSeeProfileLink {
@@ -4793,13 +4800,17 @@ html.hasMobilePatientDock .stickyShareDock {
 /* Local dev only (`wph-local-justify-prose` on `<html>` from main.tsx): preview justified copy.
    Landing forces left alignment above — this block loads after so it wins. Production has no class. */
 html.wph-local-justify-prose .pageLanding .pageSubtitle,
-html.wph-local-justify-prose .pageLanding p,
+html.wph-local-justify-prose .pageLanding p:not(.landingBioCardSeeProfile),
 html.wph-local-justify-prose .pageLanding li,
 html.wph-local-justify-prose .pageLanding .muted {
   text-align: justify !important;
   hyphens: auto;
   -webkit-hyphens: auto;
   text-wrap: pretty;
+}
+
+html.wph-local-justify-prose .pageLanding .landingBioCard .landingBioCardSeeProfile {
+  text-align: center !important;
 }
 
 html.wph-local-justify-prose .pageLanding .landingConsultLead {
