@@ -21,7 +21,8 @@ create table if not exists public.provider_profiles (
   approved boolean not null default false,
   created_at timestamptz not null default now(),
   approved_at timestamptz,
-  approved_by uuid
+  -- Prisma staff ids are cuids, not UUIDs — use text.
+  approved_by text
 );
 
 create index if not exists provider_profiles_username_idx on public.provider_profiles (username);

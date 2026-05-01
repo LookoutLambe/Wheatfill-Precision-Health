@@ -35,6 +35,7 @@ Start from `backend/.env.example`. Key values:
   - `TEAM_BRETT_PASSWORD=...`
   - `TEAM_BRIDGETTE_PASSWORD=...`
   - `TEAM_ADMIN_PASSWORD=...`
+- Optional **Supabase-backed staff passwords** (`USE_SUPABASE_AUTH=1` plus `SUPABASE_*` keys): see repo **`infra/supabase/README.md`** for SQL to run in Supabase and how staff JWTs stay aligned with Prisma.
 
 ### Docker
 

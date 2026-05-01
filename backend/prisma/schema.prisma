@@ -116,6 +116,8 @@ model User {
   id           String   @id @default(cuid())
   role         Role
   username     String   @unique
+  /// When set, this row is linked to Supabase Auth (`auth.users.id`) for provider/staff login.
+  supabaseAuthUserId String? @unique
   passwordHash String
   displayName  String
   firstName    String?

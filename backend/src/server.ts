@@ -245,6 +245,57 @@ async function providerProfileByUsername(usernameRaw: string): Promise<ProviderP
   return (data as ProviderProfile | null) ?? null
 }
 
+/**
+ * Provider JWT `sub` must stay a Prisma `User.id` — the rest of the API keys orders, Stripe, audit by Prisma id.
+ * Link Supabase Auth users into Prisma on first successful login (or attach `supabaseAuthUserId` to an existing row).
+ */
+async function ensurePrismaUserForSupabaseProvider(prof: ProviderProfile, supabaseUserId: string) {
+  const role = prof.role === 'admin' ? 'admin' : 'provider'
+  const email = prof.email.trim().toLowerCase()
+
+  const bySb = await prisma.user.findFirst({
+    where: { supabaseAuthUserId: supabaseUserId, deletedAt: null },
+  })
+  if (bySb) {
+    return prisma.user.update({
+      where: { id: bySb.id },
+      data: {
+        username: prof.username,
+        displayName: prof.display_name,
+        role,
+        email,
+      },
+    })
+  }
+
+  const byUsername = await prisma.user.findFirst({
+    where: { username: prof.username, deletedAt: null },
+  })
+  if (byUsername) {
+    return prisma.user.update({
+      where: { id: byUsername.id },
+      data: {
+        supabaseAuthUserId: supabaseUserId,
+        displayName: prof.display_name,
+        role,
+        email: email || byUsername.email,
+      },
+    })
+  }
+
+  const passwordHash = await hashPassword(crypto.randomBytes(24).toString('base64url'))
+  return prisma.user.create({
+    data: {
+      role,
+      username: prof.username,
+      supabaseAuthUserId: supabaseUserId,
+      passwordHash,
+      displayName: prof.display_name,
+      email,
+    },
+  })
+}
+
 async function ensureDefaultProviderProfiles() {
   // Optional helper to bootstrap the 3 core usernames if missing.
   // This does NOT set passwords; Supabase Auth passwords are managed in Supabase.
@@ -1082,23 +1133,30 @@ app.post('/auth/login', async (req, reply) => {
     )
   if (supabaseConfigured) {
     const prof = await providerProfileByUsername(body.username)
-    if (!prof) return reply.unauthorized('Invalid username or password.')
-    if (!prof.approved) return reply.status(403).send('Account is pending approval.')
+    if (prof) {
+      if (!prof.approved) return reply.status(403).send('Account is pending approval.')
 
-    const sb = supabaseAnon()
-    const { data, error } = await sb.auth.signInWithPassword({
-      email: prof.email,
-      password: body.password,
-    })
-    if (error || !data.user) return reply.unauthorized('Invalid username or password.')
+      const sb = supabaseAnon()
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: prof.email,
+        password: body.password,
+      })
+      if (error || !data.user) return reply.unauthorized('Invalid username or password.')
 
-    // Issue site cookie session
-    const token = await reply.jwtSign({ sub: String(data.user.id), role: prof.role, username: prof.username })
-    setJwtCookie(reply, token)
-    return {
-      user: { id: String(data.user.id), role: prof.role, username: prof.username, displayName: prof.display_name },
-      token,
+      const prismaUser = await ensurePrismaUserForSupabaseProvider(prof, String(data.user.id))
+      const token = await reply.jwtSign({ sub: prismaUser.id, role: prof.role, username: prof.username })
+      setJwtCookie(reply, token)
+      return {
+        user: {
+          id: prismaUser.id,
+          role: prof.role,
+          username: prof.username,
+          displayName: prof.display_name,
+        },
+        token,
+      }
     }
+    // Patients (and Prisma-only providers) keep using `User` rows — no `provider_profiles` row for their username.
   }
 
   // Legacy local dev fallback (Prisma users)
