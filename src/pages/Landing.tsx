@@ -242,16 +242,16 @@ export default function Landing() {
               <div className="divider" />
               <div className="btnRow" style={{ flexWrap: 'wrap' }}>
                 <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
-                <NavLink to="/medications" className="btn" style={{ textDecoration: 'none' }}>
+                <NavLink to="/medications" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                   Medication education
                 </NavLink>
-                <NavLink to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
+                <NavLink to="/ordering" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                   Order requests
                 </NavLink>
                 <NavLink to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                   Order Now catalog
                 </NavLink>
-                <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+                <Link to="/contact" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                   Contact
                 </Link>
               </div>
@@ -299,7 +299,7 @@ export default function Landing() {
               <div className="divider" />
               <div className="btnRow">
                 <BookVisitCta className="btn btnPrimary" style={{ textDecoration: 'none' }} mode="primary" />
-                <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+                <Link to="/contact" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                   Ask a question
                 </Link>
               </div>

@@ -246,7 +246,7 @@ export default function BookOnline() {
             confirm—nothing here is a medical record.
           </p>
         </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
           Home
         </Link>
       </div>
@@ -390,7 +390,7 @@ export default function BookOnline() {
             <div className="divider" />
 
             <div className="btnRow">
-              <button type="button" className="btn" onClick={() => setStep('choose')}>
+              <button type="button" className="btn catalogOutlineBtn" onClick={() => setStep('choose')}>
                 Back
               </button>
               <button
@@ -488,7 +488,7 @@ export default function BookOnline() {
               >
                 Send request
               </button>
-              <Link to="/patient" className="btn" style={{ textDecoration: 'none' }}>
+              <Link to="/patient" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                 For patients
               </Link>
             </div>
@@ -540,7 +540,7 @@ export default function BookOnline() {
                   <button type="button" className="btn btnPrimary" onClick={() => window.print()}>
                     Print / save as PDF
                   </button>
-                  <button type="button" className="btn" onClick={() => setBookingReceipt(null)}>
+                  <button type="button" className="btn catalogOutlineBtn" onClick={() => setBookingReceipt(null)}>
                     Dismiss receipt
                   </button>
                 </div>

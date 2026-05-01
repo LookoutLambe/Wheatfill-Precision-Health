@@ -329,7 +329,7 @@ export default function OrderNowSummary() {
             <p className="orderNowCheckoutKicker">Secure checkout</p>
             <div className="orderNowCheckoutTitleRow">
               <h1 className="orderNowCheckoutTitle">Checkout</h1>
-              <Link to={catalogPath} className="orderNowCheckoutBack btn">
+              <Link to={catalogPath} className="orderNowCheckoutBack btn catalogOutlineBtn">
                 Continue shopping
               </Link>
             </div>
@@ -437,7 +437,7 @@ export default function OrderNowSummary() {
                     <Link to={catalogPath} className="btn btnPrimary" style={{ textDecoration: 'none' }}>
                       Browse catalog
                     </Link>
-                    <Link to="/order-now" className="btn" style={{ textDecoration: 'none' }}>
+                    <Link to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                       All catalogs
                     </Link>
                   </div>
@@ -656,7 +656,7 @@ export default function OrderNowSummary() {
               </button>
               <button
                 type="button"
-                className="btn orderNowPayBtn"
+                className="btn catalogOutlineBtn orderNowPayBtn"
                 disabled={!canCheckOut || checkoutBusy}
                 style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
                 onClick={onRequestPayLater}

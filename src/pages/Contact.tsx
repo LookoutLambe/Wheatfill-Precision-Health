@@ -217,7 +217,7 @@ export default function Contact() {
             </button>
             <button
               type="button"
-              className="btn"
+              className="btn catalogOutlineBtn"
               onClick={() => {
                 setName('')
                 setEmail('')
@@ -264,7 +264,7 @@ export default function Contact() {
                 <button type="button" className="btn btnPrimary" onClick={() => window.print()}>
                   Print / save as PDF
                 </button>
-                <button type="button" className="btn" onClick={() => setReceipt(null)}>
+                <button type="button" className="btn catalogOutlineBtn" onClick={() => setReceipt(null)}>
                   Dismiss
                 </button>
               </div>

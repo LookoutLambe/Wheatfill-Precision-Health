@@ -135,7 +135,7 @@ export default function PharmacyOptions() {
               (same cart; add to cart on either page).
             </p>
           </div>
-          <Link to="/" className="btn orderNowHubHomeBtn" style={{ textDecoration: 'none' }}>
+          <Link to="/" className="btn catalogOutlineBtn orderNowHubHomeBtn" style={{ textDecoration: 'none' }}>
             Home
           </Link>
         </div>

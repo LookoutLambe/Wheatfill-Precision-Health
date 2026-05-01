@@ -12,7 +12,7 @@ export default function SignIn() {
           <h1 style={{ margin: 0 }}>Sign in</h1>
           <p className="muted pageSubtitle">Patient sign-in is not supported on this site.</p>
         </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
           Home
         </Link>
       </div>

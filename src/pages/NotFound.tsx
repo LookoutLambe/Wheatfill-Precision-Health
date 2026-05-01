@@ -17,7 +17,7 @@ export default function NotFound() {
           <Link to="/" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
             Home
           </Link>
-          <Link to="/patient" className="btn" style={{ textDecoration: 'none' }}>
+          <Link to="/patient" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
             For patients
           </Link>
         </div>

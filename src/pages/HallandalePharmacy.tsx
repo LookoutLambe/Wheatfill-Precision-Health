@@ -200,7 +200,7 @@ export default function HallandalePharmacy() {
           Review acknowledgments, contact details, shipping, and checkout on the order summary.
         </p>
         <div className="btnRow" style={{ marginTop: 16, flexWrap: 'wrap' }}>
-          <Link to="/order-now" className="btn" style={{ textDecoration: 'none' }}>
+          <Link to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
             All Order Now options
           </Link>
           <Link to={`/order-now/${SLUG}`} className="btn btnPrimary" style={{ textDecoration: 'none' }}>

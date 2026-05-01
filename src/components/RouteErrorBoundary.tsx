@@ -30,7 +30,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
               <button type="button" className="btn btnPrimary" onClick={() => window.location.reload()}>
                 Reload
               </button>
-              <a className="btn" href="/" style={{ textDecoration: 'none' }}>
+              <a className="btn catalogOutlineBtn" href="/" style={{ textDecoration: 'none' }}>
                 Home
               </a>
             </div>

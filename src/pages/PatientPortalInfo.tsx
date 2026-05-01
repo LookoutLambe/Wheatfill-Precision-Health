@@ -26,7 +26,7 @@ export default function PatientPortalInfo() {
             ready, your care team will send a Stripe checkout link.
           </p>
         </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
           Home
         </Link>
       </div>
@@ -107,7 +107,13 @@ export default function PatientPortalInfo() {
             journey still runs on this website.
           </p>
           <div className="btnRow" style={{ marginTop: 14 }}>
-            <a className="btn" style={{ textDecoration: 'none' }} href={accountUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              className="btn catalogOutlineBtn"
+              style={{ textDecoration: 'none' }}
+              href={accountUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Open your account
             </a>
           </div>

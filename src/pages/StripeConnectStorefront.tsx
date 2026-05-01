@@ -84,7 +84,7 @@ export default function StripeConnectStorefront() {
           </h1>
           <p className="muted pageSubtitle">Products are platform-owned; checkout uses a destination charge + application fee.</p>
         </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
           Home
         </Link>
       </div>
@@ -156,7 +156,7 @@ export default function StripeConnectStorefront() {
 
           <div className="divider" />
           <div className="btnRow">
-            <Link to="/provider/connect-demo" className="btn" style={{ textDecoration: 'none' }}>
+            <Link to="/provider/connect-demo" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
               Provider demo
             </Link>
           </div>

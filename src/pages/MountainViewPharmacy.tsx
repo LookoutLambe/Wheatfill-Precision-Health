@@ -187,7 +187,7 @@ export default function MountainViewPharmacy() {
           <Link to="/contact">Contact</Link> or the paths on the <Link to="/patient">For patients</Link> page.
         </p>
         <div className="btnRow" style={{ marginTop: 16, flexWrap: 'wrap' }}>
-          <Link to="/order-now" className="btn" style={{ textDecoration: 'none' }}>
+          <Link to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
             All Order Now options
           </Link>
           <Link to={`/order-now/${SLUG}`} className="btn btnPrimary" style={{ textDecoration: 'none' }}>

@@ -27,7 +27,7 @@ export default function MedicationEducation() {
           <Link to="/book" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
             Book Online
           </Link>
-          <Link to="/ordering" className="btn" style={{ textDecoration: 'none' }}>
+          <Link to="/ordering" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
             Order Requests
           </Link>
           <a className="btn catalogOutlineBtn" href="#dosing-guide" style={{ textDecoration: 'none' }}>

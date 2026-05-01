@@ -483,7 +483,7 @@ export default function PeptideTherapy() {
           >
             {waitBusy ? 'Sending…' : 'Submit interest'}
           </button>
-          <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
+          <Link to="/contact" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
             Contact instead
           </Link>
         </div>

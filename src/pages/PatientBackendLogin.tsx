@@ -21,7 +21,7 @@ export default function PatientBackendLogin() {
           <h1 style={{ margin: 0 }}>Patient Sign-In</h1>
           <p className="muted pageSubtitle">Sign in to complete catalog checkout and pay on our secure processor. You can browse before signing in.</p>
         </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
           Home
         </Link>
       </div>
@@ -98,7 +98,7 @@ export default function PatientBackendLogin() {
           >
             Sign In
           </button>
-          <Link to="/order-now" className="btn" style={{ textDecoration: 'none' }}>
+          <Link to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
             Order Now Home
           </Link>
         </div>

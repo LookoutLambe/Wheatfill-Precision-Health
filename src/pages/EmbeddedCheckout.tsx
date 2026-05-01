@@ -78,7 +78,11 @@ export default function EmbeddedCheckoutPage() {
           <h1 style={{ margin: 0 }}>Secure checkout</h1>
           <p className="muted pageSubtitle">Payment is processed by Stripe.</p>
         </div>
-        <Link to={`/order-now/${encodeURIComponent(slug)}/summary`} className="btn" style={{ textDecoration: 'none' }}>
+        <Link
+          to={`/order-now/${encodeURIComponent(slug)}/summary`}
+          className="btn catalogOutlineBtn"
+          style={{ textDecoration: 'none' }}
+        >
           Back
         </Link>
       </div>

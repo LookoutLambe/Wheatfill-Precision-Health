@@ -138,10 +138,10 @@ export default function PharmacyPartner() {
                 onOpenChange={setCartOpen}
               />
             ) : null}
-            <Link to="/order-now" className="btn" style={{ textDecoration: 'none' }}>
+            <Link to="/order-now" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
               All Catalogs
             </Link>
-            <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+            <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
               Home
             </Link>
           </div>

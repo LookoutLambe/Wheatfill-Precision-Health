@@ -128,7 +128,7 @@ export default function OrderingPortal() {
             required. {TYPICAL_INBOX_REPLY_LINE}
           </p>
         </div>
-        <Link to="/" className="btn" style={{ textDecoration: 'none' }}>
+        <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
           Home
         </Link>
       </div>
@@ -384,7 +384,7 @@ export default function OrderingPortal() {
             </button>
             <button
               type="button"
-              className="btn"
+              className="btn catalogOutlineBtn"
               onClick={() => {
                 clearOrderRequestDraft()
                 setFromName('')
@@ -458,7 +458,7 @@ export default function OrderingPortal() {
                 <button type="button" className="btn btnPrimary" onClick={() => window.print()}>
                   Print / save as PDF
                 </button>
-                <button type="button" className="btn" onClick={() => setReceipt(null)}>
+                <button type="button" className="btn catalogOutlineBtn" onClick={() => setReceipt(null)}>
                   Dismiss
                 </button>
               </div>
