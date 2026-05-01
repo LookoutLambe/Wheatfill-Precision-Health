@@ -373,9 +373,9 @@ export default function Landing() {
               <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
               <span className="pill">Founder</span>
             </div>
-            <p style={{ margin: 0 }}>
+            <p className="landingBioCardSeeProfile">
               <Link to="/about#brett-bio" className="landingSeeProfileLink">
-                See profile
+                See Profile
               </Link>
             </p>
           </div>
@@ -390,9 +390,9 @@ export default function Landing() {
               <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
               <span className="pill">Clinician</span>
             </div>
-            <p style={{ margin: 0 }}>
+            <p className="landingBioCardSeeProfile">
               <Link to="/about#bridgette-bio" className="landingSeeProfileLink">
-                See profile
+                See Profile
               </Link>
             </p>
           </div>

@@ -1847,6 +1847,11 @@ button.pill:active {
   }
 }
 
+.landingBioCardSeeProfile {
+  margin: 0;
+  text-align: center;
+}
+
 .landingSeeProfileLink {
   font-weight: 650;
   color: var(--navy-2);
