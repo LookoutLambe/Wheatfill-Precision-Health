@@ -28,9 +28,10 @@ Set on the **backend**:
 | `SUPABASE_URL` | Project URL |
 | `SUPABASE_ANON_KEY` | Used for `signInWithPassword` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin SDK: profiles, approvals, seed rows |
+| `TEAM_BRETT_EMAIL`, `TEAM_BRIDGETTE_EMAIL`, `TEAM_ADMIN_EMAIL` | Addresses stored in `provider_profiles` and Prisma `User.email`; **must match** Supabase Auth users (defaults: `@wheatfillprecisionhealth.com`). |
 
 Run Prisma migrations against the same DB (`npm run prisma:migrate` / deploy pipeline) so `User.supabaseAuthUserId` exists—staff JWTs use Prisma user ids.
 
 ## 4. Bootstrap admins
 
-With service role configured, the API seeds default rows for `brett`, `bridgette`, and `admin` in `provider_profiles` on boot **if** they are missing (passwords are only in Supabase Auth—you must set them in the Supabase dashboard or invite flow).
+With service role configured, the API seeds or updates rows for usernames `brett`, `bridgette`, and `admin` in `provider_profiles` on boot (email/display name come from the `TEAM_*_EMAIL` variables). **Passwords live only in Supabase Auth** — create or invite users there using the **same emails** as in Render, or sign-in will fail.

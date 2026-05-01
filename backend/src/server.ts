@@ -46,6 +46,12 @@ const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'whea
 const TEAM_BRETT_PASSWORD = process.env.TEAM_BRETT_PASSWORD || 'wheatfill'
 const TEAM_BRIDGETTE_PASSWORD = process.env.TEAM_BRIDGETTE_PASSWORD || 'wheatfill'
 const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'wheatfill'
+/** Must match Supabase Auth user emails when USE_SUPABASE_AUTH=1 (signInWithPassword is email-based). */
+const TEAM_BRETT_EMAIL = (process.env.TEAM_BRETT_EMAIL || 'brett@wheatfillprecisionhealth.com').trim().toLowerCase()
+const TEAM_BRIDGETTE_EMAIL = (process.env.TEAM_BRIDGETTE_EMAIL || 'bridgette@wheatfillprecisionhealth.com')
+  .trim()
+  .toLowerCase()
+const TEAM_ADMIN_EMAIL = (process.env.TEAM_ADMIN_EMAIL || 'admin@wheatfillprecisionhealth.com').trim().toLowerCase()
 /**
  * If true, keep overwriting the 3 default team accounts' passwords on every boot from env vars.
  * Leave this OFF in normal operation so Brett can change passwords without them being reset.
@@ -187,10 +193,29 @@ async function ensureMarketingTeamLogins() {
     role: 'provider' | 'admin'
     password: string
     displayName: string
+    email: string
   }> = [
-    { username: 'brett', role: 'provider', password: TEAM_BRETT_PASSWORD, displayName: 'Brett' },
-    { username: 'bridgette', role: 'provider', password: TEAM_BRIDGETTE_PASSWORD, displayName: 'Bridgette' },
-    { username: 'admin', role: 'admin', password: TEAM_ADMIN_PASSWORD, displayName: 'Site admin' },
+    {
+      username: 'brett',
+      role: 'provider',
+      password: TEAM_BRETT_PASSWORD,
+      displayName: 'Brett',
+      email: TEAM_BRETT_EMAIL,
+    },
+    {
+      username: 'bridgette',
+      role: 'provider',
+      password: TEAM_BRIDGETTE_PASSWORD,
+      displayName: 'Bridgette',
+      email: TEAM_BRIDGETTE_EMAIL,
+    },
+    {
+      username: 'admin',
+      role: 'admin',
+      password: TEAM_ADMIN_PASSWORD,
+      displayName: 'Site admin',
+      email: TEAM_ADMIN_EMAIL,
+    },
   ]
   for (const e of entries) {
     const ex = await prisma.user.findUnique({ where: { username: e.username } })
@@ -202,6 +227,7 @@ async function ensureMarketingTeamLogins() {
           username: e.username,
           passwordHash: nextHash,
           displayName: e.displayName,
+          email: e.email,
         },
       })
       continue
@@ -211,13 +237,15 @@ async function ensureMarketingTeamLogins() {
     const shouldSyncPassword = SYNC_TEAM_PASSWORDS && Boolean(e.password && e.password.trim())
     const needsRole = ex.role !== e.role
     const needsName = ex.displayName !== e.displayName
-    if (!shouldSyncPassword && !needsRole && !needsName) continue
+    const needsEmail = (ex.email || '').trim().toLowerCase() !== e.email
+    if (!shouldSyncPassword && !needsRole && !needsName && !needsEmail) continue
 
     await prisma.user.update({
       where: { username: e.username },
       data: {
         role: e.role,
         displayName: e.displayName,
+        email: e.email,
         ...(shouldSyncPassword ? { passwordHash: nextHash } : {}),
       },
     })
@@ -309,9 +337,9 @@ async function ensureDefaultProviderProfiles() {
   // This does NOT set passwords; Supabase Auth passwords are managed in Supabase.
   const sb = supabaseServiceRole()
   const defaults: Array<Pick<ProviderProfile, 'username' | 'email' | 'display_name' | 'role' | 'approved'>> = [
-    { username: 'brett', email: 'brett@wheatfillprecisionhealth.com', display_name: 'Brett', role: 'admin', approved: true },
-    { username: 'bridgette', email: 'bridgette@wheatfillprecisionhealth.com', display_name: 'Bridgette', role: 'admin', approved: true },
-    { username: 'admin', email: 'admin@wheatfillprecisionhealth.com', display_name: 'Site admin', role: 'admin', approved: true },
+    { username: 'brett', email: TEAM_BRETT_EMAIL, display_name: 'Brett', role: 'admin', approved: true },
+    { username: 'bridgette', email: TEAM_BRIDGETTE_EMAIL, display_name: 'Bridgette', role: 'admin', approved: true },
+    { username: 'admin', email: TEAM_ADMIN_EMAIL, display_name: 'Site admin', role: 'admin', approved: true },
   ]
   for (const d of defaults) {
     const { data, error } = await sb
@@ -320,7 +348,14 @@ async function ensureDefaultProviderProfiles() {
       .eq('username', d.username)
       .maybeSingle()
     if (error) throw new Error(error.message)
-    if (data?.id) continue
+    if (data?.id) {
+      const { error: upErr } = await sb
+        .from('provider_profiles')
+        .update({ email: d.email, display_name: d.display_name })
+        .eq('username', d.username)
+      if (upErr) throw new Error(upErr.message)
+      continue
+    }
     const { error: insErr } = await sb.from('provider_profiles').insert({
       username: d.username,
       email: d.email,
