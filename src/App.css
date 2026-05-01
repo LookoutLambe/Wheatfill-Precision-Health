@@ -1745,6 +1745,19 @@ button.pill:active {
   align-self: stretch;
 }
 
+/* Same frame height for both clinicians when columns match width (crop with cover). */
+.landingTeamMember .portrait {
+  aspect-ratio: 4 / 5;
+  flex-shrink: 0;
+}
+
+.landingTeamMember .portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+}
+
 .landingHeroIntro {
   display: flex;
   flex-direction: column;
