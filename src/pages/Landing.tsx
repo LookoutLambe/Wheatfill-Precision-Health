@@ -259,45 +259,6 @@ export default function Landing() {
 
             <div className="divider" />
 
-            <section className="landingTeamBand" aria-label="About the care team">
-              <div className="landingTeamGrid">
-                <article className="landingTeamMember">
-                  <div className="portrait">
-                    <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
-                  </div>
-                  <div className="card cardAccentNavy landingBioCard">
-                    <div className="cardTitle">
-                      <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
-                      <span className="pill">Founder</span>
-                    </div>
-                    <p className="landingBioCardSeeProfile">
-                      <Link to="/about#brett-bio" className="landingSeeProfileLink">
-                        See Profile
-                      </Link>
-                    </p>
-                  </div>
-                </article>
-                <article className="landingTeamMember">
-                  <div className="portrait">
-                    <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
-                  </div>
-                  <div className="card cardAccentNavy landingBioCard">
-                    <div className="cardTitle">
-                      <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
-                      <span className="pill">Clinician</span>
-                    </div>
-                    <p className="landingBioCardSeeProfile">
-                      <Link to="/about#bridgette-bio" className="landingSeeProfileLink">
-                        See Profile
-                      </Link>
-                    </p>
-                  </div>
-                </article>
-              </div>
-            </section>
-
-            <div className="divider" />
-
             <section className="card cardAccentSoft" aria-labelledby="landing-how-it-works-heading">
               <div className="cardTitle">
                 <h2 id="landing-how-it-works-heading" style={{ margin: 0 }}>
@@ -341,6 +302,45 @@ export default function Landing() {
                 <Link to="/contact" className="btn" style={{ textDecoration: 'none' }}>
                   Ask a question
                 </Link>
+              </div>
+            </section>
+
+            <div className="divider" />
+
+            <section className="landingTeamBand" aria-label="About the care team">
+              <div className="landingTeamGrid">
+                <article className="landingTeamMember">
+                  <div className="portrait">
+                    <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
+                  </div>
+                  <div className="card cardAccentNavy landingBioCard">
+                    <div className="cardTitle">
+                      <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
+                      <span className="pill">Founder</span>
+                    </div>
+                    <p className="landingBioCardSeeProfile">
+                      <Link to="/about#brett-bio" className="landingSeeProfileLink">
+                        See Profile
+                      </Link>
+                    </p>
+                  </div>
+                </article>
+                <article className="landingTeamMember">
+                  <div className="portrait">
+                    <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
+                  </div>
+                  <div className="card cardAccentNavy landingBioCard">
+                    <div className="cardTitle">
+                      <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
+                      <span className="pill">Clinician</span>
+                    </div>
+                    <p className="landingBioCardSeeProfile">
+                      <Link to="/about#bridgette-bio" className="landingSeeProfileLink">
+                        See Profile
+                      </Link>
+                    </p>
+                  </div>
+                </article>
               </div>
             </section>
 
