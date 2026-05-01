@@ -36,3 +36,21 @@ export type ProviderProfile = {
   approved_by: string | null
 }
 
+/** Server-side check — avoids relying on Prisma `passwordHash` when staff use Supabase Auth passwords. */
+export async function verifySupabaseEmailPassword(email: string, password: string): Promise<boolean> {
+  const sb = supabaseAnon()
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password,
+  })
+  if (error || !data.user) return false
+  await sb.auth.signOut()
+  return true
+}
+
+export async function adminSetAuthUserPassword(authUserId: string, password: string): Promise<void> {
+  const sb = supabaseServiceRole()
+  const { error } = await sb.auth.admin.updateUserById(authUserId, { password })
+  if (error) throw new Error(error.message)
+}
+

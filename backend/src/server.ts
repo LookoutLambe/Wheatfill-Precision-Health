@@ -27,7 +27,13 @@ import { hashPassword, verifyPassword } from './auth/password.js'
 import { registerAuth, requireApprover, requireRole } from './auth/authz.js'
 import { clearJwtCookie, injectJwtFromCookie, JWT_COOKIE_NAME, setJwtCookie } from './security/jwtCookie.js'
 import { rateLimitHit } from './security/simpleRateLimit.js'
-import { supabaseAnon, supabaseServiceRole, type ProviderProfile } from './integrations/supabase.js'
+import {
+  adminSetAuthUserPassword,
+  supabaseAnon,
+  supabaseServiceRole,
+  type ProviderProfile,
+  verifySupabaseEmailPassword,
+} from './integrations/supabase.js'
 import { notifyOrderEmail } from './integrations/orderEmail.js'
 
 loadAndValidateEnv()
@@ -281,6 +287,56 @@ function firstDisplayNameToken(displayName: string): string {
 /** Escape `%` / `_` / `\` for a literal prefix inside Postgres `ILIKE`. */
 function escapeForILikePrefix(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+}
+
+function envUseSupabaseStaffAuth(): boolean {
+  const use =
+    (process.env.USE_SUPABASE_AUTH || '').trim() === '1' ||
+    (process.env.USE_SUPABASE_AUTH || '').trim().toLowerCase() === 'true'
+  return (
+    use &&
+    Boolean(
+      (process.env.SUPABASE_URL || '').trim() &&
+        (process.env.SUPABASE_ANON_KEY || '').trim() &&
+        (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim(),
+    )
+  )
+}
+
+async function resolveStaffSupabaseAuthUserId(user: {
+  username: string
+  supabaseAuthUserId: string | null
+}): Promise<string | null> {
+  if (user.supabaseAuthUserId) return user.supabaseAuthUserId
+  try {
+    const sb = supabaseServiceRole()
+    const { data, error } = await sb
+      .from('provider_profiles')
+      .select('auth_user_id')
+      .eq('username', user.username.trim().toLowerCase())
+      .maybeSingle()
+    if (error || data?.auth_user_id == null) return null
+    return String(data.auth_user_id)
+  } catch {
+    return null
+  }
+}
+
+async function resolveStaffLoginEmail(user: { email: string | null; username: string }): Promise<string | null> {
+  const direct = (user.email || '').trim().toLowerCase()
+  if (direct) return direct
+  try {
+    const sb = supabaseServiceRole()
+    const { data, error } = await sb
+      .from('provider_profiles')
+      .select('email')
+      .eq('username', user.username.trim().toLowerCase())
+      .maybeSingle()
+    if (error || !data?.email) return null
+    return String(data.email).trim().toLowerCase()
+  } catch {
+    return null
+  }
 }
 
 type ProviderProfileLookup = { profile: ProviderProfile | null; ambiguous: boolean }
@@ -1475,6 +1531,17 @@ await app.register(async (protectedScope) => {
       if (!before) return reply.notFound('User not found.')
       if (before.deletedAt) return reply.badRequest('User is deleted.')
       if (before.role !== 'provider' && before.role !== 'admin') return reply.badRequest('Not a staff user.')
+      const authUid = envUseSupabaseStaffAuth() ? await resolveStaffSupabaseAuthUserId(before) : null
+      if (authUid) {
+        try {
+          await adminSetAuthUserPassword(authUid, body.password)
+        } catch (e) {
+          app.log.error({ err: e }, 'supabase_admin_password_reset_failed')
+          return reply.status(500).send(
+            'Could not update Supabase Auth password. Check logs or reset the user in the Supabase dashboard.',
+          )
+        }
+      }
       await prisma.user.update({ where: { id }, data: { passwordHash: await hashPassword(body.password) } })
       await writeAudit({
         actorId: req.user.sub,
@@ -2110,8 +2177,27 @@ await app.register(async (protectedScope) => {
       const body = ChangePasswordBody.parse(req.body)
       const user = await prisma.user.findUnique({ where: { id: req.user.sub } })
       if (!user) return reply.unauthorized('Not signed in.')
-      const ok = await verifyPassword(body.currentPassword, user.passwordHash)
-      if (!ok) return reply.unauthorized('Current password is incorrect.')
+      const loginEmail = await resolveStaffLoginEmail(user)
+      let currentOk = false
+      if (envUseSupabaseStaffAuth() && loginEmail) {
+        currentOk = await verifySupabaseEmailPassword(loginEmail, body.currentPassword)
+      }
+      if (!currentOk) {
+        currentOk = await verifyPassword(body.currentPassword, user.passwordHash)
+      }
+      if (!currentOk) return reply.unauthorized('Current password is incorrect.')
+
+      const authUid = envUseSupabaseStaffAuth() ? await resolveStaffSupabaseAuthUserId(user) : null
+      if (authUid) {
+        try {
+          await adminSetAuthUserPassword(authUid, body.newPassword)
+        } catch (e) {
+          app.log.error({ err: e }, 'supabase_self_password_update_failed')
+          return reply.status(500).send(
+            'Could not update Supabase Auth password. Try again or use Supabase dashboard recovery.',
+          )
+        }
+      }
       const nextHash = await hashPassword(body.newPassword)
       await prisma.user.update({ where: { id: user.id }, data: { passwordHash: nextHash } })
       return { ok: true }
