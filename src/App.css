@@ -1719,34 +1719,34 @@ button.pill:active {
   min-width: 0;
 }
 
-/* Under hero: smaller photos; navy cards exactly match photo width (narrow centered columns). */
-.landingTeamBand--underHero {
+/* Compact team row: smaller photos; navy cards match photo width (narrow centered columns). */
+.landingTeamBand--compact {
   padding-block: 4px 0;
 }
 
-.landingTeamBand--underHero .landingTeamGrid {
+.landingTeamBand--compact .landingTeamGrid {
   justify-items: center;
   gap: 16px 36px;
 }
 
-.landingTeamBand--underHero .landingTeamMember {
+.landingTeamBand--compact .landingTeamMember {
   width: min(196px, 86vw);
   max-width: 196px;
   justify-self: center;
 }
 
 @media (min-width: 640px) {
-  .landingTeamBand--underHero .landingTeamMember {
+  .landingTeamBand--compact .landingTeamMember {
     width: min(216px, 40vw);
     max-width: 216px;
   }
 }
 
-.landingTeamBand--underHero .landingBioCard {
+.landingTeamBand--compact .landingBioCard {
   padding: 11px 10px;
 }
 
-.landingTeamBand--underHero .landingBioCard .cardTitle h2 {
+.landingTeamBand--compact .landingBioCard .cardTitle h2 {
   font-size: clamp(13px, 3.2vw, 16px);
   line-height: 1.25;
 }
