@@ -157,7 +157,7 @@ export default function PharmacyOptions() {
           <div className="orderNowDualCatalogCol orderNowDualCatalogCol--mv">
             <div className="orderNowDualCatalogHead">
               <div className="orderNowDualCatalogTitle">{mvPartner?.name || resolvedFulfillmentPharmacyName()}</div>
-              <Link to={`/order-now/${mvSlug}`} className="btn" style={{ textDecoration: 'none' }}>
+              <Link to={`/order-now/${mvSlug}`} className="btn btnPrimary" style={{ textDecoration: 'none' }}>
                 Full list
               </Link>
             </div>
@@ -174,7 +174,7 @@ export default function PharmacyOptions() {
                       <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
                       <button
                         type="button"
-                        className="btn catalogOutlineBtn orderNowAddBtn"
+                        className="btn btnPrimary orderNowAddBtn"
                         onClick={() => onAddLine(mvSlug, p.sku)}
                       >
                         Add To Cart
@@ -190,7 +190,7 @@ export default function PharmacyOptions() {
           <div className="orderNowDualCatalogCol orderNowDualCatalogCol--hall">
             <div className="orderNowDualCatalogHead">
               <div className="orderNowDualCatalogTitle">Hallandale Pharmacy</div>
-              <Link to={`/order-now/${hallSlug}`} className="btn" style={{ textDecoration: 'none' }}>
+              <Link to={`/order-now/${hallSlug}`} className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
                 Full list
               </Link>
             </div>
@@ -268,7 +268,11 @@ export default function PharmacyOptions() {
                 </Link>
               ) : null}
               {cartCountHall > 0 ? (
-                <Link to={`/order-now/${hallSlug}/summary`} className="btn orderNowMiniCartCta" style={{ textDecoration: 'none' }}>
+                <Link
+                  to={`/order-now/${hallSlug}/summary`}
+                  className="btn catalogOutlineBtn orderNowMiniCartCta"
+                  style={{ textDecoration: 'none' }}
+                >
                   View Hallandale
                 </Link>
               ) : null}

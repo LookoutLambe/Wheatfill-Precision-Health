@@ -3641,6 +3641,41 @@ button.pill:active {
   background: rgba(255, 255, 255, 0.96);
 }
 
+/* Dual hub: price + Add To Cart centered below thumb + copy (full card width). */
+.orderNowDualCatalogCol .orderNowProductTop {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: start;
+}
+
+.orderNowDualCatalogCol .orderNowProductTop > .pharmacyVialThumb {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.orderNowDualCatalogCol .orderNowProductTop > .orderNowProductBody {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.orderNowDualCatalogCol .orderNowProductTop > .orderNowProductMeta {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-top: 2px;
+}
+
+.orderNowDualCatalogCol .orderNowProductPrice {
+  text-align: center;
+}
+
 .orderNowProductCard {
   display: flex;
   flex-direction: column;
@@ -4297,6 +4332,30 @@ button.pill:active {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+  }
+
+  .orderNowDualCatalogCol .orderNowProductTop {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .orderNowDualCatalogCol .orderNowProductTop > .pharmacyVialThumb {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  .orderNowDualCatalogCol .orderNowProductTop > .orderNowProductBody {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .orderNowDualCatalogCol .orderNowProductTop > .orderNowProductMeta {
+    grid-column: 1;
+    grid-row: 3;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .orderNowSummaryLine {
