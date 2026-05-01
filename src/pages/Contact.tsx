@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
 import { MARKETING_ONLY } from '../config/mode'
+import { TEAM_BRETT_FORWARD_EMAIL } from '../config/provider'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 
 const CONTACT_DRAFT_KEY = 'wph_contact_draft_v2'
-const CONTACT_TO_EMAIL = 'brett.wheatfill@gmail.com'
+const CONTACT_TO_EMAIL = TEAM_BRETT_FORWARD_EMAIL
 
 type ContactDraftV2 = {
   v: 2

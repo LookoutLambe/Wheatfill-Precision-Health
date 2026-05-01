@@ -47,12 +47,15 @@ const DEFAULT_PROVIDER_PASSWORD = process.env.DEFAULT_PROVIDER_PASSWORD || 'whea
 const TEAM_BRETT_PASSWORD = process.env.TEAM_BRETT_PASSWORD || 'wheatfill'
 const TEAM_BRIDGETTE_PASSWORD = process.env.TEAM_BRIDGETTE_PASSWORD || 'wheatfill'
 const TEAM_ADMIN_PASSWORD = process.env.TEAM_ADMIN_PASSWORD || 'wheatfill'
-/** Must match Supabase Auth user emails when USE_SUPABASE_AUTH=1 (signInWithPassword is email-based). */
-const TEAM_BRETT_EMAIL = (process.env.TEAM_BRETT_EMAIL || 'brett@wheatfillprecisionhealth.com').trim().toLowerCase()
-const TEAM_BRIDGETTE_EMAIL = (process.env.TEAM_BRIDGETTE_EMAIL || 'bridgette@wheatfillprecisionhealth.com')
+/**
+ * Must match Supabase Auth user emails when USE_SUPABASE_AUTH=1 (signInWithPassword is email-based).
+ * Defaults stay in sync with `src/config/provider.ts` forwarding addresses.
+ */
+const TEAM_BRETT_EMAIL = (process.env.TEAM_BRETT_EMAIL || 'brett.wheatfill@gmail.com').trim().toLowerCase()
+const TEAM_BRIDGETTE_EMAIL = (process.env.TEAM_BRIDGETTE_EMAIL || 'bridgette.wheatfill@gmail.com')
   .trim()
   .toLowerCase()
-const TEAM_ADMIN_EMAIL = (process.env.TEAM_ADMIN_EMAIL || 'admin@wheatfillprecisionhealth.com').trim().toLowerCase()
+const TEAM_ADMIN_EMAIL = (process.env.TEAM_ADMIN_EMAIL || 'lookoutlambe@gmail.com').trim().toLowerCase()
 /**
  * If true, keep overwriting the 3 default team accounts' passwords on every boot from env vars.
  * Leave this OFF in normal operation so Brett can change passwords without them being reset.
