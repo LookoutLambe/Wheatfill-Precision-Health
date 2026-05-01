@@ -355,7 +355,7 @@ export default function Landing() {
               </div>
               <div className="divider" />
               <div className="btnRow">
-                <Link to="/about" className="btn" style={{ textDecoration: 'none' }}>
+                <Link to="/about" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
                   About the team
                 </Link>
                 <Link to="/pricing" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
