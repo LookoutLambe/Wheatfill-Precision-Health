@@ -1932,6 +1932,26 @@ button.pill:active {
   flex-wrap: wrap;
 }
 
+.providerFooterAlertsBtn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--navy-2);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.providerFooterAlertsBtn:hover {
+  color: var(--navy);
+}
+
+.providerFooterAlertsStatus {
+  font-size: 13px;
+}
+
 .footerContent {
   width: 100%;
   max-width: 980px;

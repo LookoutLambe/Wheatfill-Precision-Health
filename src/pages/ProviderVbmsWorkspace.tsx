@@ -30,6 +30,7 @@ import {
   setMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { loadMarketingWorkspaceState, saveMarketingWorkspaceState } from '../marketing/workspaceStore'
+import { type TeamInboxChangedDetail, WPH_TEAM_INBOX_CHANGED } from '../provider/teamInboxPoller'
 
 type DemoPatient = { id: string; label: string }
 type DemoAppt = {
@@ -506,6 +507,16 @@ export default function ProviderVbmsWorkspace() {
       document.removeEventListener('visibilitychange', onVis)
     }
   }, [loadTeamInbox, loadOrders, loadAudit])
+
+  useEffect(() => {
+    const onPoll = (e: Event) => {
+      const ce = e as CustomEvent<TeamInboxChangedDetail>
+      if (!ce.detail?.newSinceLast?.length) return
+      void loadTeamInbox()
+    }
+    window.addEventListener(WPH_TEAM_INBOX_CHANGED, onPoll)
+    return () => window.removeEventListener(WPH_TEAM_INBOX_CHANGED, onPoll)
+  }, [loadTeamInbox])
 
   const newCount = msgs.filter((m) => m.status === 'new').length
   const handledCount = msgs.filter((m) => m.status === 'handled').length

@@ -18,6 +18,7 @@ import {
   isMarketingProviderAuthed,
   MARKETING_PROVIDER_AUTH_EVENT,
 } from '../marketing/providerStore'
+import { type TeamInboxChangedDetail, WPH_TEAM_INBOX_CHANGED } from '../provider/teamInboxPoller'
 
 type DemoMsg = {
   id: string
@@ -163,6 +164,16 @@ export default function ProviderTeamInbox() {
       window.removeEventListener(MARKETING_PROVIDER_AUTH_EVENT, sync)
       document.removeEventListener('visibilitychange', onVis)
     }
+  }, [loadTeamInbox])
+
+  useEffect(() => {
+    const onPoll = (e: Event) => {
+      const ce = e as CustomEvent<TeamInboxChangedDetail>
+      if (!ce.detail?.newSinceLast?.length) return
+      void loadTeamInbox()
+    }
+    window.addEventListener(WPH_TEAM_INBOX_CHANGED, onPoll)
+    return () => window.removeEventListener(WPH_TEAM_INBOX_CHANGED, onPoll)
   }, [loadTeamInbox])
 
   const inboxTokens = useMemo(() => norm(inboxQuery).split(' ').filter(Boolean), [inboxQuery])

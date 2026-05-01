@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import '../App.css'
 import AuthStatus from './AuthStatus'
 import { PROVIDER_TEAM_LABEL } from '../config/provider'
+import { ProviderDesktopAlertsControl, useTeamInboxPolling } from '../provider/teamInboxPoller'
 import { SiteLogo } from './SiteLogo'
 
 function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
@@ -22,6 +23,9 @@ function onMediaQueryChange(mq: MediaQueryList, cb: () => void) {
 export default function ProviderShell() {
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
+
+  /** Poll team inbox while signed in — refreshes workspace/inbox when public requests land (both providers, separate browsers). */
+  useTeamInboxPolling()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -113,6 +117,10 @@ export default function ProviderShell() {
         <div className="footerInner">
           <span>© {new Date().getFullYear()} Wheatfill Precision Health</span>
           <span className="muted">{PROVIDER_TEAM_LABEL}</span>
+          <span className="muted" aria-hidden="true">
+            ·
+          </span>
+          <ProviderDesktopAlertsControl />
         </div>
       </footer>
     </div>
