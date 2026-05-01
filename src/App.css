@@ -1731,8 +1731,18 @@ button.pill:active {
 .landingTeamMember {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 10px;
   min-width: 0;
+}
+
+/* Portrait and bio card share one column width (mobile and desktop). */
+.landingTeamMember .portrait,
+.landingTeamMember > .landingBioCard {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-self: stretch;
 }
 
 .landingHeroIntro {
@@ -1829,34 +1839,14 @@ button.pill:active {
   height: auto;
 }
 
-/* Landing team row: portrait + bio per column */
+/* Landing team row: titles centered in card */
 @media (min-width: 901px) {
-  .landingTeamMember > .landingBioCard {
-    align-self: stretch;
-    width: 100%;
-    max-width: none;
-    box-sizing: border-box;
-  }
-
-  .landingTeamMember .portrait {
-    align-self: center;
-    width: 100%;
-    max-width: min(300px, 100%);
-    box-sizing: border-box;
-  }
-
   .landingTeamMember .landingBioCard .cardTitle {
     align-items: center;
   }
 
   .landingTeamMember .landingBioCard .cardTitle h2 {
     line-height: 1.2;
-  }
-}
-
-@media (min-width: 1200px) {
-  .landingTeamMember .portrait {
-    max-width: min(320px, 100%);
   }
 }
 
