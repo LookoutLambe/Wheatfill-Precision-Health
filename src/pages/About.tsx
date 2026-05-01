@@ -24,7 +24,7 @@ export default function About() {
       </section>
 
       <div className="aboutTeamGrid" aria-label="Care team bios">
-        <section className="card cardAccentNavy aboutBioCard">
+        <section className="card cardAccentNavy aboutBioCard" id="brett-bio">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
             <span className="pill">Founder</span>

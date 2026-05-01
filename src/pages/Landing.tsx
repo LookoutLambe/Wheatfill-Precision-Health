@@ -373,15 +373,10 @@ export default function Landing() {
               <h2 style={{ margin: 0 }}>Brett Wheatfill, FNP-C</h2>
               <span className="pill">Founder</span>
             </div>
-            <p className="muted" style={{ whiteSpace: 'pre-line' }}>
-              Brett Wheatfill is a board-certified Family Nurse Practitioner with over 13 years of
-              healthcare experience, specializing in pain management and sports medicine.
-              {'\n\n'}
-              At Wheatfill Precision Health, Brett delivers a precision-based, patient-centered
-              approach focused on proactive optimization rather than reactive care.
-              {'\n\n'}
-              His mission is to help patients feel better, move better, and live at a higher
-              level—now and for years to come.
+            <p style={{ margin: 0 }}>
+              <Link to="/about#brett-bio" className="landingSeeProfileLink">
+                See profile
+              </Link>
             </p>
           </div>
 
@@ -395,22 +390,9 @@ export default function Landing() {
               <h2 style={{ margin: 0 }}>Bridgette Wheatfill, RN</h2>
               <span className="pill">Clinician</span>
             </div>
-            <p className="aboutBioTagline" style={{ margin: '0 0 8px' }}>
-              Fix the root. Transform the outcome.
-            </p>
-            <p className="muted" style={{ whiteSpace: 'pre-line' }}>
-              Bridgette is a registered nurse with over 14 years of experience in metabolic health,
-              nutrition, and weight optimization. Her own journey with PCOS and insulin resistance
-              informs how she helps patients address root causes and build sustainable, long-term
-              results—not quick fixes.
-              {'\n\n'}
-              At Wheatfill Precision Health, she pairs clear, individualized guidance with medical
-              therapy, nutrition, and practical lifestyle strategies so you can take back control of
-              your health.
-            </p>
-            <p className="muted" style={{ marginTop: 12, marginBottom: 0, fontSize: 14 }}>
-              <Link to="/about#bridgette-bio" style={{ fontWeight: 600 }}>
-                Full bio
+            <p style={{ margin: 0 }}>
+              <Link to="/about#bridgette-bio" className="landingSeeProfileLink">
+                See profile
               </Link>
             </p>
           </div>

@@ -1619,6 +1619,7 @@ button.pill:active {
 
 .aboutBioCard {
   min-width: 0;
+  scroll-margin-top: 112px;
 }
 
 .aboutBioRow {
@@ -1811,13 +1812,19 @@ button.pill:active {
   height: auto;
 }
 
-/* Landing: portrait + bio share width; portrait capped on wide screens */
+/* Landing: portrait + bio share width; portraits slightly narrower than full column */
 @media (min-width: 901px) {
-  .landingGridProfileColumn .portrait,
   .landingGridProfileColumn > .landingBioCard {
     align-self: flex-start;
     width: 100%;
     max-width: none;
+    box-sizing: border-box;
+  }
+
+  .landingGridProfileColumn .portrait {
+    align-self: center;
+    width: 100%;
+    max-width: min(300px, 92%);
     box-sizing: border-box;
   }
 
@@ -1831,10 +1838,24 @@ button.pill:active {
 }
 
 @media (min-width: 1200px) {
-  .landingGridProfileColumn .portrait,
   .landingGridProfileColumn > .landingBioCard {
     max-width: none;
   }
+
+  .landingGridProfileColumn .portrait {
+    max-width: min(320px, 88%);
+  }
+}
+
+.landingSeeProfileLink {
+  font-weight: 650;
+  color: var(--navy-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.landingSeeProfileLink:hover {
+  color: var(--navy);
 }
 
 .landingBioCard > p.muted {
