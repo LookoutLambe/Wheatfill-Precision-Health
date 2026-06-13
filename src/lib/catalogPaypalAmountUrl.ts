@@ -1,22 +1,18 @@
 import { PAYPAL_BUSINESS_EMAIL, PAYPAL_PAY_URL_OVERRIDE, PRACTICE_PUBLIC_NAME } from '../config/provider'
 
+function amountStrFromCents(cents: number): string {
+  return (Math.max(0, Math.round(cents)) / 100).toFixed(2)
+}
+
 /**
- * Builds a PayPal checkout link with a **prefilled US dollar amount** for the catalog order total.
- *
- * Resolution order:
+ * Core PayPal link builder. Resolution order:
  *  1. `VITE_PAYPAL_PAY_URL` override — a `paypal.me/<handle>` link (amount appended) or any hosted
  *     PayPal button URL (amount/currency/item_name set on the query string).
- *  2. `VITE_PAYPAL_BUSINESS_EMAIL` — builds a hosted "Buy Now" link (Website Payments Standard,
- *     `cmd=_xclick`) against the practice's PayPal business account with the amount prefilled.
- *
- * Returns an empty string when PayPal is not configured; the caller shows a friendly fallback.
+ *  2. `VITE_PAYPAL_BUSINESS_EMAIL` — a hosted "Buy Now" link (Website Payments Standard, `cmd=_xclick`)
+ *     against the practice's PayPal business account with the amount prefilled.
+ * Returns '' when PayPal is not configured.
  */
-export function catalogPayUrlForOrderTotalCents(totalCents: number, lineSummary: string): string {
-  const n = Math.max(0, Math.round(totalCents))
-  const amountStr = (n / 100).toFixed(2)
-  const itemName = `${PRACTICE_PUBLIC_NAME} order — ${lineSummary}`.slice(0, 120)
-
-  // 1) Explicit override (paypal.me/<handle> or a full hosted button URL) wins.
+function buildPaypalUrl(amountStr: string, itemName: string): string {
   const override = PAYPAL_PAY_URL_OVERRIDE
   if (override) {
     if (/paypal\.me\//i.test(override)) {
@@ -35,7 +31,6 @@ export function catalogPayUrlForOrderTotalCents(totalCents: number, lineSummary:
     }
   }
 
-  // 2) Hosted "Buy Now" link with a prefilled amount against the practice's PayPal business email.
   if (PAYPAL_BUSINESS_EMAIL) {
     const u = new URL('https://www.paypal.com/cgi-bin/webscr')
     u.searchParams.set('cmd', '_xclick')
@@ -47,6 +42,17 @@ export function catalogPayUrlForOrderTotalCents(totalCents: number, lineSummary:
     return u.toString()
   }
 
-  // Not configured — let the caller display a better error / fallback.
   return ''
+}
+
+/** PayPal checkout link with the catalog order total prefilled. */
+export function catalogPayUrlForOrderTotalCents(totalCents: number, lineSummary: string): string {
+  const itemName = `${PRACTICE_PUBLIC_NAME} order — ${lineSummary}`.slice(0, 120)
+  return buildPaypalUrl(amountStrFromCents(totalCents), itemName)
+}
+
+/** PayPal payment link for a custom-amount provider bill (built entirely client-side — no backend needed). */
+export function paypalBillUrlForAmountCents(amountCents: number, description: string): string {
+  const itemName = `${PRACTICE_PUBLIC_NAME} — ${description}`.slice(0, 120)
+  return buildPaypalUrl(amountStrFromCents(amountCents), itemName)
 }

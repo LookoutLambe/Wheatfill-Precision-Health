@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
-import { apiPost } from '../api/client'
+import { paypalBillUrlForAmountCents } from '../lib/catalogPaypalAmountUrl'
 import Page from '../components/Page'
 
 export default function ProviderPayments() {
   const [amount, setAmount] = useState('')
   const [desc, setDesc] = useState('')
   const [email, setEmail] = useState('')
-  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [link, setLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -31,21 +30,13 @@ export default function ProviderPayments() {
       setError('Enter a short description (what the bill is for).')
       return
     }
-    setBusy(true)
-    ;(async () => {
-      try {
-        const res = await apiPost<{ ok: boolean; url: string }>('/v1/provider/payments/paypal/payment-request', {
-          amountCents,
-          description,
-          patientEmail: email.trim(),
-        })
-        setLink(res.url)
-      } catch (e: unknown) {
-        setError(String((e as Error)?.message || e))
-      } finally {
-        setBusy(false)
-      }
-    })()
+    // Built entirely in the browser — no backend/API call needed.
+    const url = paypalBillUrlForAmountCents(amountCents, description)
+    if (!url) {
+      setError('PayPal is not configured. Set the practice PayPal email (VITE_PAYPAL_BUSINESS_EMAIL).')
+      return
+    }
+    setLink(url)
   }
 
   const copyLink = () => {
@@ -141,19 +132,12 @@ export default function ProviderPayments() {
         </label>
 
         <div className="btnRow" style={{ marginTop: 14 }}>
-          <button
-            type="button"
-            className="btn btnPrimary"
-            disabled={busy}
-            style={{ opacity: busy ? 0.7 : 1 }}
-            onClick={createBill}
-          >
-            {busy ? 'Creating…' : 'Create payment link'}
+          <button type="button" className="btn btnPrimary" onClick={createBill}>
+            Create payment link
           </button>
           <button
             type="button"
             className="btn"
-            disabled={busy}
             onClick={() => {
               setAmount('')
               setDesc('')
