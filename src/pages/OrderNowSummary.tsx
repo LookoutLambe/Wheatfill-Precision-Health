@@ -6,8 +6,8 @@ import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../dat
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
-import { apiGet, apiPost, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
-import { navigateToStripeHostedUrl } from '../lib/stripeHostedNavigation'
+import { apiGet, apiPost, apiPostBeacon, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
+import { catalogPayUrlForOrderTotalCents } from '../lib/catalogPaypalAmountUrl'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
@@ -140,98 +140,40 @@ export default function OrderNowSummary() {
       return
     }
 
+    // Build the PayPal checkout link with the prefilled total.
+    const payUrl = catalogPayUrlForOrderTotalCents(total, itemsSummaryText)
+    if (!payUrl) {
+      setCheckoutError('Online payment is unavailable right now. Please contact the office to complete your order.')
+      return
+    }
+
     setCheckoutBusy(true)
-    ;(async () => {
-      try {
-        const session = await fetchApiSession()
-        const patientOk = session.ok && session.authenticated && session.role === 'patient'
 
-        const body = {
-          partnerSlug: partner.slug,
-          items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-          agreedToShippingTerms: agree,
-          contactPermission: contactOk,
-          signatureName: sigName.trim(),
-          signatureDate: sigDate,
-          shippingInsurance: insurance,
-          shippingAddress1: shipStreet.trim(),
-          shippingCity: shipCity.trim(),
-          shippingState: shipState.trim(),
-          shippingPostalCode: shipZip.trim(),
-        }
+    const body = {
+      partnerSlug: partner.slug,
+      items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
+      agreedToShippingTerms: agree,
+      contactPermission: contactOk,
+      signatureName: sigName.trim(),
+      signatureDate: sigDate,
+      shippingInsurance: insurance,
+      shippingAddress1: shipStreet.trim(),
+      shippingCity: shipCity.trim(),
+      shippingState: shipState.trim(),
+      shippingPostalCode: shipZip.trim(),
+    }
 
-        const wantsEmbedded = !!(import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY
-        if (patientOk) {
-          const res = await apiPost<{
-            checkoutUrl: string | null
-            checkoutClientSecret?: string | null
-            orderId?: string
-            totalCents?: number
-          }>(
-            '/v1/patient/orders/pharmacy',
-            { ...body, uiMode: wantsEmbedded ? 'embedded' : 'redirect' },
-          )
-          if (wantsEmbedded && res.checkoutClientSecret) {
-            try {
-              sessionStorage.setItem(`wph_checkout_cs_${partner.slug}`, res.checkoutClientSecret)
-            } catch {
-              // ignore
-            }
-            window.location.assign(`/order-now/${encodeURIComponent(partner.slug)}/checkout`)
-            return
-          }
-          if (res.checkoutUrl) {
-            if (!navigateToStripeHostedUrl(res.checkoutUrl)) {
-              setCheckoutError('Could not open the secure payment page. Please try again.')
-            }
-            return
-          }
-          writeCartForSlug(slug, {})
-          setCheckoutError(null)
-          alert(
-            res.orderId
-              ? `Order received (ref ${res.orderId}). No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active payment method. Your care team can still collect payment.`
-              : 'Order submitted. No payment page opened (Stripe may not be configured on the server). Your care team will follow up with next steps.',
-          )
-          return
-        }
+    // Record the order for the office to fulfill — fire-and-forget (keepalive) so it never blocks or
+    // delays the payment hand-off. A slow/unreachable API must not stop the customer from paying.
+    if (isPatientSession) {
+      apiPostBeacon('/v1/patient/orders/pharmacy', body)
+    } else {
+      apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
+    }
 
-        const res = await apiPost<{
-          orderId: string
-          totalCents: number
-          checkoutUrl: string | null
-          checkoutClientSecret?: string | null
-        }>(
-          '/v1/public/orders/pharmacy',
-          { ...body, contactEmail: contactEmail.trim(), uiMode: wantsEmbedded ? 'embedded' : 'redirect' },
-          '',
-        )
-        if (wantsEmbedded && res.checkoutClientSecret) {
-          try {
-            sessionStorage.setItem(`wph_checkout_cs_${partner.slug}`, res.checkoutClientSecret)
-          } catch {
-            // ignore
-          }
-          window.location.assign(`/order-now/${encodeURIComponent(partner.slug)}/checkout`)
-          return
-        }
-        if (res.checkoutUrl) {
-          if (!navigateToStripeHostedUrl(res.checkoutUrl)) {
-            setCheckoutError('Could not open the secure payment page. Please try again.')
-          }
-          return
-        }
-        writeCartForSlug(slug, {})
-        setCheckoutError(null)
-        alert(
-          `Order received. Reference: ${res.orderId}. No payment page opened—usually the API needs STRIPE_SECRET_KEY or Stripe is not the active method in provider settings. Your care team can still collect payment.`,
-        )
-      } catch (e: unknown) {
-        setCheckoutError(String((e as Error)?.message || e))
-      } finally {
-        setCheckoutBusy(false)
-      }
-    })()
+    // Clear the cart and hand off to PayPal in the same tab (popup-safe).
+    writeCartForSlug(slug, {})
+    window.location.assign(payUrl)
   }
 
   const onRequestPayLater = () => {
@@ -336,7 +278,7 @@ export default function OrderNowSummary() {
             <p className="orderNowCheckoutLead">
               {items.length > 0 ? (
                 <>
-                  Enter shipping and signature below, then use <strong>Check out</strong> to open the payment link.
+                  Enter shipping and signature below, then use <strong>Check out</strong> to open the PayPal payment link.
                 </>
               ) : (
                 <>
@@ -611,7 +553,7 @@ export default function OrderNowSummary() {
                   <span style={{ textAlign: 'right' }}>{moneyCents(total)}</span>
                 </div>
                 <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>
-                  Check out opens a secure card payment page with <strong>this</strong> total. Any adjustments are
+                  Check out opens a secure PayPal payment page with <strong>this</strong> total. Any adjustments are
                   confirmed by the office.
                 </p>
               </div>

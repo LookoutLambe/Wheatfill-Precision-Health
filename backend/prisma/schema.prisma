@@ -48,17 +48,12 @@ enum BillingItemType {
 }
 
 enum PaymentMethod {
-  stripe
+  paypal
   clover
   /// Deprecated (kept for DB compatibility; app no longer uses these rails).
   manual_venmo
   /// Deprecated (kept for DB compatibility; app no longer uses these rails).
   manual_paypal
-}
-
-enum ProviderPaymentProvider {
-  stripe
-  clover
 }
 
 enum PaymentStatus {
@@ -68,15 +63,6 @@ enum PaymentStatus {
   failed
   refunded
   cancelled
-}
-
-enum SubscriptionStatus {
-  active
-  trialing
-  past_due
-  canceled
-  unpaid
-  incomplete
 }
 
 model PharmacyPartner {
@@ -133,16 +119,6 @@ model User {
   postalCode   String?
   country      String? @default("US")
   deletedAt    DateTime?
-  stripeCustomerId String?
-
-  // Stripe Connect (provider payouts)
-  stripeConnectedAccountId String?
-  stripeOnboardingStatus   String? // e.g. 'pending','complete'
-  stripeChargesEnabled     Boolean @default(false)
-  stripePayoutsEnabled     Boolean @default(false)
-
-  // Provider payment processor selection (which provider to use for new payments)
-  activePaymentProvider ProviderPaymentProvider?
 
   // Clover connection details (encrypted at rest in DB)
   cloverEnv        String?
@@ -166,7 +142,6 @@ model User {
 
   paymentsAsPatient Payment[] @relation("PaymentsAsPatient")
   paymentsAsProvider Payment[] @relation("PaymentsAsProvider")
-  subscriptions Subscription[]
 
   @@index([role])
   @@index([email])
@@ -301,11 +276,6 @@ model Payment {
   itemType  BillingItemType
   itemId    String?
 
-  // Stripe identifiers
-  stripeCheckoutSessionId String?
-  stripePaymentIntentId   String?
-  stripeSubscriptionId    String?
-
   // Clover Hosted Checkout identifiers
   cloverCheckoutSessionId String?
   cloverCheckoutHref      String?
@@ -332,24 +302,6 @@ model Payment {
   @@index([patientId, createdAt])
   @@index([providerId, createdAt])
   @@index([status])
-}
-
-model Subscription {
-  id        String             @id @default(cuid())
-  status    SubscriptionStatus
-  planKey   String
-  stripeSubscriptionId String  @unique
-  currentPeriodEnd DateTime?
-  cancelAtPeriodEnd Boolean @default(false)
-
-  patientId String
-  patient   User @relation(fields: [patientId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-
-  @@index([patientId, status])
 }
 
 model MessageThread {

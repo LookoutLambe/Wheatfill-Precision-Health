@@ -23,7 +23,7 @@ export default function PatientPortalInfo() {
           <h1 style={{ margin: 0, scrollMarginTop: 88 }}>For patients</h1>
           <p className="muted pageSubtitle" style={{ marginTop: 8 }}>
             Shop the catalog, book a time, and message the team—right here, like a modern consumer brand. When you’re
-            ready, your care team will send a Stripe checkout link.
+            ready, your care team will send a PayPal checkout link.
           </p>
         </div>
         <Link to="/" className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>

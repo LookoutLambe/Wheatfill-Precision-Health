@@ -305,7 +305,7 @@ export default function ProviderTeamInbox() {
                                   setPayBusyId(m.id)
                                   try {
                                     const r = await apiPost<{ ok: boolean; url: string; totalCents?: number }>(
-                                      `/v1/provider/orders/${encodeURIComponent(String(m.meta.orderId))}/stripe/checkout`,
+                                      `/v1/provider/orders/${encodeURIComponent(String(m.meta.orderId))}/paypal-checkout`,
                                       {},
                                     )
                                     setPayLinks((prev) => ({ ...prev, [m.id]: { url: r.url, totalCents: r.totalCents } }))

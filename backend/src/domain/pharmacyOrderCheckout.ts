@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import type { Stripe } from 'stripe'
 import { prisma } from '../db.js'
 import { shippingCentsForPartnerSlug } from './pharmacy-seed.js'
 import { notifyOrderEmail } from '../integrations/orderEmail.js'
@@ -40,22 +39,19 @@ export type PharmacyPatientForOrder = {
 }
 
 export type PharmacyOrderCheckoutResult =
-  | { ok: true; orderId: string; totalCents: number; checkoutUrl: string | null; checkoutClientSecret?: string | null }
+  | { ok: true; orderId: string; totalCents: number }
   | { ok: false; status: 400 | 404 | 500; message: string }
 
 /**
- * Creates a pharmacy Order + line items, then opens Stripe Hosted Checkout when STRIPE_SECRET_KEY is configured.
- * Uses Connect connected account when present; otherwise platform account.
+ * Creates a pharmacy Order + line items and records a pending PayPal payment for the total.
+ * Payment is collected via a hosted PayPal link (built on the frontend / provider tools); confirmation is manual.
  */
 export async function runPharmacyOrderCheckout(input: {
   body: z.infer<typeof CreatePharmacyOrderBody>
   patient: PharmacyPatientForOrder
   guestContactEmail?: string
-  stripe: Stripe | null
-  frontendOrigin: string
-  uiMode?: 'redirect' | 'embedded'
 }): Promise<PharmacyOrderCheckoutResult> {
-  const { body, patient, guestContactEmail, stripe, frontendOrigin, uiMode } = input
+  const { body, patient, guestContactEmail } = input
   if (!body.agreedToShippingTerms) return { ok: false, status: 400, message: 'You must agree to shipping terms.' }
 
   const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
@@ -132,72 +128,11 @@ export async function runPharmacyOrderCheckout(input: {
     shipTo: `${hasShip ? body.shippingAddress1!.trim() : patient.address1 || ''}, ${hasShip ? body.shippingCity!.trim() : patient.city || ''}, ${hasShip ? body.shippingState!.trim() : patient.state || ''} ${hasShip ? body.shippingPostalCode!.trim() : patient.postalCode || ''}`.trim(),
   })
 
-  const providerRow = await prisma.user.findUnique({
-    where: { id: provider.id },
-    select: { stripeConnectedAccountId: true },
-  })
-
-  const origin = frontendOrigin.split(',')[0]?.trim() || 'http://localhost:5176'
-  const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?paid=1&order=${order.id}`
-  const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?canceled=1&order=${order.id}`
-  const returnUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?checkout=1&session_id={CHECKOUT_SESSION_ID}&order=${order.id}`
-
-  if (!stripe) {
-    return { ok: true, orderId: order.id, totalCents: total, checkoutUrl: null, checkoutClientSecret: null }
-  }
-
-  const wantsEmbedded = uiMode === 'embedded'
-  const sessionCreateParams: any = {
-    mode: 'payment' as const,
-    line_items: [
-      ...order.items.map((it) => ({
-        price_data: {
-          currency: 'usd',
-          unit_amount: it.unitPriceCents,
-          product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug } },
-        },
-        quantity: it.quantity,
-      })),
-      ...(shippingInsuranceCents
-        ? [
-            {
-              price_data: {
-                currency: 'usd',
-                unit_amount: shippingInsuranceCents,
-                product_data: { name: 'Shipping insurance' },
-              },
-              quantity: 1,
-            },
-          ]
-        : []),
-      ...(shippingCents
-        ? [
-            {
-              price_data: {
-                currency: 'usd',
-                unit_amount: shippingCents,
-                product_data: { name: 'Shipping' },
-              },
-              quantity: 1,
-            },
-          ]
-        : []),
-    ],
-    metadata: { orderId: order.id },
-  }
-  if (wantsEmbedded) {
-    sessionCreateParams.ui_mode = 'embedded'
-    sessionCreateParams.return_url = returnUrl
-  } else {
-    sessionCreateParams.success_url = successUrl
-    sessionCreateParams.cancel_url = cancelUrl
-  }
-  const session = providerRow?.stripeConnectedAccountId
-    ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
-    : await stripe.checkout.sessions.create(sessionCreateParams)
+  // Record a pending PayPal payment for the order total. The hosted PayPal page is opened client-side
+  // (or via the provider "pay later" link); payment confirmation is reconciled manually by the office.
   await prisma.payment.create({
     data: {
-      method: 'stripe',
+      method: 'paypal',
       status: 'pending',
       amountCents: total,
       currency: 'usd',
@@ -206,14 +141,8 @@ export async function runPharmacyOrderCheckout(input: {
       orderId: order.id,
       patientId: patient.id,
       providerId: provider.id,
-      stripeCheckoutSessionId: session.id,
     },
   })
-  return {
-    ok: true,
-    orderId: order.id,
-    totalCents: total,
-    checkoutUrl: session.url,
-    checkoutClientSecret: (session as any).client_secret || null,
-  }
+
+  return { ok: true, orderId: order.id, totalCents: total }
 }

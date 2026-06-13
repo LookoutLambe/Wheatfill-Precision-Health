@@ -1,6 +1,6 @@
 ## Wheatfill Precision Health
 
-Telehealth landing site + patient portal + provider portal with a real multi-user backend, scheduling, ordering, and Stripe Hosted Checkout.
+Telehealth landing site + patient portal + provider portal with a real multi-user backend, scheduling, ordering, and PayPal checkout.
 
 ### Local development
 - **Frontend**: `npm install` then `npm run dev -- --port 5176`

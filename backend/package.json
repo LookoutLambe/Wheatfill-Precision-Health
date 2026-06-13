@@ -28,7 +28,6 @@
     "dotenv": "^17.2.2",
     "fastify": "^5.5.0",
     "prisma": "^6.19.3",
-    "stripe": "^22.1.0",
     "@supabase/supabase-js": "^2.57.0",
     "zod": "^4.3.6"
   },

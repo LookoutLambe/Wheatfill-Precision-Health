@@ -21,7 +21,6 @@ const PharmacyPartner = lazy(() => import('./pages/PharmacyPartner'))
 const MountainViewPharmacy = lazy(() => import('./pages/MountainViewPharmacy'))
 const HallandalePharmacy = lazy(() => import('./pages/HallandalePharmacy'))
 const OrderNowSummary = lazy(() => import('./pages/OrderNowSummary'))
-const EmbeddedCheckoutPage = lazy(() => import('./pages/EmbeddedCheckout'))
 const PatientPortalInfo = lazy(() => import('./pages/PatientPortalInfo'))
 import SignIn from './pages/SignIn'
 const ProviderLogin = lazy(() => import('./pages/ProviderLogin'))
@@ -37,9 +36,6 @@ const ProviderTeamInbox = lazy(() => import('./pages/ProviderTeamInbox'))
 const ProviderOrderHistory = lazy(() => import('./pages/ProviderOrderHistory'))
 const ProviderAuditLog = lazy(() => import('./pages/ProviderAuditLog'))
 const ProviderStaffUsers = lazy(() => import('./pages/ProviderStaffUsers'))
-const ProviderStripeConnectDemo = lazy(() => import('./pages/ProviderStripeConnectDemo'))
-const ProviderStripeConnectProducts = lazy(() => import('./pages/ProviderStripeConnectProducts'))
-const StripeConnectStorefront = lazy(() => import('./pages/StripeConnectStorefront'))
 
 /** React Router `Navigate` must not receive a full `https://…` string — it breaks routing (white screen). */
 function MarketingLeaveToFullApp({ path }: { path: string }) {
@@ -106,7 +102,6 @@ export default function App() {
 
           <Route path="/book" element={<BookOnline />} />
           <Route path="/order-now" element={<PharmacyOptions />} />
-          <Route path="/order-now/:slug/checkout" element={<EmbeddedCheckoutPage />} />
           <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
           <Route path="/order-now/:slug" element={<PharmacyPartner />} />
           <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
@@ -139,13 +134,7 @@ export default function App() {
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
           <Route path="/provider/payments" element={<ProviderPayments />} />
           <Route path="/provider/staff" element={<ProviderStaffUsers />} />
-          <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
-          <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
         </Route>
-
-        <Route path="/storefront" element={<StripeConnectStorefront />} />
-        <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
-        <Route path="/storefront/success" element={<StripeConnectStorefront />} />
           </Routes>
         </Suspense>
       </RouteErrorBoundary>
@@ -165,7 +154,6 @@ export default function App() {
         <Route path="/ordering" element={<OrderingPortal />} />
         <Route path="/medications" element={<MedicationEducation />} />
         <Route path="/order-now" element={<PharmacyOptions />} />
-        <Route path="/order-now/:slug/checkout" element={<EmbeddedCheckoutPage />} />
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />
         <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
@@ -202,14 +190,8 @@ export default function App() {
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
           <Route path="/provider/payments" element={<ProviderPayments />} />
-          <Route path="/provider/connect-demo" element={<ProviderStripeConnectDemo />} />
-          <Route path="/provider/connect-demo/products" element={<ProviderStripeConnectProducts />} />
         </>
       </Route>
-
-      <Route path="/storefront" element={<StripeConnectStorefront />} />
-      <Route path="/storefront/:accountId" element={<StripeConnectStorefront />} />
-      <Route path="/storefront/success" element={<StripeConnectStorefront />} />
         </Routes>
       </Suspense>
     </RouteErrorBoundary>

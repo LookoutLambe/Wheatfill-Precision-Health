@@ -224,8 +224,8 @@ export default function MarketingProviderAdmin() {
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Opens your patient catalog. Orders run through the practice; patients submit from the summary page and get
-            Stripe checkout instructions from the office. Fulfillment copy references{' '}
+            Opens your patient catalog. Orders run through the practice; patients submit from the summary page and pay
+            via PayPal. Fulfillment copy references{' '}
             <b>{form.fulfillmentPartnerName.trim() || 'your pharmacy'}</b>. Configure payments in the full app when deployed.
           </p>
           <div className="divider" />
@@ -272,12 +272,13 @@ export default function MarketingProviderAdmin() {
         <section className="card cardAccentSoft">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Payments</h2>
-            <span className="pill pillRed">Stripe</span>
+            <span className="pill pillRed">PayPal</span>
           </div>
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
-            Stripe is the only supported payment rail. Configure your Stripe Payment Link in the app environment
-            (<code className="muted">VITE_STRIPE_CHECKOUT_URL</code>).
+            PayPal is the only supported payment rail. Configure your PayPal business email in the app environment
+            (<code className="muted">VITE_PAYPAL_BUSINESS_EMAIL</code>), or a <code className="muted">VITE_PAYPAL_PAY_URL</code>{' '}
+            override.
           </p>
         </section>
       </div>

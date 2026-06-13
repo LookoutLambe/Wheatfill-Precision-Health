@@ -28,10 +28,8 @@ services:
         sync: false
       - key: USE_SUPABASE_AUTH
         value: "0"
-      # Optional (Stripe payments)
-      - key: STRIPE_SECRET_KEY
+      # PayPal payments (catalog checkout + provider pay-later links)
+      - key: PAYPAL_BUSINESS_EMAIL
         sync: false
-      - key: STRIPE_CONNECT_CLIENT_ID
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
+      - key: PAYPAL_PAY_URL
         sync: false

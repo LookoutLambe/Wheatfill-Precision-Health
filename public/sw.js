@@ -64,8 +64,8 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // Same-origin HTML / SPA navigations only. Cross-origin top-level navigations (Stripe
-  // Checkout, OAuth, etc.) must not be intercepted — mobile Safari and PWAs rely on native handling.
+  // Same-origin HTML / SPA navigations only. Cross-origin top-level navigations (PayPal
+  // checkout, OAuth, etc.) must not be intercepted — mobile Safari and PWAs rely on native handling.
   if (isNavigationRequest(request)) {
     if (!sameOrigin(request.url)) return
     event.respondWith(

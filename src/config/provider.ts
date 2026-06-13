@@ -24,5 +24,14 @@ export const TEAM_ADMIN_FORWARD_EMAIL = 'lookoutlambe@gmail.com'
 /** Shown in the back-office UI — consumer / brand tone (not a clinical EHR). */
 export const PROVIDER_TEAM_LABEL = 'Brett & Bridget — team'
 
-/** Stripe Payment Link (the only supported payment rail). */
-export const STRIPE_CHECKOUT_URL = (vitePublicEnv.VITE_STRIPE_CHECKOUT_URL?.toString() || '').trim()
+/** PayPal business (merchant) email — used to build hosted "Buy Now" checkout links with a prefilled amount. */
+export const PAYPAL_BUSINESS_EMAIL = (
+  vitePublicEnv.VITE_PAYPAL_BUSINESS_EMAIL?.toString() || 'brett.wheatfill@gmail.com'
+).trim()
+
+/** Optional override: a full PayPal pay URL (`paypal.me/...` or a hosted button). Takes precedence over the business email. */
+export const PAYPAL_PAY_URL_OVERRIDE = (vitePublicEnv.VITE_PAYPAL_PAY_URL?.toString() || '').trim()
+
+/** PayPal is the only supported payment rail. Treated as "configured" when an email or override URL is present. */
+export const CATALOG_PAYPAL: { readonly label: string } | null =
+  PAYPAL_BUSINESS_EMAIL || PAYPAL_PAY_URL_OVERRIDE ? { label: 'PayPal' } : null

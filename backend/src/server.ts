@@ -7,10 +7,8 @@ import {
   runPharmacyOrderCheckout,
   type PharmacyPatientForOrder,
 } from './domain/pharmacyOrderCheckout.js'
-import { registerBillingWebhookRoutes } from './routes/billingWebhooks.js'
 import { registerHealthRoutes } from './routes/health.js'
 import { registerPharmacyRoutes } from './routes/pharmacies.js'
-import { startPaymentCleanup } from './jobs/paymentCleanup.js'
 import type { User } from '@prisma/client'
 import Fastify from 'fastify'
 import cookie from '@fastify/cookie'
@@ -20,7 +18,6 @@ import sensible from '@fastify/sensible'
 import jwt from '@fastify/jwt'
 import { z } from 'zod'
 import crypto from 'node:crypto'
-import Stripe from 'stripe'
 
 import { prisma } from './db.js'
 import { hashPassword, verifyPassword } from './auth/password.js'
@@ -106,52 +103,52 @@ function requireProductionSecrets() {
 
 requireProductionSecrets()
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || ''
-const STRIPE_CONNECT_CLIENT_ID = process.env.STRIPE_CONNECT_CLIENT_ID || ''
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
-const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null
+/**
+ * PayPal is the only supported payment rail. Patient checkout (and provider "pay later" links) send the
+ * customer to a hosted PayPal page with the order total prefilled.
+ *
+ * Configure in your host (Render, etc.):
+ * - PAYPAL_BUSINESS_EMAIL=you@practice.com  — builds hosted "Buy Now" (cmd=_xclick) links with the amount prefilled
+ * - PAYPAL_PAY_URL=...                       — optional override: a paypal.me/<handle> link or a hosted button URL
+ */
+const PAYPAL_BUSINESS_EMAIL = (process.env.PAYPAL_BUSINESS_EMAIL || 'brett.wheatfill@gmail.com').trim()
+const PAYPAL_PAY_URL = (process.env.PAYPAL_PAY_URL || '').trim()
 
 /**
- * Stripe Connect sample integration notes
- * --------------------------------------
- * This codebase already uses Stripe for (optional) Connect payouts + Checkout.
- *
- * The routes below add a *sample* integration that demonstrates:
- * - Creating a V2 Connected Account (recipient configuration) where the platform collects fees & handles losses
- * - Onboarding via Account Links (V2)
- * - Creating platform-level Products (not on the connected account) and tagging them with the connected account id
- * - A simple “storefront” that creates destination-charge Checkout Sessions with an application fee
- * - Parsing thin webhook events for V2 accounts by first parsing the thin payload, then retrieving full event data
- *
- * IMPORTANT: Do not commit API keys. Configure these environment variables in your host (Render, etc.):
- * - STRIPE_SECRET_KEY=sk_live_...  (required)
- * - STRIPE_WEBHOOK_SECRET=whsec_... (required only if using webhooks)
- *
- * V2 account webhooks should use THIN payloads. See:
- * - https://docs.stripe.com/webhooks.md?snapshot-or-thin=thin
+ * Builds a PayPal checkout link with a prefilled USD amount for an order total.
+ * Resolution order: PAYPAL_PAY_URL override → PAYPAL_BUSINESS_EMAIL "Buy Now" link. Returns '' when unconfigured.
  */
-
-function requireStripeConfigured() {
-  if (!stripe) {
-    // Helpful runtime error when env vars are missing.
-    // Placeholder: set STRIPE_SECRET_KEY in your backend environment.
-    throw new Error('Stripe is not configured. Set STRIPE_SECRET_KEY (sk_...) in the server environment.')
+function paypalPayUrlForAmountCents(totalCents: number, itemName: string): string {
+  const n = Math.max(0, Math.round(totalCents))
+  const amountStr = (n / 100).toFixed(2)
+  const name = itemName.slice(0, 120)
+  if (PAYPAL_PAY_URL) {
+    if (/paypal\.me\//i.test(PAYPAL_PAY_URL)) {
+      const path = PAYPAL_PAY_URL.replace(/\/$/, '')
+      if (/\/\d+(\.\d+)?$/.test(path)) return path
+      return `${path}/${amountStr}`
+    }
+    try {
+      const u = new URL(PAYPAL_PAY_URL)
+      u.searchParams.set('amount', amountStr)
+      u.searchParams.set('currency_code', 'USD')
+      u.searchParams.set('item_name', name)
+      return u.toString()
+    } catch {
+      // fall through to the business-email builder
+    }
   }
-  return stripe
-}
-
-/**
- * Stripe node SDK does not always expose preview / V2 resources as first-class methods.
- * We intentionally use `stripe.request(...)` to call preview endpoints while still using a single Stripe Client.
- */
-async function stripeV2Request<T>(params: { method: 'GET' | 'POST'; path: string; body?: any; query?: any }): Promise<T> {
-  const s = requireStripeConfigured() as any
-  return (await s.request({
-    method: params.method,
-    path: params.path,
-    ...(params.body ? { body: params.body } : {}),
-    ...(params.query ? { query: params.query } : {}),
-  })) as T
+  if (PAYPAL_BUSINESS_EMAIL) {
+    const u = new URL('https://www.paypal.com/cgi-bin/webscr')
+    u.searchParams.set('cmd', '_xclick')
+    u.searchParams.set('business', PAYPAL_BUSINESS_EMAIL)
+    u.searchParams.set('amount', amountStr)
+    u.searchParams.set('currency_code', 'USD')
+    u.searchParams.set('item_name', name)
+    u.searchParams.set('no_shipping', '2')
+    return u.toString()
+  }
+  return ''
 }
 
 const PROVIDER_PRACTITIONER_ID = process.env.PROVIDER_PRACTITIONER_ID || ''
@@ -375,7 +372,7 @@ async function prismaUserForStaffLogin(identifier: string): Promise<{ user: User
 }
 
 /**
- * Provider JWT `sub` must stay a Prisma `User.id` — the rest of the API keys orders, Stripe, audit by Prisma id.
+ * Provider JWT `sub` must stay a Prisma `User.id` — the rest of the API keys orders, payments, audit by Prisma id.
  * Link Supabase Auth users into Prisma on first successful login (or attach `supabaseAuthUserId` to an existing row).
  */
 async function ensurePrismaUserForSupabaseProvider(prof: ProviderProfile, supabaseUserId: string) {
@@ -535,9 +532,6 @@ const app = Fastify({
   trustProxy: TRUST_PROXY_ENABLED,
 })
 
-// Periodically clean up abandoned Stripe checkouts so admin views stay tidy.
-const stopPaymentCleanup = startPaymentCleanup(app.log)
-
 await app.register(cookie)
 await app.register(helmet, {
   global: true,
@@ -567,7 +561,7 @@ await app.register(cors, {
   credentials: true,
   // Ensure browser preflight for DELETE / PATCH to team inbox, provider routes, etc.
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-  allowedHeaders: ['content-type', 'authorization', 'x-requested-with', 'x-wph-client', 'stripe-signature'],
+  allowedHeaders: ['content-type', 'authorization', 'x-requested-with', 'x-wph-client'],
 })
 await app.register(sensible)
 await app.register(jwt, {
@@ -621,121 +615,6 @@ app.post('/v1/public/contact', async (req, reply) => {
     },
   })
   return { ok: true, id: created.id }
-})
-
-// Public checkout (no patient sign-in): create a Stripe Checkout session for the cart total.
-// Does not create an Order row (no PHI / address persistence); creates a Payment row so webhooks can reconcile.
-const PublicPharmacyCheckoutBody = z.object({
-  partnerSlug: z.string().min(1).max(80),
-  items: z
-    .array(
-      z.object({
-        sku: z.string().min(1).max(120),
-        quantity: z.number().int().min(1).max(99),
-      }),
-    )
-    .min(1)
-    .max(50),
-  shippingInsurance: z.boolean().optional().default(false),
-})
-
-app.post('/v1/public/pharmacy/checkout', async (req, reply) => {
-  const body = PublicPharmacyCheckoutBody.parse(req.body)
-
-  const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
-  if (!partner) return reply.notFound('Pharmacy not found.')
-
-  const provider = await prisma.user.findFirst({ where: { role: 'provider', deletedAt: null } })
-  if (!provider) return reply.internalServerError('No provider configured.')
-
-  const providerRow = await prisma.user.findUnique({
-    where: { id: provider.id },
-    select: { stripeConnectedAccountId: true },
-  })
-
-  if (!stripe) return reply.badRequest('Stripe is not configured.')
-
-  const products = await prisma.pharmacyProduct.findMany({
-    where: { partnerId: partner.id, isActive: true, sku: { in: body.items.map((i) => i.sku) } },
-    select: { sku: true, name: true, priceCents: true, currency: true },
-  })
-  const bySku = new Map(products.map((p) => [p.sku, p]))
-  for (const it of body.items) {
-    if (!bySku.has(it.sku)) return reply.badRequest(`Invalid item sku: ${it.sku}`)
-  }
-
-  const subtotal = body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0)
-  const shippingCents = shippingCentsForPartnerSlug(partner.slug)
-  const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
-
-  const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-  const successUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?paid=1`
-  const cancelUrl = `${origin.replace(/\/$/, '')}/order-now/${partner.slug}/summary?canceled=1`
-
-  const sessionCreateParams = {
-    mode: 'payment' as const,
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    line_items: [
-      ...body.items.map((it) => {
-        const p = bySku.get(it.sku)!
-        return {
-          price_data: {
-            currency: (p.currency || 'usd').toLowerCase(),
-            unit_amount: p.priceCents,
-            product_data: { name: p.name, metadata: { sku: p.sku, partner: partner.slug } },
-          },
-          quantity: it.quantity,
-        }
-      }),
-      ...(shippingInsuranceCents
-        ? [
-            {
-              price_data: {
-                currency: 'usd',
-                unit_amount: shippingInsuranceCents,
-                product_data: { name: 'Shipping insurance' },
-              },
-              quantity: 1,
-            },
-          ]
-        : []),
-      ...(shippingCents
-        ? [
-            {
-              price_data: {
-                currency: 'usd',
-                unit_amount: shippingCents,
-                product_data: { name: 'Shipping' },
-              },
-              quantity: 1,
-            },
-          ]
-        : []),
-    ],
-    metadata: { partnerSlug: partner.slug, kind: 'public_catalog_checkout' },
-  }
-  const session = providerRow?.stripeConnectedAccountId
-    ? await stripe.checkout.sessions.create(sessionCreateParams, { stripeAccount: providerRow.stripeConnectedAccountId })
-    : await stripe.checkout.sessions.create(sessionCreateParams)
-
-  const totalCents = subtotal + shippingCents + shippingInsuranceCents
-  const primaryCurrency = (bySku.get(body.items[0]!.sku)?.currency || 'usd').toLowerCase()
-  await prisma.payment.create({
-    data: {
-      method: 'stripe',
-      status: 'pending',
-      amountCents: totalCents,
-      currency: primaryCurrency,
-      itemType: 'other',
-      patientId: null,
-      providerId: provider.id,
-      stripeCheckoutSessionId: session.id,
-      p2pMemo: `public_catalog:${partner.slug}`,
-    },
-  })
-
-  return { ok: true, checkoutUrl: session.url }
 })
 
 const GUEST_USER_PREFIX = 'guest_'
@@ -816,7 +695,6 @@ async function getOrCreateGuestPharmacyPatient(input: {
 
 const PublicPharmacyOrderBody = CreatePharmacyOrderBody.extend({
   contactEmail: z.string().email(),
-  uiMode: z.enum(['redirect', 'embedded']).optional(),
 })
 
 const PublicPharmacyOrderRequestBody = CreatePharmacyOrderBody.extend({
@@ -842,7 +720,7 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
       .send('Too many order submissions from this network. Try again later.')
   }
   const raw = PublicPharmacyOrderBody.parse(req.body)
-  const { contactEmail, uiMode, ...rest } = raw
+  const { contactEmail, ...rest } = raw
   const body = CreatePharmacyOrderBody.parse(rest)
   if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
   if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
@@ -862,20 +740,12 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
     body,
     patient: guest,
     guestContactEmail: contactEmail.trim(),
-    stripe,
-    frontendOrigin: FRONTEND_ORIGIN,
-    uiMode: uiMode || 'redirect',
   })
   if (!r.ok) return reply.status(r.status).send(r.message)
-  return {
-    orderId: r.orderId,
-    totalCents: r.totalCents,
-    checkoutUrl: r.checkoutUrl,
-    checkoutClientSecret: r.checkoutClientSecret || null,
-  }
+  return { orderId: r.orderId, totalCents: r.totalCents }
 })
 
-// Public: submit a pharmacy + consult request for provider review (NO Stripe checkout).
+// Public: submit a pharmacy + consult request for provider review (NO payment checkout).
 app.post('/v1/public/orders/pharmacy/request', async (req, reply) => {
   const lim = rateLimitHit(`pubordreq:${reqIp(req) || 'unknown'}`, 20, 3_600_000)
   if (!lim.ok) {
@@ -1095,16 +965,6 @@ app.patch(
     return { item: row }
   },
 )
-
-await registerBillingWebhookRoutes(app, {
-  prisma,
-  stripe,
-  STRIPE_WEBHOOK_SECRET,
-  writeAudit,
-  reqIp,
-  stripeV2Request,
-  log: app.log,
-})
 
 const SignupBody = z.object({
   role: z.enum(['patient', 'provider']),
@@ -1380,11 +1240,6 @@ await app.register(async (protectedScope) => {
           role: true,
           username: true,
           displayName: true,
-          stripeConnectedAccountId: true,
-          stripeChargesEnabled: true,
-          stripePayoutsEnabled: true,
-          stripeOnboardingStatus: true,
-          activePaymentProvider: true,
           createdAt: true,
         },
       })
@@ -1555,150 +1410,11 @@ await app.register(async (protectedScope) => {
     },
   )
 
-  // Provider: Stripe Connect + Hosted Checkout
-  protectedScope.get(
-    '/v1/provider/payments',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req) => {
-      const u = await prisma.user.findUnique({
-        where: { id: req.user.sub },
-        select: {
-          activePaymentProvider: true,
-          stripeConnectedAccountId: true,
-          stripeChargesEnabled: true,
-          stripePayoutsEnabled: true,
-          stripeOnboardingStatus: true,
-        },
-      })
-      const stripeConnected = Boolean(u?.stripeConnectedAccountId)
-      return {
-        activeProvider: u?.activePaymentProvider === 'stripe' ? 'stripe' : null,
-        stripe: {
-          available: Boolean(stripe && STRIPE_CONNECT_CLIENT_ID),
-          connected: stripeConnected,
-          accountId: u?.stripeConnectedAccountId || null,
-          onboardingStatus: u?.stripeOnboardingStatus || null,
-          chargesEnabled: Boolean(u?.stripeChargesEnabled),
-          payoutsEnabled: Boolean(u?.stripePayoutsEnabled),
-        },
-      }
-    },
-  )
-
-  // Provider: create a $1 test Checkout link (no Stripe product required).
+  // Provider: create a PayPal payment link for an existing Order (pay later requests).
   protectedScope.post(
-    '/v1/provider/payments/stripe/test-checkout',
+    '/v1/provider/orders/:id/paypal-checkout',
     { preHandler: requireRole(['provider', 'admin']) },
     async (req, reply) => {
-      if (!stripe) return reply.badRequest('Stripe is not configured. Set STRIPE_SECRET_KEY.')
-      const u = await prisma.user.findUnique({
-        where: { id: req.user.sub },
-        select: { stripeConnectedAccountId: true },
-      })
-      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const successUrl = `${origin.replace(/\/$/, '')}/provider/payments?testCheckout=paid`
-      const cancelUrl = `${origin.replace(/\/$/, '')}/provider/payments?testCheckout=canceled`
-      const params = {
-        mode: 'payment' as const,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              unit_amount: 100,
-              product_data: { name: 'WPH test charge ($1)' },
-            },
-            quantity: 1,
-          },
-        ],
-        metadata: { kind: 'provider_test_checkout', createdBy: req.user.sub },
-      }
-      const session = u?.stripeConnectedAccountId
-        ? await stripe.checkout.sessions.create(params as any, { stripeAccount: u.stripeConnectedAccountId })
-        : await stripe.checkout.sessions.create(params as any)
-      return { url: session.url }
-    },
-  )
-
-  // Provider: create a custom amount payment request (Hosted Checkout link to share with a patient).
-  protectedScope.post(
-    '/v1/provider/payments/stripe/payment-request',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!stripe) return reply.badRequest('Stripe is not configured. Set STRIPE_SECRET_KEY.')
-      const body = z
-        .object({
-          amountCents: z.number().int().min(50).max(10_000_000),
-          currency: z.string().min(3).max(3).optional().default('usd'),
-          description: z.string().min(2).max(140),
-          patientEmail: z.string().email().max(200).optional().default(''),
-        })
-        .parse((req as any).body)
-
-      const u = await prisma.user.findUnique({
-        where: { id: req.user.sub },
-        select: { stripeConnectedAccountId: true },
-      })
-      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const successUrl = `${origin.replace(/\/$/, '')}/provider/payments?request=paid`
-      const cancelUrl = `${origin.replace(/\/$/, '')}/provider/payments?request=canceled`
-
-      const params: any = {
-        mode: 'payment' as const,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        line_items: [
-          {
-            price_data: {
-              currency: (body.currency || 'usd').toLowerCase(),
-              unit_amount: body.amountCents,
-              product_data: {
-                name: body.description,
-                metadata: { kind: 'provider_payment_request' },
-              },
-            },
-            quantity: 1,
-          },
-        ],
-        metadata: {
-          kind: 'provider_payment_request',
-          createdBy: req.user.sub,
-          ...(body.patientEmail ? { patientEmail: body.patientEmail.trim().toLowerCase() } : {}),
-        },
-        ...(body.patientEmail ? { customer_email: body.patientEmail.trim().toLowerCase() } : {}),
-      }
-
-      const session = u?.stripeConnectedAccountId
-        ? await stripe.checkout.sessions.create(params, { stripeAccount: u.stripeConnectedAccountId })
-        : await stripe.checkout.sessions.create(params)
-
-      const payment = await prisma.payment.create({
-        data: {
-          method: 'stripe',
-          status: 'pending',
-          amountCents: body.amountCents,
-          currency: (body.currency || 'usd').toLowerCase(),
-          itemType: 'other',
-          itemId: null,
-          patientId: null,
-          providerId: req.user.sub,
-          stripeCheckoutSessionId: session.id,
-          p2pMemo: `${body.description}${body.patientEmail ? ` (${body.patientEmail.trim().toLowerCase()})` : ''}`,
-        },
-        select: { id: true },
-      })
-
-      return { ok: true, url: session.url, paymentId: payment.id }
-    },
-  )
-
-  // Provider: create a Stripe Checkout link for an existing Order (pay later requests).
-  protectedScope.post(
-    '/v1/provider/orders/:id/stripe/checkout',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!stripe) return reply.badRequest('Stripe is not configured. Set STRIPE_SECRET_KEY.')
       const orderId = String((req.params as any).id || '').trim()
       if (!orderId) return reply.badRequest('Missing order id.')
 
@@ -1707,57 +1423,24 @@ await app.register(async (protectedScope) => {
         include: {
           items: true,
           patient: { select: { id: true, displayName: true, email: true } },
-          provider: { select: { id: true, stripeConnectedAccountId: true } },
         },
       })
       if (!order || order.deletedAt) return reply.notFound('Order not found.')
-
-      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const successUrl = `${origin.replace(/\/$/, '')}/provider/orders?paid=1&order=${encodeURIComponent(order.id)}`
-      const cancelUrl = `${origin.replace(/\/$/, '')}/provider/orders?canceled=1&order=${encodeURIComponent(order.id)}`
-
-      const lineItems: any[] = order.items.map((it) => ({
-        price_data: {
-          currency: 'usd',
-          unit_amount: it.unitPriceCents,
-          product_data: { name: it.name, metadata: { sku: it.productSku, partner: it.partnerSlug, orderId: order.id } },
-        },
-        quantity: it.quantity,
-      }))
-      if (order.shippingInsuranceCents > 0) {
-        lineItems.push({
-          price_data: { currency: 'usd', unit_amount: order.shippingInsuranceCents, product_data: { name: 'Shipping insurance' } },
-          quantity: 1,
-        })
-      }
-      if (order.shippingCents > 0) {
-        lineItems.push({
-          price_data: { currency: 'usd', unit_amount: order.shippingCents, product_data: { name: 'Shipping' } },
-          quantity: 1,
-        })
-      }
 
       const totalCents =
         order.items.reduce((sum, it) => sum + it.unitPriceCents * it.quantity, 0) +
         (order.shippingCents || 0) +
         (order.shippingInsuranceCents || 0)
 
-      const params: any = {
-        mode: 'payment' as const,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        line_items: lineItems,
-        metadata: { kind: 'provider_order_checkout', orderId: order.id, patientId: order.patientId },
-        ...(order.patient?.email ? { customer_email: order.patient.email } : {}),
+      const itemSummary = order.items.map((it) => `${it.name} (x${it.quantity})`).join(', ')
+      const url = paypalPayUrlForAmountCents(totalCents, `Order ${order.id} — ${itemSummary}`)
+      if (!url) {
+        return reply.badRequest('PayPal is not configured. Set PAYPAL_BUSINESS_EMAIL (or PAYPAL_PAY_URL).')
       }
-
-      const session = order.provider?.stripeConnectedAccountId
-        ? await stripe.checkout.sessions.create(params, { stripeAccount: order.provider.stripeConnectedAccountId })
-        : await stripe.checkout.sessions.create(params)
 
       const payment = await prisma.payment.create({
         data: {
-          method: 'stripe',
+          method: 'paypal',
           status: 'pending',
           amountCents: totalCents,
           currency: 'usd',
@@ -1766,403 +1449,12 @@ await app.register(async (protectedScope) => {
           orderId: order.id,
           patientId: order.patientId,
           providerId: order.providerId,
-          stripeCheckoutSessionId: session.id,
           p2pMemo: `order:${order.id}`,
         },
         select: { id: true },
       })
 
-      return { ok: true, url: session.url, paymentId: payment.id, totalCents }
-    },
-  )
-
-  /**
-   * Stripe Connect DEMO (sample integration)
-   * ---------------------------------------
-   * These endpoints intentionally keep state minimal:
-   * - Connected account id is stored on the provider User row (stripeConnectedAccountId)
-   * - Product→connected-account mapping is stored in Stripe Product metadata (connected_account_id)
-   *
-   * This is a demo scaffolding to help you wire your own user model + marketplace flows.
-   */
-
-  protectedScope.post(
-    '/v1/stripe-connect-demo/accounts',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
-
-      const body = z
-        .object({
-          displayName: z.string().min(2).max(120),
-          contactEmail: z.string().email().max(200),
-        })
-        .parse((req as any).body)
-
-      // Create a V2 Connected Account. Per requirements: only pass the allowed properties (no top-level `type`).
-      const account = await stripeV2Request<any>({
-        method: 'POST',
-        path: '/v2/core/accounts',
-        body: {
-          display_name: body.displayName,
-          contact_email: body.contactEmail,
-          identity: { country: 'us' },
-          dashboard: 'express',
-          defaults: {
-            responsibilities: {
-              fees_collector: 'application',
-              losses_collector: 'application',
-            },
-          },
-          configuration: {
-            recipient: {
-              capabilities: {
-                stripe_balance: {
-                  stripe_transfers: {
-                    requested: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      })
-
-      // Store mapping from this provider user → connected account id.
-      await prisma.user.update({
-        where: { id: req.user.sub },
-        data: { stripeConnectedAccountId: String(account.id || '') },
-      })
-
-      return { ok: true, accountId: account.id }
-    },
-  )
-
-  protectedScope.get(
-    '/v1/stripe-connect-demo/account',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
-
-      const user = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { stripeConnectedAccountId: true } })
-      const accountId = user?.stripeConnectedAccountId || ''
-      if (!accountId) return reply.notFound('No connected account yet. Create one first.')
-
-      // Always fetch live status from the API (do not store requirements state in DB for this demo).
-      const account = await stripeV2Request<any>({
-        method: 'GET',
-        path: `/v2/core/accounts/${encodeURIComponent(accountId)}`,
-        query: { include: ['configuration.recipient', 'requirements'] },
-      })
-
-      const readyToReceivePayments =
-        account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === 'active'
-      const requirementsStatus = account?.requirements?.summary?.minimum_deadline?.status
-      const onboardingComplete = requirementsStatus !== 'currently_due' && requirementsStatus !== 'past_due'
-
-      return {
-        ok: true,
-        accountId,
-        readyToReceivePayments: Boolean(readyToReceivePayments),
-        onboardingComplete: Boolean(onboardingComplete),
-        requirementsStatus: requirementsStatus || null,
-        account,
-      }
-    },
-  )
-
-  protectedScope.post(
-    '/v1/stripe-connect-demo/account-link',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
-
-      const user = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { stripeConnectedAccountId: true } })
-      const accountId = user?.stripeConnectedAccountId || ''
-      if (!accountId) return reply.notFound('No connected account yet. Create one first.')
-
-      // Create a V2 account link for onboarding to collect payments.
-      // Placeholder: In production, use your real domain(s) for refresh/return.
-      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const refreshUrl = `${origin.replace(/\/$/, '')}/provider/connect-demo?refresh=1`
-      const returnUrl = `${origin.replace(/\/$/, '')}/provider/connect-demo?return=1`
-
-      const accountLink = await stripeV2Request<any>({
-        method: 'POST',
-        path: '/v2/core/account_links',
-        body: {
-          account: accountId,
-          use_case: {
-            type: 'account_onboarding',
-            account_onboarding: {
-              configurations: ['recipient'],
-              refresh_url: refreshUrl,
-              return_url: `${returnUrl}&accountId=${encodeURIComponent(accountId)}`,
-            },
-          },
-        },
-      })
-
-      return { ok: true, url: accountLink?.url }
-    },
-  )
-
-  protectedScope.get(
-    '/v1/stripe-connect-demo/accounts',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async () => {
-      // Demo: list “sellers” as users in the local DB that have a connected account id.
-      const users = await prisma.user.findMany({
-        where: { stripeConnectedAccountId: { not: null } },
-        select: { id: true, displayName: true, username: true, stripeConnectedAccountId: true },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      })
-      return {
-        ok: true,
-        accounts: users
-          .map((u) => ({
-            userId: u.id,
-            label: u.displayName || u.username,
-            accountId: u.stripeConnectedAccountId,
-          }))
-          .filter((x) => Boolean(x.accountId)),
-      }
-    },
-  )
-
-  protectedScope.post(
-    '/v1/stripe-connect-demo/products',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!STRIPE_SECRET_KEY) return reply.badRequest('Missing STRIPE_SECRET_KEY. (Set sk_... in backend env vars.)')
-      const body = z
-        .object({
-          connectedAccountId: z.string().min(3).max(120),
-          name: z.string().min(2).max(120),
-          description: z.string().max(500).optional().default(''),
-          priceInCents: z.number().int().min(50).max(10_000_000),
-          currency: z.string().min(3).max(3).default('usd'),
-        })
-        .parse((req as any).body)
-
-      // Create product at the PLATFORM level (not on a connected account).
-      // Store the mapping to the connected account in metadata.
-      const s = requireStripeConfigured()
-      const product = await s.products.create({
-        name: body.name,
-        description: body.description || undefined,
-        default_price_data: {
-          unit_amount: body.priceInCents,
-          currency: body.currency.toLowerCase(),
-        },
-        metadata: {
-          connected_account_id: body.connectedAccountId,
-        },
-      })
-      return { ok: true, productId: product.id }
-    },
-  )
-
-  // Public storefront: list platform products + connected accounts they map to.
-  app.get('/v1/stripe-connect-demo/storefront', async (req, reply) => {
-    if (!STRIPE_SECRET_KEY) return reply.badRequest('Storefront is not configured. Set STRIPE_SECRET_KEY (sk_...).')
-    const s = requireStripeConfigured()
-    const products = await s.products.list({ limit: 100, expand: ['data.default_price'] } as any)
-    const accounts = await prisma.user.findMany({
-      where: { stripeConnectedAccountId: { not: null } },
-      select: { displayName: true, username: true, stripeConnectedAccountId: true },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    })
-    return {
-      ok: true,
-      connectedAccounts: accounts
-        .map((u) => ({
-          label: u.displayName || u.username,
-          accountId: u.stripeConnectedAccountId,
-        }))
-        .filter((x) => Boolean(x.accountId)),
-      products: (products.data || []).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        currency: p.default_price?.currency || null,
-        unitAmount: p.default_price?.unit_amount || null,
-        connectedAccountId: p.metadata?.connected_account_id || null,
-      })),
-    }
-  })
-
-  // Public storefront: start a hosted Checkout session using a destination charge + application fee.
-  app.post('/v1/stripe-connect-demo/checkout', async (req, reply) => {
-    if (!STRIPE_SECRET_KEY) return reply.badRequest('Checkout is not configured. Set STRIPE_SECRET_KEY (sk_...).')
-    const s = requireStripeConfigured()
-
-    const body = z
-      .object({
-        productId: z.string().min(3).max(120),
-        quantity: z.number().int().min(1).max(10).default(1),
-      })
-      .parse((req as any).body)
-
-    const product = await s.products.retrieve(body.productId, { expand: ['default_price'] } as any)
-    const price = (product as any).default_price
-    if (!price?.unit_amount || !price?.currency) return reply.badRequest('Product has no default price.')
-
-    const connectedAccountId = (product as any).metadata?.connected_account_id || ''
-    if (!connectedAccountId) return reply.badRequest('Product is not mapped to a connected account.')
-
-    // Simple platform fee: 8% of the line item total (demo).
-    const lineTotal = Number(price.unit_amount) * body.quantity
-    const applicationFeeAmount = Math.max(0, Math.round(lineTotal * 0.08))
-
-    const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-    const successUrl = `${origin.replace(/\/$/, '')}/storefront/success?session_id={CHECKOUT_SESSION_ID}`
-    const cancelUrl = `${origin.replace(/\/$/, '')}/storefront?canceled=1`
-
-    const session = await s.checkout.sessions.create({
-      line_items: [
-        {
-          price_data: {
-            currency: String(price.currency),
-            unit_amount: Number(price.unit_amount),
-            product_data: { name: product.name, description: product.description || undefined, metadata: { productId: product.id } },
-          },
-          quantity: body.quantity,
-        },
-      ],
-      payment_intent_data: {
-        application_fee_amount: applicationFeeAmount,
-        transfer_data: {
-          destination: connectedAccountId,
-        },
-      },
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    })
-
-    return { ok: true, url: session.url }
-  })
-
-  const SetActivePaymentBody = z.object({
-    provider: z.literal('stripe'),
-  })
-  protectedScope.patch(
-    '/v1/provider/payments/active',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      SetActivePaymentBody.parse(req.body)
-      const u = await prisma.user.findUnique({
-        where: { id: req.user.sub },
-        select: {
-          stripeConnectedAccountId: true,
-        },
-      })
-      const stripeOk = Boolean(u?.stripeConnectedAccountId)
-      if (!stripeOk) return reply.badRequest('Stripe is not connected yet.')
-      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
-      const after = await prisma.user.update({ where: { id: req.user.sub }, data: { activePaymentProvider: 'stripe' } })
-      await writeAudit({
-        actorId: req.user.sub,
-        entityType: 'user',
-        entityId: req.user.sub,
-        action: 'provider_payment_provider_set_active',
-        before,
-        after,
-        ip: reqIp(req),
-      })
-      return { ok: true, activeProvider: 'stripe' as const }
-    },
-  )
-
-  protectedScope.post(
-    '/v1/provider/payments/stripe/onboard',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!stripe || !STRIPE_CONNECT_CLIENT_ID) return reply.badRequest('Stripe Connect not configured.')
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.sub },
-        select: { stripeConnectedAccountId: true },
-      })
-      const accountId =
-        user?.stripeConnectedAccountId ||
-        (
-          await stripe.accounts.create({
-            type: 'express',
-            metadata: { providerUserId: req.user.sub },
-          })
-        ).id
-      if (!user?.stripeConnectedAccountId) {
-        await prisma.user.update({
-          where: { id: req.user.sub },
-          data: {
-            stripeConnectedAccountId: accountId,
-            stripeOnboardingStatus: 'pending',
-            stripeChargesEnabled: false,
-            stripePayoutsEnabled: false,
-          },
-        })
-      }
-      const origin = FRONTEND_ORIGIN.split(',')[0]?.trim() || 'http://localhost:5176'
-      const returnUrl = `${origin.replace(/\/$/, '')}/provider/payments?stripe=return`
-      const refreshUrl = `${origin.replace(/\/$/, '')}/provider/payments?stripe=refresh`
-      const link = await stripe.accountLinks.create({
-        account: accountId,
-        type: 'account_onboarding',
-        return_url: returnUrl,
-        refresh_url: refreshUrl,
-      })
-      return { url: link.url, accountId }
-    },
-  )
-
-  protectedScope.post(
-    '/v1/provider/payments/stripe/refresh',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req, reply) => {
-      if (!stripe) return reply.badRequest('Stripe not configured.')
-      const user = await prisma.user.findUnique({ where: { id: req.user.sub }, select: { stripeConnectedAccountId: true } })
-      if (!user?.stripeConnectedAccountId) return reply.badRequest('Stripe is not connected yet.')
-      const acct = await stripe.accounts.retrieve(user.stripeConnectedAccountId)
-      await prisma.user.update({
-        where: { id: req.user.sub },
-        data: {
-          stripeChargesEnabled: Boolean((acct as any).charges_enabled),
-          stripePayoutsEnabled: Boolean((acct as any).payouts_enabled),
-          stripeOnboardingStatus: (acct as any).details_submitted ? 'complete' : 'pending',
-        },
-      })
-      return { ok: true }
-    },
-  )
-
-  protectedScope.post(
-    '/v1/provider/payments/stripe/disconnect',
-    { preHandler: requireRole(['provider', 'admin']) },
-    async (req) => {
-      const before = await prisma.user.findUnique({ where: { id: req.user.sub } })
-      const after = await prisma.user.update({
-        where: { id: req.user.sub },
-        data: {
-          stripeConnectedAccountId: null,
-          stripeOnboardingStatus: null,
-          stripeChargesEnabled: false,
-          stripePayoutsEnabled: false,
-          ...(before?.activePaymentProvider === 'stripe' ? { activePaymentProvider: null } : {}),
-        },
-      })
-      await writeAudit({
-        actorId: req.user.sub,
-        entityType: 'user',
-        entityId: req.user.sub,
-        action: 'provider_stripe_disconnected',
-        before,
-        after,
-        ip: reqIp(req),
-      })
-      return { ok: true }
+      return { ok: true, url, paymentId: payment.id, totalCents }
     },
   )
 
@@ -2818,9 +2110,7 @@ await app.register(async (protectedScope) => {
     '/v1/patient/orders/pharmacy',
     { preHandler: requireRole(['patient']) },
     async (req, reply) => {
-      const body = CreatePharmacyOrderBody.extend({ uiMode: z.enum(['redirect', 'embedded']).optional() }).parse(
-        req.body,
-      )
+      const body = CreatePharmacyOrderBody.parse(req.body)
       if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
 
       const patient = (await prisma.user.findUnique({
@@ -2841,20 +2131,9 @@ await app.register(async (protectedScope) => {
       })) as PharmacyPatientForOrder | null
       if (!patient) return reply.unauthorized('Invalid user.')
 
-      const r = await runPharmacyOrderCheckout({
-        body: CreatePharmacyOrderBody.parse(body),
-        patient,
-        stripe,
-        frontendOrigin: FRONTEND_ORIGIN,
-        uiMode: body.uiMode || 'redirect',
-      })
+      const r = await runPharmacyOrderCheckout({ body, patient })
       if (!r.ok) return reply.status(r.status).send(r.message)
-      return {
-        orderId: r.orderId,
-        totalCents: r.totalCents,
-        checkoutUrl: r.checkoutUrl,
-        checkoutClientSecret: r.checkoutClientSecret || null,
-      }
+      return { orderId: r.orderId, totalCents: r.totalCents }
     },
   )
 })
@@ -2865,6 +2144,4 @@ app.log.info(
   'wph API ready (trustProxy affects req.ip / rate-limit keys behind proxies)',
 )
 
-process.on('SIGTERM', () => stopPaymentCleanup())
-process.on('SIGINT', () => stopPaymentCleanup())
 

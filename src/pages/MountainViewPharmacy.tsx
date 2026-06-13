@@ -78,7 +78,7 @@ export default function MountainViewPharmacy() {
         </div>
         <p className="muted" style={{ fontSize: 14, marginTop: 10, marginBottom: 0, maxWidth: 720 }}>
           Use the <strong>bag in the site header</strong> to open your cart—same list as the full catalog. Prices mirror
-          a typical posted menu. Your care team confirms the amount before you pay via Stripe.
+          a typical posted menu. Your care team confirms the amount before you pay via PayPal.
         </p>
         {cartCount > 0 ? (
           <p className="muted" style={{ fontSize: 14, marginTop: 8, marginBottom: 0, maxWidth: 720 }} aria-live="polite">

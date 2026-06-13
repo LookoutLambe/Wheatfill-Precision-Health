@@ -263,6 +263,29 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
   return readResponseBody<T>(res)
 }
 
+/**
+ * Fire-and-forget POST that survives a page navigation (uses `keepalive`), so the request still
+ * completes after we redirect the tab (e.g. handing off to PayPal). Never awaits, never throws.
+ */
+export function apiPostBeacon(path: string, body: unknown, token?: string): void {
+  try {
+    const t = token ?? getToken()
+    void fetch(`${getApiUrl()}${path}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-wph-client': WPH_BROWSER_CLIENT,
+        ...(t ? { authorization: `Bearer ${t}` } : {}),
+      },
+      credentials: 'include',
+      body: JSON.stringify(body),
+      keepalive: true,
+    }).catch(() => {})
+  } catch {
+    // ignore — payment hand-off must not depend on this request
+  }
+}
+
 export async function apiPatch<T>(path: string, body: unknown, token?: string): Promise<T> {
   const t = token ?? getToken()
   let res: Response

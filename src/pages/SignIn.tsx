@@ -27,7 +27,7 @@ export default function SignIn() {
         </p>
         <div className="divider" />
         <p className="muted" style={{ margin: 0 }}>
-          Patients can browse and complete payment through <strong>Stripe Checkout</strong> when a checkout link is provided.
+          Patients can browse and complete payment through <strong>PayPal</strong> when a checkout link is provided.
         </p>
       </section>
     </Page>
