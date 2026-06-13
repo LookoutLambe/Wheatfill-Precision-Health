@@ -1438,23 +1438,75 @@ await app.register(async (protectedScope) => {
         return reply.badRequest('PayPal is not configured. Set PAYPAL_BUSINESS_EMAIL (or PAYPAL_PAY_URL).')
       }
 
-      const payment = await prisma.payment.create({
-        data: {
-          method: 'paypal',
-          status: 'pending',
-          amountCents: totalCents,
-          currency: 'usd',
-          itemType: 'order',
-          itemId: order.id,
-          orderId: order.id,
-          patientId: order.patientId,
-          providerId: order.providerId,
-          p2pMemo: `order:${order.id}`,
-        },
-        select: { id: true },
-      })
+      // Record best-effort so an un-migrated payments table can't block the link.
+      let paymentId: string | null = null
+      try {
+        const payment = await prisma.payment.create({
+          data: {
+            method: 'paypal',
+            status: 'pending',
+            amountCents: totalCents,
+            currency: 'usd',
+            itemType: 'order',
+            itemId: order.id,
+            orderId: order.id,
+            patientId: order.patientId,
+            providerId: order.providerId,
+            p2pMemo: `order:${order.id}`,
+          },
+          select: { id: true },
+        })
+        paymentId = payment.id
+      } catch (e) {
+        req.log.warn({ err: e }, 'paypal order checkout: could not record Payment row')
+      }
 
-      return { ok: true, url, paymentId: payment.id, totalCents }
+      return { ok: true, url, paymentId, totalCents }
+    },
+  )
+
+  // Provider: create a custom-amount PayPal payment link (a "bill" to send to a patient).
+  protectedScope.post(
+    '/v1/provider/payments/paypal/payment-request',
+    { preHandler: requireRole(['provider', 'admin']) },
+    async (req, reply) => {
+      const body = z
+        .object({
+          amountCents: z.number().int().min(50).max(10_000_000),
+          description: z.string().min(2).max(140),
+          patientEmail: z.string().email().max(200).optional().default(''),
+        })
+        .parse((req as any).body)
+
+      const url = paypalPayUrlForAmountCents(body.amountCents, body.description)
+      if (!url) {
+        return reply.badRequest('PayPal is not configured. Set PAYPAL_BUSINESS_EMAIL (or PAYPAL_PAY_URL).')
+      }
+
+      // Record the bill best-effort — generating/returning the link must not fail if the payments table
+      // isn't migrated yet. The provider still gets a usable PayPal link.
+      let paymentId: string | null = null
+      try {
+        const payment = await prisma.payment.create({
+          data: {
+            method: 'paypal',
+            status: 'pending',
+            amountCents: body.amountCents,
+            currency: 'usd',
+            itemType: 'other',
+            itemId: null,
+            patientId: null,
+            providerId: req.user.sub,
+            p2pMemo: `${body.description}${body.patientEmail ? ` (${body.patientEmail.trim().toLowerCase()})` : ''}`,
+          },
+          select: { id: true },
+        })
+        paymentId = payment.id
+      } catch (e) {
+        req.log.warn({ err: e }, 'paypal payment-request: could not record Payment row')
+      }
+
+      return { ok: true, url, paymentId }
     },
   )
 
