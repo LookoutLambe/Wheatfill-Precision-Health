@@ -43,6 +43,13 @@ function offlinePartnerForSlug(slug: string): PartnerResp['partner'] | null {
   return null
 }
 
+/** Consultation fees added to the checkout total when a visit type is selected (matches the Pricing page). */
+const CONSULT_FEE_CENTS: Record<'none' | 'new_patient' | 'follow_up', number> = {
+  none: 0,
+  new_patient: 11000, // New patient / initial consultation — $110
+  follow_up: 8500, // Follow-up visit — $85
+}
+
 export default function OrderNowSummary() {
   const { slug = '' } = useParams()
   const isPrimaryCatalog = slug === DEFAULT_CATALOG_PARTNER_SLUG
@@ -127,7 +134,14 @@ export default function OrderNowSummary() {
   )
   const insuranceCents = useMemo(() => (insurance ? Math.round(subtotal * 0.02) : 0), [insurance, subtotal])
   const shippingCents = slug === 'hallandale' ? 2500 : 0
-  const total = subtotal + insuranceCents + shippingCents
+  const consultFeeCents = CONSULT_FEE_CENTS[consultType]
+  const consultFeeLabel =
+    consultType === 'new_patient'
+      ? 'New patient consultation'
+      : consultType === 'follow_up'
+        ? 'Follow-up consultation'
+        : ''
+  const total = subtotal + insuranceCents + shippingCents + consultFeeCents
 
   const onCheckout = () => {
     setCheckoutError(null)
@@ -153,8 +167,9 @@ export default function OrderNowSummary() {
       return
     }
 
-    // Build the PayPal checkout link with the prefilled total.
-    const payUrl = catalogPayUrlForOrderTotalCents(total, itemsSummaryText)
+    // Build the PayPal checkout link with the prefilled total (consult fee included in `total`).
+    const payLineSummary = consultFeeLabel ? `${itemsSummaryText} + ${consultFeeLabel}` : itemsSummaryText
+    const payUrl = catalogPayUrlForOrderTotalCents(total, payLineSummary)
     if (!payUrl) {
       setCheckoutError('Online payment is unavailable right now. Please contact the office to complete your order.')
       return
@@ -502,12 +517,12 @@ export default function OrderNowSummary() {
 
                 <label style={{ display: 'block', marginTop: 12 }}>
                   <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                    Visit type (optional)
+                    Visit type (adds the consult fee to your total)
                   </div>
                   <select className="select" value={consultType} onChange={(e) => setConsultType(e.target.value as any)}>
                     <option value="none">Medication only</option>
-                    <option value="new_patient">New patient + medication</option>
-                    <option value="follow_up">Follow-up + medication</option>
+                    <option value="new_patient">New patient + medication (+$110)</option>
+                    <option value="follow_up">Follow-up + medication (+$85)</option>
                   </select>
                 </label>
               </div>
@@ -557,6 +572,18 @@ export default function OrderNowSummary() {
                       value={moneyPlain(insuranceCents)}
                       style={{ textAlign: 'right', maxWidth: 100 }}
                       aria-label="Shipping insurance"
+                    />
+                  </div>
+                ) : null}
+                {consultFeeCents > 0 ? (
+                  <div className="orderNowSummaryTableRow">
+                    <span>{consultFeeLabel}</span>
+                    <input
+                      className="input"
+                      readOnly
+                      value={moneyPlain(consultFeeCents)}
+                      style={{ textAlign: 'right', maxWidth: 100 }}
+                      aria-label={consultFeeLabel}
                     />
                   </div>
                 ) : null}
