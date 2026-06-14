@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { paypalBillUrlForAmountCents } from '../lib/catalogPaypalAmountUrl'
 import { CONSULT_FEES, formatConsultFee, type PaidConsultType } from '../config/consultFees'
+import { ZELLE_ENABLED, ZELLE_RECIPIENT_NAME } from '../config/provider'
+import { formatZellePhone, zelleRequestMessage } from '../lib/zelle'
 import Page from '../components/Page'
 
 export default function ProviderPayments() {
@@ -71,6 +73,29 @@ export default function ProviderPayments() {
         `Here is your secure PayPal payment link for ${amtLabel}${desc.trim() ? ` (${desc.trim()})` : ''}:\n\n${link}\n\nIf you have any questions, just reply to this email.`,
       )}`
     : ''
+
+  // Zelle: build a copy/email-able request from the amount entered above (no link — Zelle is bank-to-bank).
+  const zelleAmountCents = (() => {
+    const a = Number(String(amount).replace(/[^0-9.]/g, ''))
+    return Number.isFinite(a) && a > 0 ? Math.round(a * 100) : 0
+  })()
+  const zelleMessage =
+    zelleAmountCents > 0
+      ? zelleRequestMessage(zelleAmountCents, desc.trim() || undefined)
+      : `Please send your payment via Zelle to ${formatZellePhone()} (${ZELLE_RECIPIENT_NAME}).`
+  const [zelleCopied, setZelleCopied] = useState(false)
+  const copyZelle = () => {
+    navigator.clipboard?.writeText(zelleMessage).then(
+      () => {
+        setZelleCopied(true)
+        window.setTimeout(() => setZelleCopied(false), 1800)
+      },
+      () => setError('Could not copy. Select the text and copy it manually.'),
+    )
+  }
+  const zelleMailto = `mailto:${encodeURIComponent(email.trim())}?subject=${encodeURIComponent(
+    `Payment by Zelle — ${amtLabel}`,
+  )}&body=${encodeURIComponent(`${zelleMessage}\n\nIf you have any questions, just reply to this email.`)}`
 
   return (
     <Page variant="wide">
@@ -199,6 +224,36 @@ export default function ProviderPayments() {
           </div>
         ) : null}
       </section>
+
+      {ZELLE_ENABLED ? (
+        <section className="card cardAccentSoft" style={{ marginTop: 16 }}>
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>Or take payment by Zelle</h2>
+            <span className="pill">Zelle</span>
+          </div>
+          <div className="divider" />
+          <p className="muted" style={{ marginTop: 0 }}>
+            Zelle has no link — the patient sends from their own bank app. Have them send to:
+          </p>
+          <div style={{ fontSize: 14, marginBottom: 10 }}>
+            Phone: <strong>{formatZellePhone()}</strong> · Name: <strong>{ZELLE_RECIPIENT_NAME}</strong>
+          </div>
+          <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>
+            Enter an amount in the box above, then copy or email a ready-made request{' '}
+            {zelleAmountCents > 0 ? <>(for {amtLabel})</> : null}:
+          </p>
+          <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+            <button type="button" className="btn btnPrimary" onClick={copyZelle}>
+              {zelleCopied ? 'Copied!' : 'Copy Zelle request'}
+            </button>
+            {email.trim() ? (
+              <a className="btn" href={zelleMailto}>
+                Email Zelle request
+              </a>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section className="card cardAccentSoft" style={{ marginTop: 16 }}>
         <div className="cardTitle">

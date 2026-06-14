@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { PRACTICE_PUBLIC_NAME } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME, ZELLE_ENABLED } from '../config/provider'
+import ZelleInstructions from '../components/ZelleInstructions'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
@@ -61,6 +62,7 @@ export default function OrderNowSummary() {
   const [insurance, setInsurance] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [zelleInfo, setZelleInfo] = useState<{ amountCents: number; memo: string } | null>(null)
   const [shipStreet, setShipStreet] = useState('')
   const [shipCity, setShipCity] = useState('')
   const [shipState, setShipState] = useState('')
@@ -192,6 +194,55 @@ export default function OrderNowSummary() {
     // Clear the cart and hand off to PayPal in the same tab (popup-safe).
     writeCartForSlug(slug, {})
     window.location.assign(payUrl)
+  }
+
+  const onPayWithZelle = () => {
+    setCheckoutError(null)
+    if (!partner || items.length === 0) return
+    if (!agree) {
+      setCheckoutError('Please read and agree to the medication shipping terms and conditions above.')
+      return
+    }
+    if (!contactOk) {
+      setCheckoutError('Please agree to the contact / privacy authorization to continue.')
+      return
+    }
+    if (!shipStreet.trim() || !shipCity.trim() || !shipState || !shipZip.trim()) {
+      setCheckoutError('Please complete street, city, state, and zip for shipping.')
+      return
+    }
+    if (!sigName.trim()) {
+      setCheckoutError('Please type your name as a signature to continue.')
+      return
+    }
+    if (!isPatientSession && !emailOk(contactEmail)) {
+      setCheckoutError('Please enter a valid email so we can confirm your order and reach you if needed.')
+      return
+    }
+
+    const body = {
+      partnerSlug: partner.slug,
+      items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
+      agreedToShippingTerms: agree,
+      contactPermission: contactOk,
+      signatureName: sigName.trim(),
+      signatureDate: sigDate,
+      shippingInsurance: insurance,
+      shippingAddress1: shipStreet.trim(),
+      shippingCity: shipCity.trim(),
+      shippingState: shipState.trim(),
+      shippingPostalCode: shipZip.trim(),
+    }
+
+    // Record the order (fire-and-forget), then show Zelle instructions. Zelle has no link — the patient
+    // sends the payment from their own bank app.
+    if (isPatientSession) {
+      apiPostBeacon('/v1/patient/orders/pharmacy', body)
+    } else {
+      apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
+    }
+
+    setZelleInfo({ amountCents: total, memo: sigName.trim() })
   }
 
   const onRequestPayLater = () => {
@@ -630,6 +681,17 @@ export default function OrderNowSummary() {
               >
                 {checkoutBusy ? 'Opening checkout…' : 'Check out'}
               </button>
+              {ZELLE_ENABLED ? (
+                <button
+                  type="button"
+                  className="btn catalogOutlineBtn orderNowPayBtn"
+                  disabled={!canCheckOut || checkoutBusy}
+                  style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
+                  onClick={onPayWithZelle}
+                >
+                  Pay with Zelle
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="btn catalogOutlineBtn orderNowPayBtn"
@@ -640,8 +702,17 @@ export default function OrderNowSummary() {
                 {checkoutBusy ? 'Sending request…' : 'Send request (pay later)'}
               </button>
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
-                Your checkout opens securely. The practice confirms fulfillment details after payment.
+                Card checkout opens securely with PayPal, or pay by Zelle. The practice confirms fulfillment details
+                after payment.
               </p>
+              {zelleInfo ? (
+                <>
+                  <p style={{ fontSize: 14, marginTop: 16, marginBottom: 0, fontWeight: 800 }}>
+                    Your order is recorded — complete payment with Zelle:
+                  </p>
+                  <ZelleInstructions amountCents={zelleInfo.amountCents} memo={zelleInfo.memo} />
+                </>
+              ) : null}
             </div>
           </>
         ) : null}

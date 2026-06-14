@@ -32,6 +32,15 @@ export const PAYPAL_BUSINESS_EMAIL = (
 /** Optional override: a full PayPal pay URL (`paypal.me/...` or a hosted button). Takes precedence over the business email. */
 export const PAYPAL_PAY_URL_OVERRIDE = (vitePublicEnv.VITE_PAYPAL_PAY_URL?.toString() || '').trim()
 
-/** PayPal is the only supported payment rail. Treated as "configured" when an email or override URL is present. */
+/** PayPal is a supported payment rail. Treated as "configured" when an email or override URL is present. */
 export const CATALOG_PAYPAL: { readonly label: string } | null =
   PAYPAL_BUSINESS_EMAIL || PAYPAL_PAY_URL_OVERRIDE ? { label: 'PayPal' } : null
+
+/** Zelle recipient — patients send payment from their own bank's Zelle to this phone number. */
+export const ZELLE_PHONE = (vitePublicEnv.VITE_ZELLE_PHONE?.toString() || '714-489-7506').trim()
+
+/** Name patients should see / select when sending via Zelle. */
+export const ZELLE_RECIPIENT_NAME = (vitePublicEnv.VITE_ZELLE_NAME?.toString() || 'Brett Wheatfill').trim()
+
+/** Zelle is offered as a payment option when a recipient phone is configured. */
+export const ZELLE_ENABLED = ZELLE_PHONE.length > 0
