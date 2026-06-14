@@ -34,7 +34,6 @@ const ProviderTwpWorkspace = lazy(() => import('./pages/ProviderTwpWorkspace'))
 const ProviderSchedule = lazy(() => import('./pages/ProviderSchedule'))
 const ProviderTeamInbox = lazy(() => import('./pages/ProviderTeamInbox'))
 const ProviderOrderHistory = lazy(() => import('./pages/ProviderOrderHistory'))
-const ProviderAuditLog = lazy(() => import('./pages/ProviderAuditLog'))
 const ProviderStaffUsers = lazy(() => import('./pages/ProviderStaffUsers'))
 
 /** React Router `Navigate` must not receive a full `https://…` string — it breaks routing (white screen). */
@@ -128,7 +127,6 @@ export default function App() {
           <Route path="/provider" element={<ProviderTwpWorkspace />} />
           <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
           <Route path="/provider/orders" element={<ProviderOrderHistory />} />
-          <Route path="/provider/audit" element={<ProviderAuditLog />} />
           <Route path="/provider/schedule" element={<ProviderSchedule />} />
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />
@@ -185,7 +183,6 @@ export default function App() {
           <Route path="/provider" element={<ProviderTwpWorkspace />} />
           <Route path="/provider/inbox" element={<ProviderTeamInbox />} />
           <Route path="/provider/orders" element={<ProviderOrderHistory />} />
-          <Route path="/provider/audit" element={<ProviderAuditLog />} />
           <Route path="/provider/schedule" element={<ProviderSchedule />} />
           <Route path="/provider/integrations" element={<MarketingProviderAdmin />} />
           <Route path="/provider/security" element={<MarketingProviderSecurity />} />

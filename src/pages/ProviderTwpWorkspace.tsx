@@ -92,18 +92,6 @@ type ProviderOrderRow = {
   pharmacyPartner: { id: string; name: string; slug: string } | null
 }
 
-function auditEntityLabel(entityType: string) {
-  const map: Record<string, string> = {
-    order: 'Orders',
-    appointment: 'Appointments',
-    team_inbox_item: 'Team inbox',
-    blackout: 'Blackouts / availability',
-    provider_profile: 'Provider profile',
-    user: 'Users',
-  }
-  return map[entityType] || entityType.replace(/_/g, ' ')
-}
-
 function norm(s: unknown) {
   return String(s ?? '')
     .toLowerCase()
@@ -183,12 +171,6 @@ export default function ProviderTwpWorkspace() {
   const [orders, setOrders] = useState<ProviderOrderRow[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState<string | null>(null)
-  const [auditSummary, setAuditSummary] = useState<{
-    total: number
-    byEntityType: Array<{ entityType: string; count: number }>
-  } | null>(null)
-  const [auditLoading, setAuditLoading] = useState(false)
-  const [auditError, setAuditError] = useState<string | null>(null)
   const [msgs, setMsgs] = useState<DemoMsg[]>([])
   const [inboxNameCache, setInboxNameCache] = useState<Record<string, string>>(() => initialWs.inboxNameCache)
   const [inboxError, setInboxError] = useState<string | null>(null)
@@ -445,52 +427,15 @@ export default function ProviderTwpWorkspace() {
     }
   }, [navigate])
 
-  const loadAudit = useCallback(async () => {
-    setAuditLoading(true)
-    setAuditError(null)
-    try {
-      const r = await apiGetWithSessionWarmup<{ total: number; byEntityType: Array<{ entityType: string; count: number }> }>(
-        '/v1/provider/audit/summary',
-      )
-      setAuditSummary({
-        total: typeof r.total === 'number' ? r.total : 0,
-        byEntityType: Array.isArray(r.byEntityType) ? r.byEntityType : [],
-      })
-    } catch (e: any) {
-      const msg = String(e?.message || e)
-      if (/401|unauthorized|Unauthorized/i.test(msg)) {
-        const tok = (getToken() || '').trim()
-        const authBits = [
-          `api=${getApiUrl()}`,
-          `token=${tok ? `${tok.slice(0, 12)}…` : 'none'}`,
-          `sessionHint=${hasApiSessionHint() ? '1' : '0'}`,
-        ].join(' · ')
-        setAuditError(
-          `Could not load audit log (401). Sign in again at Provider login — cross-site API calls need the bearer token when cookies are not sent. ${authBits}`,
-        )
-      } else {
-        setAuditError(msg)
-      }
-      setAuditSummary(null)
-    } finally {
-      setAuditLoading(false)
-    }
-  }, [navigate])
-
   useEffect(() => {
     if (isMarketingProviderAuthed()) void loadOrders()
   }, [loadOrders])
-
-  useEffect(() => {
-    if (isMarketingProviderAuthed()) void loadAudit()
-  }, [loadAudit])
 
   // Token/session changes (other tab, return from login, PWA resume): refresh inbox and orders together.
   useEffect(() => {
     const sync = () => {
       void loadTeamInbox()
       void loadOrders()
-      void loadAudit()
     }
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'wph_token_v1') sync()
@@ -506,7 +451,7 @@ export default function ProviderTwpWorkspace() {
       window.removeEventListener('storage', onStorage)
       document.removeEventListener('visibilitychange', onVis)
     }
-  }, [loadTeamInbox, loadOrders, loadAudit])
+  }, [loadTeamInbox, loadOrders])
 
   useEffect(() => {
     const onPoll = (e: Event) => {
@@ -1310,64 +1255,7 @@ export default function ProviderTwpWorkspace() {
           ) : null}
         </section>
 
-        {/* Payments panel removed. */}
-
-        <section className="card cardAccentSoft" id="twp-audit">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Audit log</h2>
-            <div className="btnRow" style={{ margin: 0, flexWrap: 'wrap' }}>
-              <span className="pill">Compliance</span>
-              <Link to="/provider/audit" className="btn" style={{ textDecoration: 'none' }}>
-                Full audit log
-              </Link>
-              <button type="button" className="btn" disabled={auditLoading || !hasApiCredential()} onClick={() => void loadAudit()}>
-                {auditLoading ? 'Loading…' : 'Refresh'}
-              </button>
-            </div>
-          </div>
-          <div className="divider" />
-          <p className="muted" style={{ marginTop: 0 }}>
-            Counts below are <strong>all-time</strong> totals from the database (provider-authenticated API only). Open the full
-            log to browse recent events, search, and filter by type.
-          </p>
-          <div className="divider" />
-          {auditError ? (
-            <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, margin: '0 0 10px' }}>
-              {auditError}
-            </p>
-          ) : null}
-          {hasApiCredential() && !auditLoading && auditSummary !== null && auditSummary.total === 0 ? (
-            <p className="muted" style={{ margin: 0 }}>
-              No audit events yet. Actions such as order updates, inbox handling, schedule changes, and profile edits appear here
-              once recorded by the server.
-            </p>
-          ) : null}
-          {auditSummary !== null && auditSummary.total > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.45 }}>
-                <strong>{auditSummary.total}</strong> audit events all-time.
-              </p>
-              <ul style={{ margin: 0, paddingLeft: '1.1em', lineHeight: 1.65 }}>
-                {auditSummary.byEntityType.map(({ entityType, count: n }) => (
-                  <li key={entityType}>
-                    <Link
-                      to={`/provider/audit?entityType=${encodeURIComponent(entityType)}`}
-                      className="teamWorkspaceStatPillLink"
-                      style={{ fontWeight: 700 }}
-                    >
-                      {n} {auditEntityLabel(entityType)}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <div className="btnRow" style={{ marginTop: 4 }}>
-                <Link to="/provider/audit" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-                  Open full audit log
-                </Link>
-              </div>
-            </div>
-          ) : null}
-        </section>
+        {/* Payments + audit panels removed. */}
 
         <section className="card cardAccentRed" id="twp-orders">
           <div className="cardTitle">

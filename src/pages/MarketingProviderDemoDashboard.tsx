@@ -288,21 +288,6 @@ export default function MarketingProviderDemoDashboard() {
           )}
         </section>
 
-        <section className="card cardAccentSoft">
-          <div className="cardTitle">
-            <h2 style={{ margin: 0 }}>Audit log (preview)</h2>
-            <span className="pill">Compliance</span>
-          </div>
-          <div className="divider" />
-          <p className="muted">In production, every action writes an audit event. Preview shows examples only.</p>
-          <div className="divider" />
-          <div className="muted" style={{ fontSize: 13 }}>
-            - Apr 24 09:05 · inbox_mark_handled · m2
-            <br />- Apr 24 08:12 · appointment_status_changed · a2
-            <br />- Apr 23 14:10 · order_marked_ordered · o2
-          </div>
-        </section>
-
         <section className="card cardAccentRed">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
