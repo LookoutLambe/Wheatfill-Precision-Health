@@ -2,6 +2,7 @@ import { type KeyboardEvent as ReactKeyboardEvent, useEffect, useMemo, useRef, u
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import CatalogCartDrawer, { type CartLineProduct } from './CatalogCartDrawer'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
+import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 import { apiGet } from '../api/client'
 import '../App.css'
 import { APP_URL, MARKETING_ONLY } from '../config/mode'
@@ -38,14 +39,33 @@ function mapCatalogHighlightToCart(): CartLineProduct[] {
   }))
 }
 
+/** Offline product list for the header cart drawer when the catalog API is unreachable. */
+function headerFallbackProductsForSlug(slug: string): CartLineProduct[] {
+  if (slug === 'hallandale') {
+    return HALLANDALE_FALLBACK_PRODUCTS.map((p) => ({
+      sku: p.sku,
+      name: p.name,
+      subtitle: p.subtitle,
+      priceCents: p.priceCents,
+    }))
+  }
+  return mapCatalogHighlightToCart()
+}
+
 /**
  * Which cart the header bag should reflect. Partner-specific when on that catalog; otherwise
  * the primary (default) catalog so the bag is available on every page to track the usual storefront cart.
  */
 function headerCatalogSlugForPath(pathname: string): string {
-  if (pathname === '/pharmacy/mountain-view' || pathname === '/order-now' || pathname === '/order-now/') {
+  if (pathname === '/order-now' || pathname === '/order-now/') {
     return DEFAULT_CATALOG_PARTNER_SLUG
   }
+  // Branded pharmacy pages: /pharmacy/<slug> (e.g. /pharmacy/hallandale, /pharmacy/mountain-view).
+  const pm = /^\/pharmacy\/([^/]+)$/.exec(pathname)
+  if (pm) {
+    return pm[1]
+  }
+  // Catalog + order summary: /order-now/<slug>[/summary].
   const m = /^\/order-now\/([^/]+)(?:\/summary)?$/.exec(pathname)
   if (m) {
     return m[1]
@@ -89,7 +109,7 @@ export default function Shell() {
         )
       } catch {
         if (cancelled) return
-        setHeaderCartProducts([])
+        setHeaderCartProducts(headerFallbackProductsForSlug(headerCartSlug))
       }
     })()
     return () => {
