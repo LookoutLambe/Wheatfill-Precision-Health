@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
+import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -19,6 +20,27 @@ function moneyCents(cents: number) {
 
 function moneyPlain(cents: number) {
   return (cents / 100).toFixed(2)
+}
+
+/** Static catalog used when the live API is unreachable (e.g. cold-start), so checkout still works offline. */
+function offlinePartnerForSlug(slug: string): PartnerResp['partner'] | null {
+  if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
+    return {
+      slug,
+      name: resolvedFulfillmentPharmacyName(),
+      products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
+        sku: p.sku,
+        name: p.name,
+        subtitle: p.subtitle,
+        priceCents: p.priceCents,
+        currency: 'usd',
+      })),
+    }
+  }
+  if (slug === 'hallandale') {
+    return { slug, name: 'Hallandale Pharmacy', products: HALLANDALE_FALLBACK_PRODUCTS }
+  }
+  return null
 }
 
 export default function OrderNowSummary() {
@@ -66,18 +88,9 @@ export default function OrderNowSummary() {
         setOfflineCatalog(false)
       })
       .catch((e) => {
-        if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
-          setPartner({
-            slug,
-            name: resolvedFulfillmentPharmacyName(),
-            products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
-              sku: p.sku,
-              name: p.name,
-              subtitle: p.subtitle,
-              priceCents: p.priceCents,
-              currency: 'usd',
-            })),
-          })
+        const offline = offlinePartnerForSlug(slug)
+        if (offline) {
+          setPartner(offline)
           setLoadError(null)
           setOfflineCatalog(true)
         } else {
