@@ -24,6 +24,7 @@ export default function ProviderStaffUsers() {
   const navigate = useNavigate()
   const who = getMarketingProviderLoginDisplay()
   const [meRole, setMeRole] = useState<'provider' | 'admin' | ''>('')
+  const [meUsername, setMeUsername] = useState('')
   const [users, setUsers] = useState<StaffUser[]>([])
   const [requests, setRequests] = useState<StaffRequest[]>([])
   const [loading, setLoading] = useState(false)
@@ -52,8 +53,9 @@ export default function ProviderStaffUsers() {
     setLoading(true)
     setErr(null)
     try {
-      const me = await apiGet<{ user: { role: 'provider' | 'admin' } }>('/v1/provider/me', tok)
+      const me = await apiGet<{ user: { role: 'provider' | 'admin'; username?: string } }>('/v1/provider/me', tok)
       setMeRole(me.user.role)
+      setMeUsername(String(me.user.username || '').trim().toLowerCase())
       const r = await apiGet<{ users: StaffUser[] }>('/v1/admin/users', tok)
       setUsers(r.users || [])
       const q = await apiGet<{ requests: StaffRequest[] }>('/v1/admin/staff-requests', tok)
@@ -61,7 +63,7 @@ export default function ProviderStaffUsers() {
     } catch (e: any) {
       const m = String(e?.message || e)
       if (/403|forbidden/i.test(m)) {
-        setErr('Only admin can manage staff logins. Sign in as admin.')
+        setErr('You do not have permission to manage staff logins. Sign in as admin, Brett, or Bridgette.')
       } else if (/401|unauthorized/i.test(m)) {
         setErr('Session expired. Sign in again.')
       } else {
@@ -76,7 +78,7 @@ export default function ProviderStaffUsers() {
     void load()
   }, [load])
 
-  const canManage = meRole === 'admin'
+  const canManage = meRole === 'admin' || meUsername === 'brett' || meUsername === 'bridgette'
   const headerPill = useMemo(() => (who ? `Signed in as: ${who}` : 'Provider'), [who])
 
   const create = useCallback(async () => {
@@ -164,7 +166,7 @@ export default function ProviderStaffUsers() {
         <div>
           <h1 style={{ margin: 0 }}>Staff logins</h1>
           <p className="muted pageSubtitle">
-            Create new staff usernames + passwords (admin only). Use this when you hire someone new.
+            Create new staff usernames + passwords (admin, Brett, or Bridgette). Use this when you hire someone new.
           </p>
           <div className="pill" style={{ marginTop: 10, width: 'fit-content' }}>
             {headerPill}

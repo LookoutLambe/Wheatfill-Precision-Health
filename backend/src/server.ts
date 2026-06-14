@@ -1153,10 +1153,9 @@ app.post('/auth/login', async (req, reply) => {
           'public.provider_profiles missing in Supabase — falling back to Prisma login. Apply infra/supabase/provider_profiles.sql in the Supabase SQL editor.',
         )
       } else {
-        app.log.error({ err: e }, 'providerProfileForLogin failed')
-        return reply.status(500).send(
-          'Provider directory lookup failed. Check API logs. If you enabled USE_SUPABASE_AUTH, ensure public.provider_profiles exists (see infra/supabase/README.md).',
-        )
+        // Supabase unreachable/paused or the lookup errored — do NOT lock everyone out. Fall back to
+        // Prisma (local) login below so staff can still sign in with their stored credentials.
+        app.log.error({ err: e }, 'providerProfileForLogin failed — falling back to Prisma login')
       }
     }
     if (prof) {
@@ -1322,10 +1321,10 @@ await app.register(async (protectedScope) => {
     },
   )
 
-  // Admin: manage staff logins (create + reset passwords).
+  // Approvers (admin + Brett/Bridgette): manage staff logins (create + reset passwords).
   protectedScope.get(
     '/v1/admin/users',
-    { preHandler: requireRole(['admin']) },
+    { preHandler: requireApprover() },
     async () => {
       const users = await prisma.user.findMany({
         where: { deletedAt: null, role: { in: ['provider', 'admin'] } },
@@ -1346,7 +1345,7 @@ await app.register(async (protectedScope) => {
 
   protectedScope.post(
     '/v1/admin/users',
-    { preHandler: requireRole(['admin']) },
+    { preHandler: requireApprover() },
     async (req, reply) => {
       const body = AdminCreateUserBody.parse(req.body)
       const exists = await prisma.user.findUnique({ where: { username: body.username } })
@@ -1378,7 +1377,7 @@ await app.register(async (protectedScope) => {
 
   protectedScope.patch(
     '/v1/admin/users/:id/password',
-    { preHandler: requireRole(['admin']) },
+    { preHandler: requireApprover() },
     async (req, reply) => {
       const id = (req.params as any).id as string
       const body = AdminResetPasswordBody.parse(req.body)
