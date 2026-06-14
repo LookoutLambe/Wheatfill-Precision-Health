@@ -4,6 +4,7 @@ import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
+import { CONSULT_FEES, formatConsultFee } from '../config/consultFees'
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -43,12 +44,6 @@ function offlinePartnerForSlug(slug: string): PartnerResp['partner'] | null {
   return null
 }
 
-/** Consultation fees added to the checkout total when a visit type is selected (matches the Pricing page). */
-const CONSULT_FEE_CENTS: Record<'none' | 'new_patient' | 'follow_up', number> = {
-  none: 0,
-  new_patient: 11000, // New patient / initial consultation — $110
-  follow_up: 8500, // Follow-up visit — $85
-}
 
 export default function OrderNowSummary() {
   const { slug = '' } = useParams()
@@ -134,13 +129,8 @@ export default function OrderNowSummary() {
   )
   const insuranceCents = useMemo(() => (insurance ? Math.round(subtotal * 0.02) : 0), [insurance, subtotal])
   const shippingCents = slug === 'hallandale' ? 2500 : 0
-  const consultFeeCents = CONSULT_FEE_CENTS[consultType]
-  const consultFeeLabel =
-    consultType === 'new_patient'
-      ? 'New patient consultation'
-      : consultType === 'follow_up'
-        ? 'Follow-up consultation'
-        : ''
+  const consultFeeCents = consultType === 'none' ? 0 : CONSULT_FEES[consultType].cents
+  const consultFeeLabel = consultType === 'none' ? '' : CONSULT_FEES[consultType].label
   const total = subtotal + insuranceCents + shippingCents + consultFeeCents
 
   const onCheckout = () => {
@@ -521,8 +511,12 @@ export default function OrderNowSummary() {
                   </div>
                   <select className="select" value={consultType} onChange={(e) => setConsultType(e.target.value as any)}>
                     <option value="none">Medication only</option>
-                    <option value="new_patient">New patient + medication (+$110)</option>
-                    <option value="follow_up">Follow-up + medication (+$85)</option>
+                    <option value="new_patient">
+                      New patient + medication (+{formatConsultFee(CONSULT_FEES.new_patient.cents)})
+                    </option>
+                    <option value="follow_up">
+                      Follow-up + medication (+{formatConsultFee(CONSULT_FEES.follow_up.cents)})
+                    </option>
                   </select>
                 </label>
               </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
 import { paypalBillUrlForAmountCents } from '../lib/catalogPaypalAmountUrl'
+import { CONSULT_FEES, formatConsultFee, type PaidConsultType } from '../config/consultFees'
 import Page from '../components/Page'
 
 export default function ProviderPayments() {
@@ -10,6 +11,15 @@ export default function ProviderPayments() {
   const [error, setError] = useState<string | null>(null)
   const [link, setLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const applyConsult = (type: PaidConsultType) => {
+    const fee = CONSULT_FEES[type]
+    setAmount(String(fee.cents / 100))
+    setDesc(fee.label)
+    setError(null)
+    setLink(null)
+    setCopied(false)
+  }
 
   const createBill = () => {
     setError(null)
@@ -90,6 +100,15 @@ export default function ProviderPayments() {
           <span className="pill">PayPal</span>
         </div>
         <div className="divider" />
+
+        <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>Quick fill a consult fee</div>
+        <div className="btnRow" style={{ marginBottom: 14, flexWrap: 'wrap' }}>
+          {(Object.keys(CONSULT_FEES) as PaidConsultType[]).map((t) => (
+            <button key={t} type="button" className="btn" onClick={() => applyConsult(t)}>
+              {CONSULT_FEES[t].shortLabel} — {formatConsultFee(CONSULT_FEES[t].cents)}
+            </button>
+          ))}
+        </div>
 
         <div className="formRow" style={{ marginTop: 4 }}>
           <label>
