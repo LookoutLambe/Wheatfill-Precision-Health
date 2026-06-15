@@ -19,7 +19,6 @@ const MedicationEducation = lazy(() => import('./pages/MedicationEducation'))
 const PharmacyOptions = lazy(() => import('./pages/PharmacyOptions'))
 const PharmacyPartner = lazy(() => import('./pages/PharmacyPartner'))
 const MountainViewPharmacy = lazy(() => import('./pages/MountainViewPharmacy'))
-const HallandalePharmacy = lazy(() => import('./pages/HallandalePharmacy'))
 const OrderNowSummary = lazy(() => import('./pages/OrderNowSummary'))
 const PatientPortalInfo = lazy(() => import('./pages/PatientPortalInfo'))
 import SignIn from './pages/SignIn'
@@ -101,10 +100,13 @@ export default function App() {
 
           <Route path="/book" element={<BookOnline />} />
           <Route path="/order-now" element={<PharmacyOptions />} />
+          {/* Hallandale is hidden — redirect its links to Order Now / Mountain View. */}
+          <Route path="/order-now/hallandale" element={<Navigate to="/order-now" replace />} />
+          <Route path="/order-now/hallandale/summary" element={<Navigate to="/order-now" replace />} />
           <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
           <Route path="/order-now/:slug" element={<PharmacyPartner />} />
           <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
-          <Route path="/pharmacy/hallandale" element={<HallandalePharmacy />} />
+          <Route path="/pharmacy/hallandale" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
           <Route path="/pharmacy/:slug" element={<PharmacySlugRedirect />} />
@@ -152,10 +154,13 @@ export default function App() {
         <Route path="/ordering" element={<OrderingPortal />} />
         <Route path="/medications" element={<MedicationEducation />} />
         <Route path="/order-now" element={<PharmacyOptions />} />
+        {/* Hallandale is hidden — redirect its links to Order Now / Mountain View. */}
+        <Route path="/order-now/hallandale" element={<Navigate to="/order-now" replace />} />
+        <Route path="/order-now/hallandale/summary" element={<Navigate to="/order-now" replace />} />
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />
         <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
-        <Route path="/pharmacy/hallandale" element={<HallandalePharmacy />} />
+        <Route path="/pharmacy/hallandale" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
         <Route path="/pharmacy/:slug" element={<PharmacySlugRedirect />} />

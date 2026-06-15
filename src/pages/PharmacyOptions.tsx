@@ -7,7 +7,6 @@ import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDispl
 import { CATALOG_HIGHLIGHT_PRODUCTS } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
-import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerWithProducts = { slug: string; name: string; products: Product[] }
@@ -20,51 +19,21 @@ function formatPrice(cents: number) {
 function vialFamilyForSku(sku: string) {
   if (sku.startsWith('TZ')) return 'tirzepatide'
   if (sku.startsWith('SEMA')) return 'semaglutide'
-  if (sku.startsWith('H_TZ')) return 'tirzepatide'
-  if (sku.startsWith('H_SEMA')) return 'semaglutide'
   return 'neutral'
 }
 
 export default function PharmacyOptions() {
   const [cartTick, setCartTick] = useState(0)
   const [mvPartner, setMvPartner] = useState<PartnerWithProducts | null>(null)
-  const [hallPartner, setHallPartner] = useState<PartnerWithProducts | null>(null)
 
-  // Keep default slug imported for compatibility with older links; hub now shows both catalogs.
   const mvSlug = 'mountain-view'
-  const hallSlug = 'hallandale'
 
   useEffect(() => {
     let cancelled = false
-    // Fetch the two main catalogs so the hub can show them side-by-side.
-    Promise.allSettled([
-      apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(mvSlug)}`),
-      apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(hallSlug)}`),
-    ])
-      .then((rows) => {
+    apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(mvSlug)}`)
+      .then((r) => {
         if (cancelled) return
-        const mv = rows[0].status === 'fulfilled' ? rows[0].value.partner : null
-        const hall = rows[1].status === 'fulfilled' ? rows[1].value.partner : null
-        setMvPartner(
-          mv || {
-            slug: mvSlug,
-            name: resolvedFulfillmentPharmacyName(),
-            products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
-              sku: p.sku,
-              name: p.name,
-              subtitle: p.subtitle,
-              priceCents: p.priceCents,
-              currency: 'usd',
-            })),
-          },
-        )
-        setHallPartner(
-          hall || {
-            slug: hallSlug,
-            name: 'Hallandale Pharmacy',
-            products: HALLANDALE_FALLBACK_PRODUCTS,
-          },
-        )
+        setMvPartner(r.partner)
       })
       .catch(() => {
         if (cancelled) return
@@ -79,11 +48,6 @@ export default function PharmacyOptions() {
             currency: 'usd',
           })),
         })
-        setHallPartner({
-          slug: hallSlug,
-          name: 'Hallandale Pharmacy',
-          products: HALLANDALE_FALLBACK_PRODUCTS,
-        })
       })
     return () => {
       cancelled = true
@@ -91,8 +55,6 @@ export default function PharmacyOptions() {
   }, [])
 
   const cartCountMv = useMemo(() => countCartItems(mvSlug), [cartTick])
-  const cartCountHall = useMemo(() => countCartItems(hallSlug), [cartTick])
-  const cartCountTotal = cartCountMv + cartCountHall
 
   const refreshCart = useCallback(() => setCartTick((t) => t + 1), [])
 
@@ -105,7 +67,7 @@ export default function PharmacyOptions() {
   )
 
   return (
-    <div className={`page orderNowHubPage ${cartCountTotal > 0 ? 'orderNowHubPage--cart' : ''}`}>
+    <div className={`page orderNowHubPage ${cartCountMv > 0 ? 'orderNowHubPage--cart' : ''}`}>
       <nav className="wphBreadcrumbs" aria-label="Breadcrumb" style={{ maxWidth: 1120, margin: '0 auto 10px', padding: '0 16px' }}>
         <Link to="/">Home</Link>
         <span className="wphBreadcrumbsSep" aria-hidden="true">
@@ -127,12 +89,8 @@ export default function PharmacyOptions() {
               Browse an accessible, table-style price list:{' '}
               <Link to="/pharmacy/mountain-view" style={{ fontWeight: 800 }}>
                 {resolvedFulfillmentPharmacyName()}
-              </Link>{' '}
-              {' '}and{' '}
-              <Link to="/pharmacy/hallandale" style={{ fontWeight: 800 }}>
-                Hallandale Pharmacy
-              </Link>{' '}
-              (same cart; add to cart on either page).
+              </Link>
+              .
             </p>
           </div>
           <Link to="/" className="btn catalogOutlineBtn orderNowHubHomeBtn" style={{ textDecoration: 'none' }}>
@@ -153,81 +111,43 @@ export default function PharmacyOptions() {
           for comparison, and a link to the <Link to="/medications#dosing-guide">titration dosing guide</Link>.
         </p>
 
-        <div className="orderNowDualCatalogGrid" role="region" aria-label="Mountain View and Hallandale catalogs">
-          <div className="orderNowDualCatalogCol orderNowDualCatalogCol--mv">
-            <div className="orderNowDualCatalogHead">
-              <div className="orderNowDualCatalogTitle">{mvPartner?.name || resolvedFulfillmentPharmacyName()}</div>
-              <Link to={`/order-now/${mvSlug}`} className="btn btnPrimary" style={{ textDecoration: 'none' }}>
-                Full list
-              </Link>
-            </div>
-            <ul className="orderNowProductList">
-              {(mvPartner?.products || CATALOG_HIGHLIGHT_PRODUCTS).map((p: any) => (
-                <li key={p.sku} className="orderNowProductCard">
-                  <div className="orderNowProductTop">
-                    <CatalogVialThumb family={p.family || vialFamilyForSku(p.sku)} />
-                    <div className="orderNowProductBody">
-                      <div className="orderNowProductName">{p.name}</div>
-                      <div className="muted orderNowProductSub">{p.subtitle}</div>
-                    </div>
-                    <div className="orderNowProductMeta">
-                      <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
-                      <button
-                        type="button"
-                        className="btn btnPrimary orderNowAddBtn"
-                        onClick={() => onAddLine(mvSlug, p.sku)}
-                      >
-                        Add To Cart
-                      </button>
-                    </div>
-                  </div>
-                  <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
-                </li>
-              ))}
-            </ul>
+        <div className="orderNowDualCatalogCol orderNowDualCatalogCol--mv" role="region" aria-label="Mountain View catalog">
+          <div className="orderNowDualCatalogHead">
+            <div className="orderNowDualCatalogTitle">{mvPartner?.name || resolvedFulfillmentPharmacyName()}</div>
+            <Link to={`/order-now/${mvSlug}`} className="btn btnPrimary" style={{ textDecoration: 'none' }}>
+              Full list
+            </Link>
           </div>
-
-          <div className="orderNowDualCatalogCol orderNowDualCatalogCol--hall">
-            <div className="orderNowDualCatalogHead">
-              <div className="orderNowDualCatalogTitle">Hallandale Pharmacy</div>
-              <Link to={`/order-now/${hallSlug}`} className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }}>
-                Full list
-              </Link>
-            </div>
-            <ul className="orderNowProductList">
-              {(hallPartner?.products || HALLANDALE_FALLBACK_PRODUCTS).map((p) => (
-                <li key={p.sku} className="orderNowProductCard">
-                  <div className="orderNowProductTop">
-                    <CatalogVialThumb family={vialFamilyForSku(p.sku)} />
-                    <div className="orderNowProductBody">
-                      <div className="orderNowProductName">{p.name}</div>
-                      <div className="muted orderNowProductSub">{p.subtitle}</div>
-                    </div>
-                    <div className="orderNowProductMeta">
-                      <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
-                      <button type="button" className="btn catalogOutlineBtn orderNowAddBtn" onClick={() => onAddLine(hallSlug, p.sku)}>
-                        Add To Cart
-                      </button>
-                    </div>
+          <ul className="orderNowProductList">
+            {(mvPartner?.products || CATALOG_HIGHLIGHT_PRODUCTS).map((p: any) => (
+              <li key={p.sku} className="orderNowProductCard">
+                <div className="orderNowProductTop">
+                  <CatalogVialThumb family={p.family || vialFamilyForSku(p.sku)} />
+                  <div className="orderNowProductBody">
+                    <div className="orderNowProductName">{p.name}</div>
+                    <div className="muted orderNowProductSub">{p.subtitle}</div>
                   </div>
-                  <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
-                </li>
-              ))}
-            </ul>
-          </div>
+                  <div className="orderNowProductMeta">
+                    <span className="orderNowProductPrice">{formatPrice(p.priceCents)}</span>
+                    <button
+                      type="button"
+                      className="btn btnPrimary orderNowAddBtn"
+                      onClick={() => onAddLine(mvSlug, p.sku)}
+                    >
+                      Add To Cart
+                    </button>
+                  </div>
+                </div>
+                <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="orderNowAfterProducts">
           <div className="btnRow orderNowAfterBtnRow">
             <Link to={`/order-now/${mvSlug}/summary`} className="btn btnPrimary orderNowWideBtn" style={{ textDecoration: 'none' }}>
-              View Mountain View Cart
-            </Link>
-            <Link
-              to={`/order-now/${hallSlug}/summary`}
-              className="btn catalogOutlineBtn orderNowWideBtn"
-              style={{ textDecoration: 'none' }}
-            >
-              View Hallandale Cart
+              View Cart
             </Link>
           </div>
           <p className="muted orderNowFineprint">
@@ -236,46 +156,23 @@ export default function PharmacyOptions() {
         </div>
       </section>
 
-      {/* Only show Mountain View + Hallandale catalogs on this hub. */}
-
-      {cartCountTotal > 0 ? (
+      {cartCountMv > 0 ? (
         <div className="orderNowMiniCart" role="region" aria-label="Shopping cart summary">
           <div className="orderNowMiniCartInner">
             <div>
               <div className="orderNowMiniCartLabel">Your cart</div>
               <div className="orderNowMiniCartCount">
-                {cartCountMv > 0 ? (
-                  <>
-                    <b>{resolvedFulfillmentPharmacyName()}</b>: {cartCountMv} {cartCountMv === 1 ? 'item' : 'items'}
-                  </>
-                ) : null}
-                {cartCountMv > 0 && cartCountHall > 0 ? <span className="muted"> {' · '} </span> : null}
-                {cartCountHall > 0 ? (
-                  <>
-                    <b>Hallandale</b>: {cartCountHall} {cartCountHall === 1 ? 'item' : 'items'}
-                  </>
-                ) : null}
+                <b>{resolvedFulfillmentPharmacyName()}</b>: {cartCountMv} {cartCountMv === 1 ? 'item' : 'items'}
               </div>
             </div>
             <div className="btnRow" style={{ margin: 0, gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              {cartCountMv > 0 ? (
-                <Link
-                  to={`/order-now/${mvSlug}/summary`}
-                  className="btn btnPrimary orderNowMiniCartCta"
-                  style={{ textDecoration: 'none' }}
-                >
-                  View {resolvedFulfillmentPharmacyName()}
-                </Link>
-              ) : null}
-              {cartCountHall > 0 ? (
-                <Link
-                  to={`/order-now/${hallSlug}/summary`}
-                  className="btn catalogOutlineBtn orderNowMiniCartCta"
-                  style={{ textDecoration: 'none' }}
-                >
-                  View Hallandale
-                </Link>
-              ) : null}
+              <Link
+                to={`/order-now/${mvSlug}/summary`}
+                className="btn btnPrimary orderNowMiniCartCta"
+                style={{ textDecoration: 'none' }}
+              >
+                View {resolvedFulfillmentPharmacyName()}
+              </Link>
             </div>
           </div>
         </div>
