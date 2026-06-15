@@ -1,4 +1,4 @@
-import brandMarkImg from '../assets/wheatfill-mark.png'
+import brandMarkImg from '../assets/wheatfill-logo-new.png'
 
 export type SiteLogoMode = 'marketing' | 'provider'
 

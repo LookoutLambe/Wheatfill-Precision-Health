@@ -218,8 +218,8 @@ html.pharmacyCartOpen body {
 
 /* Clip baked-in PNG matte / edge so the mark sits flush on the header bar (no “subtle box”). */
 .brandMarkCrop {
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
   align-self: center;
   overflow: hidden;
@@ -232,8 +232,8 @@ html.pharmacyCartOpen body {
 .brandMarkImg {
   display: block;
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
   object-position: center;
   transform: scale(1.1);
@@ -242,7 +242,7 @@ html.pharmacyCartOpen body {
 
 .brandDivider {
   width: 1px;
-  height: 44px;
+  height: 52px;
   flex-shrink: 0;
   align-self: center;
   background: rgba(90, 60, 70, 0.45);
@@ -366,13 +366,13 @@ html.pharmacyCartOpen body {
   }
 
   .brandMarkCrop {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
   }
 
   .brandMarkImg {
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
   }
 
   .brandDivider {
@@ -2129,13 +2129,13 @@ button.pill:active {
   }
 
   .brandMarkCrop {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
   }
 
   .brandMarkImg {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
   }
 
   .brandDivider {
