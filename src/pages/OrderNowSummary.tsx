@@ -6,6 +6,7 @@ import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDispl
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 import { CONSULT_FEES, formatConsultFee } from '../config/consultFees'
+import { notifyByEmail } from '../lib/notifyEmail'
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -135,6 +136,25 @@ export default function OrderNowSummary() {
   const consultFeeLabel = consultType === 'none' ? '' : CONSULT_FEES[consultType].label
   const total = subtotal + insuranceCents + shippingCents + consultFeeCents
 
+  /** Email the practice when an order is placed (client-side, fire-and-forget). */
+  const sendOrderNotification = (method: string) => {
+    notifyByEmail(
+      `New med order (${method}) — ${PRACTICE_PUBLIC_NAME}`,
+      {
+        'Payment method': method,
+        Pharmacy: partner?.name,
+        Items: itemsSummaryText,
+        'Visit type': consultFeeLabel || 'Medication only',
+        Total: `$${(total / 100).toFixed(2)}`,
+        Patient: sigName.trim(),
+        Email: isPatientSession ? '(signed-in patient)' : contactEmail.trim(),
+        'Ship to': `${shipStreet.trim()}, ${shipCity.trim()}, ${shipState} ${shipZip.trim()}`,
+        Date: sigDate,
+      },
+      isPatientSession ? undefined : contactEmail.trim(),
+    )
+  }
+
   const onCheckout = () => {
     setCheckoutError(null)
     if (!partner || items.length === 0) return
@@ -191,7 +211,8 @@ export default function OrderNowSummary() {
       apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
     }
 
-    // Clear the cart and hand off to PayPal in the same tab (popup-safe).
+    // Email the practice, then clear the cart and hand off to PayPal in the same tab (popup-safe).
+    sendOrderNotification('PayPal')
     writeCartForSlug(slug, {})
     window.location.assign(payUrl)
   }
@@ -242,6 +263,7 @@ export default function OrderNowSummary() {
       apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
     }
 
+    sendOrderNotification('Zelle')
     setZelleInfo({ amountCents: total, memo: sigName.trim() })
   }
 
@@ -292,6 +314,7 @@ export default function OrderNowSummary() {
           body,
           '',
         )
+        sendOrderNotification('Pay later')
         writeCartForSlug(slug, {})
         setCheckoutError(null)
         alert(

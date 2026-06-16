@@ -5,6 +5,7 @@ import { MARKETING_ONLY } from '../config/mode'
 import { getMarketingIntegrations } from '../marketing/providerStore'
 import { getScheduleConfig, bookAppointment, getPortalState, slotsForDate, subscribePortalState, type ScheduleConfigV1 } from '../data/portalStore'
 import { apiPost } from '../api/client'
+import { notifyByEmail } from '../lib/notifyEmail'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
@@ -435,6 +436,15 @@ export default function BookOnline() {
                         // Keep going so the user still sees their selection "booked" locally, but call out the failure.
                         setMessage(`Booked locally, but the team inbox alert failed: ${String(e?.message || e)}`)
                       }
+
+                      // Email the practice the appointment request (client-side, fire-and-forget).
+                      notifyByEmail(`New appointment request — ${apptType}`, {
+                        'Visit type': apptType,
+                        Patient: who,
+                        'Preferred date': `${formatDateLong(selected.date)} (${selected.date})`,
+                        'Preferred time': `${selected.time} (${timeLabel24To12(selected.time)})`,
+                        Notes: (notes || '').trim() || undefined,
+                      })
 
                       const res = bookAppointment({
                         patientName: who,
