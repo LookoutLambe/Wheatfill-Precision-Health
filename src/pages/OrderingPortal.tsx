@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import { Link } from 'react-router-dom'
 import { apiPost } from '../api/client'
+import { notifyByEmail } from '../lib/notifyEmail'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 import { type Glp1Medication, type OrderCategory } from '../data/portalStore'
 import Page from '../components/Page'
@@ -348,6 +349,18 @@ export default function OrderingPortal() {
                       category === 'GLP-1' ? `GLP-1: ${glp1}` : null,
                       `Request: ${snapReq}`,
                     ].filter(Boolean) as string[]
+
+                    notifyByEmail(
+                      `New order request — ${snapName}`,
+                      {
+                        Category: category,
+                        ...(category === 'GLP-1' ? { 'GLP-1': glp1 } : {}),
+                        Request: snapReq,
+                        Name: snapName,
+                        Email: snapEmail,
+                      },
+                      snapEmail,
+                    )
 
                     await apiPost('/v1/public/team-inbox', {
                       kind: 'order_request',

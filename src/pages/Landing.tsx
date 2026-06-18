@@ -4,6 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import { apiPost } from '../api/client'
+import { notifyByEmail } from '../lib/notifyEmail'
 import { BrandSlogan } from '../components/BrandSlogan'
 import { BookVisitCta, PatientPortalCta } from '../components/CharmMarketingCtas'
 import Page from '../components/Page'
@@ -533,6 +534,17 @@ export default function Landing() {
                         `Landing consultation request`,
                         `Updates opt-in: ${consultUpdates ? 'yes' : 'no'}`,
                       ].join('\n')
+                      notifyByEmail(
+                        `New consultation request — ${name}`,
+                        {
+                          Name: name,
+                          Email: email,
+                          Message: msg,
+                          'Updates opt-in': consultUpdates ? 'yes' : 'no',
+                          Source: 'Landing consultation form',
+                        },
+                        email,
+                      )
                       await apiPost('/v1/public/contact', { name, email, message: fullMessage })
                       setConsultStatus('sent')
                       setConsultFirst('')

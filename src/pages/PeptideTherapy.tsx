@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 import { apiPost } from '../api/client'
+import { notifyByEmail } from '../lib/notifyEmail'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
 import { MARKETING_ONLY } from '../config/mode'
@@ -71,6 +72,17 @@ export default function PeptideTherapy() {
       '',
       'Checkboxes: user confirmed informational-only nature and legal/availability limitations.',
     ].join('\n')
+
+    // Email the practice regardless of build mode (live site is marketing-only).
+    notifyByEmail(
+      `New peptide waitlist request — ${waitName.trim() || waitEmail.trim()}`,
+      {
+        Name: waitName.trim() || '(not provided)',
+        Email: waitEmail.trim(),
+        Interest: 'Peptide program waitlist',
+      },
+      waitEmail.trim(),
+    )
 
     setWaitBusy(true)
     try {
