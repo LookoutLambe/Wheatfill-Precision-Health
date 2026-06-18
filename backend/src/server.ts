@@ -502,6 +502,16 @@ async function teamProviderIdsForPharmacyOrders(fallbackUserId: string): Promise
   return ids.length > 0 ? ids : [fallbackUserId]
 }
 
+/**
+ * Prisma `where` fragment scoping pharmacy orders for a staff user: **admins see every order**;
+ * providers see their practice team's orders. Spread into the order query alongside `deletedAt: null`.
+ */
+async function pharmacyOrderProviderFilter(req: any): Promise<Record<string, unknown>> {
+  if ((req?.user as any)?.role === 'admin') return {}
+  const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
+  return { providerId: { in: teamIds } }
+}
+
 async function ensureDemoPatientSeed() {
   const username = DEFAULT_PATIENT_USERNAME
   const existing = await prisma.user.findUnique({ where: { username } })
@@ -1935,9 +1945,9 @@ await app.register(async (protectedScope) => {
     '/v1/provider/orders',
     { preHandler: requireRole(['provider', 'admin']) },
     async (req) => {
-      const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
+      const scope = await pharmacyOrderProviderFilter(req)
       const orders = await prisma.order.findMany({
-        where: { providerId: { in: teamIds }, deletedAt: null },
+        where: { ...scope, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         take: 100,
         include: {
@@ -2004,8 +2014,8 @@ await app.register(async (protectedScope) => {
     async (req, reply) => {
       const id = (req.params as any).id as string
       const body = UpdateOrderStatusBody.parse(req.body)
-      const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
-      const before = await prisma.order.findFirst({ where: { id, providerId: { in: teamIds }, deletedAt: null } })
+      const scope = await pharmacyOrderProviderFilter(req)
+      const before = await prisma.order.findFirst({ where: { id, ...scope, deletedAt: null } })
       if (!before) return reply.notFound('Order not found.')
       const order = await prisma.order.update({ where: { id }, data: { status: body.status } })
       await writeAudit({
@@ -2027,8 +2037,8 @@ await app.register(async (protectedScope) => {
     { preHandler: requireRole(['provider', 'admin']) },
     async (req, reply) => {
       const id = (req.params as any).id as string
-      const teamIds = await teamProviderIdsForPharmacyOrders(req.user.sub)
-      const before = await prisma.order.findFirst({ where: { id, providerId: { in: teamIds }, deletedAt: null } })
+      const scope = await pharmacyOrderProviderFilter(req)
+      const before = await prisma.order.findFirst({ where: { id, ...scope, deletedAt: null } })
       if (!before) return reply.notFound('Order not found.')
       if (before.status !== 'closed' && before.status !== 'declined') {
         return reply.badRequest('Only closed or declined orders can be removed from the list.')
