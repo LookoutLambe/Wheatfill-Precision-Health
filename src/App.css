@@ -3374,8 +3374,8 @@ button.pill:active {
 .landingPenFeature {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  align-items: flex-start;
+  text-align: left;
   gap: 8px;
   padding: 8px 6px;
 }
@@ -3417,7 +3417,9 @@ button.pill:active {
    dev preview, which stretches these short lines oddly. High specificity to beat that rule. */
 .pageLanding .landingGridCatalog .landingCatalogSection .landingShipNote,
 .pageLanding .landingGridCatalog .landingPenPromo .landingPenLead,
-.pageLanding .landingGridCatalog .landingPenPromo .landingPenNote {
+.pageLanding .landingGridCatalog .landingPenPromo .landingPenNote,
+.pageLanding .landingGridCatalog .landingPenPromo .landingPenFeatures .landingPenFeature,
+.pageLanding .landingGridCatalog .landingPenPromo .landingPenFeatures .landingPenFeatureText {
   text-align: left !important;
   hyphens: none;
   -webkit-hyphens: none;
