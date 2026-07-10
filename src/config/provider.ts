@@ -5,8 +5,9 @@ export const PROVIDER_DISPLAY_NAME = 'Brett Wheatfill, FNP-C'
 /** Patient-facing practice name for ordering and policy copy. */
 export const PRACTICE_PUBLIC_NAME = 'Wheatfill Precision Health'
 
-/** Compounding pharmacy Brett is contracted with for catalog / fulfillment. */
-export const CONTRACTED_PHARMACY_NAME = 'Mountain View Pharmacy'
+/** Catalog / fulfillment display name. The contracted pharmacy is intentionally not named publicly;
+ *  the catalog is branded as the practice itself. */
+export const CONTRACTED_PHARMACY_NAME = PRACTICE_PUBLIC_NAME
 
 export const PROVIDER_LICENSED_STATES = ['Utah']
 

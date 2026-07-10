@@ -36,44 +36,32 @@ export default function PharmacyPartner() {
 
   useEffect(() => {
     if (!slug) return
-    setPartner(null)
     setError(null)
     setOfflineCatalog(false)
+    // Catalog is front-end controlled (the API can't be redeployed), so use the local list directly.
+    if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
+      setPartner({
+        slug,
+        name: resolvedFulfillmentPharmacyName(),
+        products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
+          sku: p.sku,
+          name: p.name,
+          subtitle: p.subtitle,
+          priceCents: p.priceCents,
+          currency: 'usd',
+        })),
+      })
+      return
+    }
+    if (slug === 'hallandale') {
+      setPartner({ slug, name: 'Hallandale Pharmacy', products: HALLANDALE_FALLBACK_PRODUCTS })
+      return
+    }
+    // Unknown slug: try the API as a last resort.
+    setPartner(null)
     apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(slug)}`)
-      .then((r) => {
-        setPartner(r.partner)
-        setError(null)
-        setOfflineCatalog(false)
-      })
-      .catch((e) => {
-        if (slug === DEFAULT_CATALOG_PARTNER_SLUG) {
-          setPartner({
-            slug,
-            name: resolvedFulfillmentPharmacyName(),
-            products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
-              sku: p.sku,
-              name: p.name,
-              subtitle: p.subtitle,
-              priceCents: p.priceCents,
-              currency: 'usd',
-            })),
-          })
-          setError(null)
-          setOfflineCatalog(true)
-        } else if (slug === 'hallandale') {
-          setPartner({
-            slug,
-            name: 'Hallandale Pharmacy',
-            products: HALLANDALE_FALLBACK_PRODUCTS,
-          })
-          setError(null)
-          setOfflineCatalog(true)
-        } else {
-          setPartner(null)
-          setError(String(e?.message || e))
-          setOfflineCatalog(false)
-        }
-      })
+      .then((r) => setPartner(r.partner))
+      .catch((e) => setError(String(e?.message || e)))
   }, [slug])
 
   useEffect(() => {

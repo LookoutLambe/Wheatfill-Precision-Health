@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
-import { apiGet } from '../api/client'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS } from '../data/catalogHighlight'
@@ -10,7 +9,6 @@ import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerWithProducts = { slug: string; name: string; products: Product[] }
-type PartnerResp = { partner: PartnerWithProducts }
 
 function formatPrice(cents: number) {
   return `$${(cents / 100).toFixed(0)}`
@@ -29,29 +27,18 @@ export default function PharmacyOptions() {
   const mvSlug = 'mountain-view'
 
   useEffect(() => {
-    let cancelled = false
-    apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(mvSlug)}`)
-      .then((r) => {
-        if (cancelled) return
-        setMvPartner(r.partner)
-      })
-      .catch(() => {
-        if (cancelled) return
-        setMvPartner({
-          slug: mvSlug,
-          name: resolvedFulfillmentPharmacyName(),
-          products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
-            sku: p.sku,
-            name: p.name,
-            subtitle: p.subtitle,
-            priceCents: p.priceCents,
-            currency: 'usd',
-          })),
-        })
-      })
-    return () => {
-      cancelled = true
-    }
+    // Catalog is front-end controlled (the API backend can't be redeployed), so use the local list.
+    setMvPartner({
+      slug: mvSlug,
+      name: resolvedFulfillmentPharmacyName(),
+      products: CATALOG_HIGHLIGHT_PRODUCTS.map((p) => ({
+        sku: p.sku,
+        name: p.name,
+        subtitle: p.subtitle,
+        priceCents: p.priceCents,
+        currency: 'usd',
+      })),
+    })
   }, [])
 
   const cartCountMv = useMemo(() => countCartItems(mvSlug), [cartTick])
@@ -111,7 +98,16 @@ export default function PharmacyOptions() {
           for comparison, and a link to the <Link to="/medications#dosing-guide">titration dosing guide</Link>.
         </p>
 
-        <div className="orderNowDualCatalogCol orderNowDualCatalogCol--mv" role="region" aria-label="Mountain View catalog">
+        <div className="orderNowShipNote" role="note" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '4px 0 14px', fontWeight: 800 }}>
+          <span className="pill" style={{ background: '#b9932e', color: '#fff', borderColor: '#b9932e' }}>
+            🚚 Free overnight shipping
+          </span>
+          <span className="muted" style={{ fontWeight: 600, fontSize: 13 }}>
+            Auto-inject pen coming soon (+$10/order) — dial your actual dose, no unit conversions.
+          </span>
+        </div>
+
+        <div className="orderNowDualCatalogCol orderNowDualCatalogCol--mv" role="region" aria-label="GLP-1 catalog">
           <div className="orderNowDualCatalogHead">
             <div className="orderNowDualCatalogTitle">{mvPartner?.name || resolvedFulfillmentPharmacyName()}</div>
             <Link to={`/order-now/${mvSlug}`} className="btn btnPrimary" style={{ textDecoration: 'none' }}>

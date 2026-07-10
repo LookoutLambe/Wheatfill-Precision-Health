@@ -83,26 +83,19 @@ export default function OrderNowSummary() {
 
   useEffect(() => {
     if (!slug) return
-    setPartner(null)
     setLoadError(null)
     setOfflineCatalog(false)
+    // Catalog is front-end controlled (the API can't be redeployed), so use the local list directly.
+    const offline = offlinePartnerForSlug(slug)
+    if (offline) {
+      setPartner(offline)
+      return
+    }
+    // Unknown slug (no local catalog): try the API as a last resort.
+    setPartner(null)
     apiGet<PartnerResp>(`/v1/pharmacies/${encodeURIComponent(slug)}`)
-      .then((r) => {
-        setPartner(r.partner)
-        setLoadError(null)
-        setOfflineCatalog(false)
-      })
-      .catch((e) => {
-        const offline = offlinePartnerForSlug(slug)
-        if (offline) {
-          setPartner(offline)
-          setLoadError(null)
-          setOfflineCatalog(true)
-        } else {
-          setPartner(null)
-          setLoadError(String(e?.message || e))
-        }
-      })
+      .then((r) => setPartner(r.partner))
+      .catch((e) => setLoadError(String(e?.message || e)))
   }, [slug])
 
   useLayoutEffect(() => {
