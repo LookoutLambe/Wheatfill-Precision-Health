@@ -3,6 +3,7 @@ import { Link, NavLink } from 'react-router-dom'
 
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
+import glp1PenImg from '../assets/glp1-pen.png'
 import { apiPost } from '../api/client'
 import { notifyByEmail } from '../lib/notifyEmail'
 import { BrandSlogan } from '../components/BrandSlogan'
@@ -11,15 +12,50 @@ import Page from '../components/Page'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import {
-  minCatalogPriceCentsForFamily,
+  CATALOG_HIGHLIGHT_PRODUCTS,
+  type CatalogHighlightProduct,
 } from '../data/catalogHighlight'
 
 function formatCatalogPrice(cents: number) {
   return `$${(cents / 100).toFixed(0)}`
 }
 
-const SEMAGLUTIDE_STARTING_CENTS = minCatalogPriceCentsForFamily('semaglutide')
-const TIRZEPATIDE_STARTING_CENTS = minCatalogPriceCentsForFamily('tirzepatide')
+/** "Semaglutide 2.5 mg/mL - 1 mL" -> "2.5 mg/mL (1 mL)" for the compact pricing table. */
+function catalogDoseLabel(name: string) {
+  return name
+    .replace(/^(semaglutide|tirzepatide)\s+/i, '')
+    .replace(/\s*-\s*([\d.]+\s*mL)\s*$/i, ' ($1)')
+}
+
+const SEMAGLUTIDE_ROWS = CATALOG_HIGHLIGHT_PRODUCTS.filter((p) => p.family === 'semaglutide')
+const TIRZEPATIDE_ROWS = CATALOG_HIGHLIGHT_PRODUCTS.filter((p) => p.family === 'tirzepatide')
+
+function CatalogPriceTable({
+  heading,
+  variant,
+  rows,
+}: {
+  heading: string
+  variant: 'sema' | 'tz'
+  rows: CatalogHighlightProduct[]
+}) {
+  return (
+    <div className={`landingPriceTable landingPriceTable--${variant}`}>
+      <div className="landingPriceTableHead">
+        <span>{heading}</span>
+        <span className="landingPriceTableHeadPrice">Price</span>
+      </div>
+      <ul className="landingPriceTableRows">
+        {rows.map((p) => (
+          <li key={p.sku} className="landingPriceRow">
+            <span className="landingPriceDose">{catalogDoseLabel(p.name)}</span>
+            <span className="landingPricePrice">{formatCatalogPrice(p.priceCents)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
 
 type AccordionId = 'telehealth' | 'metabolic' | 'medication' | 'longevity'
 
@@ -420,28 +456,80 @@ export default function Landing() {
               medication is prescribed. Checkout opens securely with your order total after you submit from the summary page.
               If something goes wrong with your order, your care team handles it from our side.
             </p>
-            <div className="landingCatalogStartingRows">
-              <div className="landingCatalogStartingAt">
-                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
-                  Semaglutide starting at
-                </span>
-                <span className="landingCatalogStartingAmt">
-                  {formatCatalogPrice(SEMAGLUTIDE_STARTING_CENTS)}
-                </span>
-              </div>
-              <div className="landingCatalogStartingAt">
-                <span className="landingCatalogStartingLabel landingCatalogStartingLineLabel">
-                  Tirzepatide starting at
-                </span>
-                <span className="landingCatalogStartingAmt">
-                  {formatCatalogPrice(TIRZEPATIDE_STARTING_CENTS)}
-                </span>
-              </div>
+            <div className="landingPriceTables">
+              <CatalogPriceTable heading="Semaglutide + Glycine" variant="sema" rows={SEMAGLUTIDE_ROWS} />
+              <CatalogPriceTable heading="Tirzepatide + Glycine" variant="tz" rows={TIRZEPATIDE_ROWS} />
             </div>
+
+            <div className="landingShipBanner" role="note">
+              <span className="landingShipBannerIcon" aria-hidden="true">🚚</span>
+              <span className="landingShipBannerText">Free Overnight Shipping</span>
+            </div>
+            <p className="muted landingShipNote">
+              Auto-inject pen coming soon (+$10/order) — dial your actual dose, no unit conversions.
+            </p>
+
             <div className="btnRow">
               <Link to="/order-now" className="btn btnPrimary" style={{ textDecoration: 'none' }}>
                 View Full Catalog
               </Link>
+            </div>
+          </section>
+
+          <section className="landingPenPromo" aria-labelledby="landing-pen-heading">
+            <div className="landingPenPromoInner">
+              <div className="landingPenPromoMain">
+                <div className="landingPenPromoHead">
+                  <h2 id="landing-pen-heading" className="landingPenTitle">
+                    Confused by <span className="landingPenTitleAccent">GLP-1 Units?</span>
+                  </h2>
+                  <p className="muted landingPenLead">
+                    Most patients know their units, but not what that means in actual milligrams.
+                  </p>
+                </div>
+
+                <div className="landingPenBanners">
+                  <div className="landingPenBanner landingPenBanner--soon">Coming Soon</div>
+                  <div className="landingPenBanner landingPenBanner--option">Auto-Inject Pen Option</div>
+                </div>
+
+                <ul className="landingPenFeatures">
+                  <li className="landingPenFeature">
+                    <span className="landingPenFeatureIcon" aria-hidden="true">🏷️</span>
+                    <span className="landingPenFeatureText">
+                      <b>+$10</b> per order
+                    </span>
+                  </li>
+                  <li className="landingPenFeature">
+                    <span className="landingPenFeatureIcon" aria-hidden="true">🎯</span>
+                    <span className="landingPenFeatureText">Dial your actual dose</span>
+                  </li>
+                  <li className="landingPenFeature">
+                    <span className="landingPenFeatureIcon" aria-hidden="true">🚫</span>
+                    <span className="landingPenFeatureText">No confusing unit conversions</span>
+                  </li>
+                  <li className="landingPenFeature">
+                    <span className="landingPenFeatureIcon" aria-hidden="true">✅</span>
+                    <span className="landingPenFeatureText">Less math. Less guesswork.</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="landingPenPromoArt">
+                <img
+                  src={glp1PenImg}
+                  alt="Auto-inject pen showing a 2.5 mg dose — simple, clear, confident"
+                  className="landingPenImg"
+                />
+              </div>
+            </div>
+
+            <div className="landingPenNote" role="note">
+              <span className="landingPenNoteIcon" aria-hidden="true">📅</span>
+              <span>
+                Within the next month, your medication can be provided in an <b>auto-inject pen</b> that
+                lets you dial the <b>actual dose</b> instead of units.
+              </span>
             </div>
           </section>
         </section>

@@ -3156,6 +3156,273 @@ button.pill:active {
   letter-spacing: -0.02em;
 }
 
+/* ——— Landing GLP-1 pricing tables (matches the pricing sheet) ——— */
+.landingPriceTables {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 6px 0 16px;
+}
+
+@media (max-width: 680px) {
+  .landingPriceTables {
+    grid-template-columns: 1fr;
+  }
+}
+
+.landingPriceTable {
+  border: 1px solid var(--border, rgba(10, 30, 63, 0.14));
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card, rgba(255, 255, 255, 0.96));
+}
+
+.landingPriceTableHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(15px, 1.6vw, 17px);
+  letter-spacing: 0.01em;
+}
+
+.landingPriceTableHeadPrice {
+  font-size: 0.9em;
+  opacity: 0.95;
+}
+
+.landingPriceTable--sema .landingPriceTableHead {
+  background: var(--navy);
+}
+
+.landingPriceTable--tz .landingPriceTableHead {
+  background: var(--red);
+}
+
+.landingPriceTableRows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.landingPriceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border, rgba(10, 30, 63, 0.1));
+}
+
+.landingPriceTableRows > .landingPriceRow:first-child {
+  border-top: none;
+}
+
+.landingPriceDose {
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+.landingPricePrice {
+  font-weight: 800;
+  font-size: clamp(18px, 2.4vw, 22px);
+  letter-spacing: -0.01em;
+}
+
+.landingPriceTable--sema .landingPricePrice {
+  color: var(--navy);
+}
+
+.landingPriceTable--tz .landingPricePrice {
+  color: var(--red);
+}
+
+.landingShipBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 18px;
+  margin: 6px 0 8px;
+  border: 2px solid var(--navy);
+  border-radius: 14px;
+  background: var(--card, rgba(255, 255, 255, 0.96));
+}
+
+.landingShipBannerIcon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.landingShipBannerText {
+  font-weight: 800;
+  font-size: clamp(18px, 2.6vw, 24px);
+  color: var(--text-h);
+  letter-spacing: 0.01em;
+}
+
+.landingShipNote {
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+
+/* ——— Landing auto-inject pen promo ——— */
+.landingPenPromo {
+  margin-top: 18px;
+  padding: clamp(16px, 2.4vw, 24px);
+  border: 1px solid var(--border, rgba(10, 30, 63, 0.14));
+  border-radius: 16px;
+  background: var(--card, rgba(255, 255, 255, 0.96));
+}
+
+.landingPenPromoInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 300px);
+  gap: clamp(16px, 3vw, 32px);
+  align-items: center;
+}
+
+@media (max-width: 720px) {
+  .landingPenPromoInner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.landingPenPromoArt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landingPenImg {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+@media (max-width: 720px) {
+  .landingPenPromoArt {
+    order: -1;
+  }
+  .landingPenImg {
+    max-width: 220px;
+  }
+}
+
+.landingPenTitle {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  color: var(--navy, #0a1e3f);
+}
+
+.landingPenTitleAccent {
+  color: var(--red);
+}
+
+.landingPenLead {
+  margin: 10px 0 0;
+  font-size: 15px;
+}
+
+.landingPenBanners {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.landingPenBanner {
+  text-align: center;
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: clamp(15px, 2vw, 19px);
+}
+
+.landingPenBanner--soon {
+  background: var(--red);
+}
+
+.landingPenBanner--option {
+  background: var(--navy);
+}
+
+.landingPenFeatures {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .landingPenFeatures {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.landingPenFeature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 8px 6px;
+}
+
+.landingPenFeatureIcon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.landingPenFeatureText {
+  font-size: 13.5px;
+  color: var(--text-h);
+}
+
+.landingPenFeatureText b {
+  color: var(--red);
+  font-size: 16px;
+}
+
+.landingPenNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--accent-border);
+  background: rgba(10, 30, 63, 0.05);
+  font-size: 14px;
+  color: var(--text-h);
+}
+
+.landingPenNoteIcon {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+/* Keep the new-section copy reading left-to-right — the site justifies body prose in the
+   dev preview, which stretches these short lines oddly. High specificity to beat that rule. */
+.pageLanding .landingGridCatalog .landingCatalogSection .landingShipNote,
+.pageLanding .landingGridCatalog .landingPenPromo .landingPenLead,
+.pageLanding .landingGridCatalog .landingPenPromo .landingPenNote {
+  text-align: left !important;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+
 .pharmacyProductBody {
   flex: 1;
   min-width: 0;
