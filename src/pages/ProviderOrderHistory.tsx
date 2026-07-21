@@ -6,6 +6,7 @@ import {
   getMarketingProviderLoginDisplay,
   isMarketingProviderAuthed,
 } from '../marketing/providerStore'
+import { displayFulfillmentName } from '../lib/practiceIntegrationDisplay'
 
 type ProviderOrderRow = {
   id: string
@@ -199,7 +200,7 @@ export default function ProviderOrderHistory() {
           o.patient?.email || '',
           formatShipTo(o),
           o.status,
-          o.pharmacyPartner?.name || '',
+          o.pharmacyPartner ? displayFulfillmentName(o.pharmacyPartner.name) : '',
           o.createdAt,
         ]
           .filter(Boolean)
@@ -314,7 +315,7 @@ export default function ProviderOrderHistory() {
                   <div>
                     <div style={{ fontWeight: 800, color: 'var(--text-h)' }}>{orderLineItemsSummary(o)}</div>
                     <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                      {new Date(o.createdAt).toLocaleString()} · {o.status} · {o.pharmacyPartner ? o.pharmacyPartner.name : o.request}
+                      {new Date(o.createdAt).toLocaleString()} · {o.status} · {o.pharmacyPartner ? displayFulfillmentName(o.pharmacyPartner.name) : o.request}
                     </div>
                   </div>
                   <div className="btnRow" style={{ margin: 0, gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>

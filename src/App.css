@@ -646,34 +646,32 @@ html.pharmacyCartOpen body {
   margin-top: 10px;
 }
 
-/* Table headers: panel scrolling is disabled (use browser scrollbar only). */
+/* Widget lists scroll within a fixed height so long queues stay tidy instead of overflowing
+   the card. The column header stays pinned while the rows scroll. */
 .teamWorkspacePage .teamWidgetScroll thead th {
-  position: static;
-  top: auto;
-  z-index: auto;
-  background: transparent;
-  box-shadow: none;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--card, #fff);
+  box-shadow: 0 1px 0 var(--border);
 }
 
-/* Team Workspace scroll fixes:
-   - Prevent horizontal scroll on the page
-   - Use only the browser scrollbar (no nested widget scrollbars) */
 .teamWorkspacePage {
   overflow-x: hidden;
 }
 
 .teamWorkspacePage .teamWidgetScroll {
-  max-height: none;
-  overflow-y: visible;
+  max-height: 440px;
+  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: auto;
+  overscroll-behavior: contain;
   touch-action: auto;
 }
 
 @media (max-width: 900px) {
   .teamWorkspacePage .teamWidgetScroll {
-    max-height: none;
+    max-height: 60vh;
   }
 }
 

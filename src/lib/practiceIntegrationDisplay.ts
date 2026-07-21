@@ -20,3 +20,11 @@ export function resolvedFulfillmentPharmacyName(): string {
   if (!n || STALE_FULFILLMENT_NAMES.has(n.toLowerCase())) return CONTRACTED_PHARMACY_NAME
   return n
 }
+
+/** Hide legacy pharmacy names in internal/provider views: any stored order whose partner is a
+ *  retired pharmacy name (e.g. "Mountain View Pharmacy") displays as the practice name instead. */
+export function displayFulfillmentName(name?: string | null): string {
+  const n = (name || '').trim()
+  if (!n || STALE_FULFILLMENT_NAMES.has(n.toLowerCase())) return CONTRACTED_PHARMACY_NAME
+  return n
+}
