@@ -10,7 +10,7 @@ import { notifyByEmail } from '../lib/notifyEmail'
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
-import { apiGet, apiPost, apiPostBeacon, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
+import { apiGet, apiPostBeacon, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
 import { catalogPayUrlForOrderTotalCents } from '../lib/catalogPaypalAmountUrl'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
@@ -260,67 +260,6 @@ export default function OrderNowSummary() {
 
     sendOrderNotification('Zelle')
     setZelleInfo({ amountCents: total, memo: sigName.trim() })
-  }
-
-  const onRequestPayLater = () => {
-    setCheckoutError(null)
-    if (!partner || items.length === 0) return
-    if (!agree) {
-      setCheckoutError('Please read and agree to the medication shipping terms and conditions above.')
-      return
-    }
-    if (!contactOk) {
-      setCheckoutError('Please agree to the contact / privacy authorization to continue.')
-      return
-    }
-    if (!shipStreet.trim() || !shipCity.trim() || !shipState || !shipZip.trim()) {
-      setCheckoutError('Please complete street, city, state, and zip for shipping.')
-      return
-    }
-    if (!sigName.trim()) {
-      setCheckoutError('Please type your name as a signature to continue.')
-      return
-    }
-    if (!emailOk(contactEmail)) {
-      setCheckoutError('Please enter a valid email so we can send you a payment link.')
-      return
-    }
-
-    setCheckoutBusy(true)
-    ;(async () => {
-      try {
-        const body = {
-          partnerSlug: partner.slug,
-          items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-          agreedToShippingTerms: agree,
-          contactPermission: contactOk,
-          signatureName: sigName.trim(),
-          signatureDate: sigDate,
-          shippingInsurance: insurance,
-          shippingAddress1: shipStreet.trim(),
-          shippingCity: shipCity.trim(),
-          shippingState: shipState.trim(),
-          shippingPostalCode: shipZip.trim(),
-          contactEmail: contactEmail.trim(),
-          consultType: consultType === 'none' ? undefined : consultType,
-        }
-        const res = await apiPost<{ ok: boolean; orderId: string; totalCents: number }>(
-          '/v1/public/orders/pharmacy/request',
-          body,
-          '',
-        )
-        sendOrderNotification('Pay later')
-        writeCartForSlug(slug, {})
-        setCheckoutError(null)
-        alert(
-          `Request sent to the team (ref ${res.orderId}). We’ll email you a payment link for $${(res.totalCents / 100).toFixed(2)} once the order is reviewed.`,
-        )
-      } catch (e: unknown) {
-        setCheckoutError(String((e as Error)?.message || e))
-      } finally {
-        setCheckoutBusy(false)
-      }
-    })()
   }
 
   const catalogPath = `/order-now/${encodeURIComponent(slug)}`
@@ -724,15 +663,6 @@ export default function OrderNowSummary() {
                   Pay with Zelle
                 </button>
               ) : null}
-              <button
-                type="button"
-                className="btn catalogOutlineBtn orderNowPayBtn"
-                disabled={!canCheckOut || checkoutBusy}
-                style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
-                onClick={onRequestPayLater}
-              >
-                {checkoutBusy ? 'Sending request…' : 'Send request (pay later)'}
-              </button>
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
                 Card checkout opens securely with PayPal, or pay by Zelle. The practice confirms fulfillment details
                 after payment.
