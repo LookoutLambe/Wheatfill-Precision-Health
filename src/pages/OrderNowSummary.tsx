@@ -69,6 +69,7 @@ export default function OrderNowSummary() {
   const [shipState, setShipState] = useState('')
   const [shipZip, setShipZip] = useState('')
   const [contactEmail, setContactEmail] = useState('')
+  const [dob, setDob] = useState('')
   const [consultType, setConsultType] = useState<'none' | 'new_patient' | 'follow_up'>('none')
   const [apiSession, setApiSession] = useState<ApiSessionSnapshot | null>(null)
 
@@ -124,7 +125,7 @@ export default function OrderNowSummary() {
     [items],
   )
   const insuranceCents = useMemo(() => (insurance ? Math.round(subtotal * 0.02) : 0), [insurance, subtotal])
-  const shippingCents = slug === 'hallandale' ? 2500 : 0
+  const shippingCents = slug === 'hallandale' ? 2500 : 1000
   const consultFeeCents = consultType === 'none' ? 0 : CONSULT_FEES[consultType].cents
   const consultFeeLabel = consultType === 'none' ? '' : CONSULT_FEES[consultType].label
   const total = subtotal + insuranceCents + shippingCents + consultFeeCents
@@ -140,6 +141,7 @@ export default function OrderNowSummary() {
         'Visit type': consultFeeLabel || 'Medication only',
         Total: `$${(total / 100).toFixed(2)}`,
         Patient: sigName.trim(),
+        'Date of birth': dob.trim(),
         Email: isPatientSession ? '(signed-in patient)' : contactEmail.trim(),
         'Ship to': `${shipStreet.trim()}, ${shipCity.trim()}, ${shipState} ${shipZip.trim()}`,
         Date: sigDate,
@@ -330,6 +332,7 @@ export default function OrderNowSummary() {
     shipState &&
     shipZip.trim() &&
     sigName.trim() &&
+    dob.trim() &&
     (isPatientSession || emailOk(contactEmail))
   const itemsSummaryText = items.map((it) => `${it.product.name} (x${it.quantity})`).join(', ')
 
@@ -512,6 +515,19 @@ export default function OrderNowSummary() {
                     />
                   </label>
                 )}
+                <label style={{ display: 'block', marginBottom: 10 }}>
+                  <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                    Date of birth <span style={{ color: 'var(--accent-rose)' }}>*</span>
+                  </div>
+                  <input
+                    className="input"
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    autoComplete="bday"
+                    style={{ maxWidth: 200 }}
+                  />
+                </label>
                 <label>
                   <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                     Street address <span style={{ color: 'var(--accent-rose)' }}>*</span>

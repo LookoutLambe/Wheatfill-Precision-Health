@@ -100,7 +100,7 @@ export default function PharmacyOptions() {
 
         <div className="orderNowShipNote" role="note" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '4px 0 14px', fontWeight: 800 }}>
           <span className="pill" style={{ background: '#b9932e', color: '#fff', borderColor: '#b9932e' }}>
-            🚚 Free overnight shipping
+            🚚 $10 overnight shipping
           </span>
           <span className="muted" style={{ fontWeight: 600, fontSize: 13 }}>
             Auto-inject pen coming soon (+$10/order) — dial your actual dose, no unit conversions.

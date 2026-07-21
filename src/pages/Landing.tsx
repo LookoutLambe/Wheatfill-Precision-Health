@@ -463,7 +463,7 @@ export default function Landing() {
 
             <div className="landingShipBanner" role="note">
               <span className="landingShipBannerIcon" aria-hidden="true">🚚</span>
-              <span className="landingShipBannerText">Free Overnight Shipping</span>
+              <span className="landingShipBannerText">$10 Overnight Shipping</span>
             </div>
             <p className="muted landingShipNote">
               Auto-inject pen coming soon (+$10/order) — dial your actual dose, no unit conversions.
