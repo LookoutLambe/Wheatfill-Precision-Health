@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { PRACTICE_PUBLIC_NAME, ZELLE_ENABLED } from '../config/provider'
+import { PRACTICE_PUBLIC_NAME, VENMO_ENABLED, ZELLE_ENABLED } from '../config/provider'
 import ZelleInstructions from '../components/ZelleInstructions'
+import VenmoInstructions from '../components/VenmoInstructions'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
@@ -11,7 +12,6 @@ import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet, apiPostBeacon, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
-import { catalogPayUrlForOrderTotalCents } from '../lib/catalogPaypalAmountUrl'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
@@ -62,8 +62,8 @@ export default function OrderNowSummary() {
   const [sigDate, setSigDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [insurance, setInsurance] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [zelleInfo, setZelleInfo] = useState<{ amountCents: number; memo: string } | null>(null)
+  const [venmoInfo, setVenmoInfo] = useState<{ amountCents: number; memo: string } | null>(null)
   const [shipStreet, setShipStreet] = useState('')
   const [shipCity, setShipCity] = useState('')
   const [shipState, setShipState] = useState('')
@@ -150,7 +150,7 @@ export default function OrderNowSummary() {
     )
   }
 
-  const onCheckout = () => {
+  const onPayWithVenmo = () => {
     setCheckoutError(null)
     if (!partner || items.length === 0) return
     if (!agree) {
@@ -174,16 +174,6 @@ export default function OrderNowSummary() {
       return
     }
 
-    // Build the PayPal checkout link with the prefilled total (consult fee included in `total`).
-    const payLineSummary = consultFeeLabel ? `${itemsSummaryText} + ${consultFeeLabel}` : itemsSummaryText
-    const payUrl = catalogPayUrlForOrderTotalCents(total, payLineSummary)
-    if (!payUrl) {
-      setCheckoutError('Online payment is unavailable right now. Please contact the office to complete your order.')
-      return
-    }
-
-    setCheckoutBusy(true)
-
     const body = {
       partnerSlug: partner.slug,
       items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
@@ -198,18 +188,16 @@ export default function OrderNowSummary() {
       shippingPostalCode: shipZip.trim(),
     }
 
-    // Record the order for the office to fulfill — fire-and-forget (keepalive) so it never blocks or
-    // delays the payment hand-off. A slow/unreachable API must not stop the customer from paying.
+    // Record the order (fire-and-forget), then show Venmo instructions with a prefilled deep link.
+    // Venmo is peer-to-peer — there is no server confirmation, so the office reconciles on receipt.
     if (isPatientSession) {
       apiPostBeacon('/v1/patient/orders/pharmacy', body)
     } else {
       apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
     }
 
-    // Email the practice, then clear the cart and hand off to PayPal in the same tab (popup-safe).
-    sendOrderNotification('PayPal')
-    writeCartForSlug(slug, {})
-    window.location.assign(payUrl)
+    sendOrderNotification('Venmo')
+    setVenmoInfo({ amountCents: total, memo: sigName.trim() })
   }
 
   const onPayWithZelle = () => {
@@ -305,7 +293,7 @@ export default function OrderNowSummary() {
             <p className="orderNowCheckoutLead">
               {items.length > 0 ? (
                 <>
-                  Enter shipping and signature below, then use <strong>Check out</strong> to open the PayPal payment link.
+                  Enter shipping and signature below, then use <strong>Pay with Venmo</strong> to complete payment.
                 </>
               ) : (
                 <>
@@ -609,7 +597,7 @@ export default function OrderNowSummary() {
                   <span style={{ textAlign: 'right' }}>{moneyCents(total)}</span>
                 </div>
                 <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>
-                  Check out opens a secure PayPal payment page with <strong>this</strong> total. Any adjustments are
+                  Pay with Venmo shows the amount to send for <strong>this</strong> total. Any adjustments are
                   confirmed by the office.
                 </p>
               </div>
@@ -643,30 +631,39 @@ export default function OrderNowSummary() {
             ) : null}
 
             <div className="orderNowSummaryPayWrap" style={{ marginTop: 18 }}>
-              <button
-                type="button"
-                className="btn btnPrimary orderNowPayBtn"
-                disabled={!canCheckOut || checkoutBusy}
-                style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
-                onClick={onCheckout}
-              >
-                {checkoutBusy ? 'Opening checkout…' : 'Check out'}
-              </button>
+              {VENMO_ENABLED ? (
+                <button
+                  type="button"
+                  className="btn btnPrimary orderNowPayBtn"
+                  disabled={!canCheckOut}
+                  style={{ opacity: !canCheckOut ? 0.55 : 1 }}
+                  onClick={onPayWithVenmo}
+                >
+                  Pay with Venmo
+                </button>
+              ) : null}
               {ZELLE_ENABLED ? (
                 <button
                   type="button"
                   className="btn catalogOutlineBtn orderNowPayBtn"
-                  disabled={!canCheckOut || checkoutBusy}
-                  style={{ opacity: !canCheckOut || checkoutBusy ? 0.55 : 1 }}
+                  disabled={!canCheckOut}
+                  style={{ opacity: !canCheckOut ? 0.55 : 1 }}
                   onClick={onPayWithZelle}
                 >
                   Pay with Zelle
                 </button>
               ) : null}
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
-                Card checkout opens securely with PayPal, or pay by Zelle. The practice confirms fulfillment details
-                after payment.
+                Pay by Venmo or Zelle. The practice confirms fulfillment details after payment.
               </p>
+              {venmoInfo ? (
+                <>
+                  <p style={{ fontSize: 14, marginTop: 16, marginBottom: 0, fontWeight: 800 }}>
+                    Your order is recorded — complete payment with Venmo:
+                  </p>
+                  <VenmoInstructions amountCents={venmoInfo.amountCents} memo={venmoInfo.memo} />
+                </>
+              ) : null}
               {zelleInfo ? (
                 <>
                   <p style={{ fontSize: 14, marginTop: 16, marginBottom: 0, fontWeight: 800 }}>

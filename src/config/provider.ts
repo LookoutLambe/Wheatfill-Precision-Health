@@ -45,3 +45,11 @@ export const ZELLE_RECIPIENT_NAME = (vitePublicEnv.VITE_ZELLE_NAME?.toString() |
 
 /** Zelle is offered as a payment option when a recipient phone is configured. */
 export const ZELLE_ENABLED = ZELLE_PHONE.length > 0
+
+/** Venmo username (without the leading @) — patients pay the practice here (primary rail, replaces PayPal). */
+export const VENMO_USERNAME = (vitePublicEnv.VITE_VENMO_USERNAME?.toString() || 'wheaty27')
+  .trim()
+  .replace(/^@+/, '')
+
+/** Venmo is offered when a username is configured. */
+export const VENMO_ENABLED = VENMO_USERNAME.length > 0
