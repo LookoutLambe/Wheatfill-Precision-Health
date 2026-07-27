@@ -8,7 +8,6 @@ import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../dat
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
 import { CONSULT_FEES, formatConsultFee } from '../config/consultFees'
 import { notifyByEmail } from '../lib/notifyEmail'
-import { emailCustomerVenmoPayLink } from '../lib/customerPayEmail'
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
@@ -198,8 +197,6 @@ export default function OrderNowSummary() {
     }
 
     sendOrderNotification('Venmo')
-    // Auto-email the customer their Venmo pay link (guest checkout has a typed email; patients don't).
-    emailCustomerVenmoPayLink(contactEmail.trim(), total, { customerName: sigName.trim() })
     setVenmoInfo({ amountCents: total, memo: sigName.trim() })
   }
 
