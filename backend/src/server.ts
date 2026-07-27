@@ -31,7 +31,7 @@ import {
   type ProviderProfile,
   verifySupabaseEmailPassword,
 } from './integrations/supabase.js'
-import { notifyOrderEmail } from './integrations/orderEmail.js'
+import { notifyOrderEmail, notifyCustomerVenmoPayEmail } from './integrations/orderEmail.js'
 
 loadAndValidateEnv()
 
@@ -752,6 +752,15 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
     guestContactEmail: contactEmail.trim(),
   })
   if (!r.ok) return reply.status(r.status).send(r.message)
+
+  // Email the customer their Venmo pay link (best-effort; gated by CUSTOMER_PAY_EMAIL_ENABLED).
+  void notifyCustomerVenmoPayEmail({
+    orderId: r.orderId,
+    totalCents: r.totalCents,
+    patientEmail: contactEmail.trim(),
+    patientName: body.signatureName,
+  })
+
   return { orderId: r.orderId, totalCents: r.totalCents }
 })
 
