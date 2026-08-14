@@ -25,15 +25,6 @@ export const TEAM_ADMIN_FORWARD_EMAIL = 'lookoutlambe@gmail.com'
 /** Shown in the back-office UI — consumer / brand tone (not a clinical EHR). */
 export const PROVIDER_TEAM_LABEL = 'Brett & Bridget — team'
 
-/** Zelle recipient — patients send payment from their own bank's Zelle to this phone number. */
-export const ZELLE_PHONE = (vitePublicEnv.VITE_ZELLE_PHONE?.toString() || '714-489-7506').trim()
-
-/** Name patients should see / select when sending via Zelle. */
-export const ZELLE_RECIPIENT_NAME = (vitePublicEnv.VITE_ZELLE_NAME?.toString() || 'Brett Wheatfill').trim()
-
-/** Zelle is offered as a payment option when a recipient phone is configured. */
-export const ZELLE_ENABLED = ZELLE_PHONE.length > 0
-
 /** Venmo username (without the leading @) — patients pay the practice here (the only payment rail). */
 export const VENMO_USERNAME = (vitePublicEnv.VITE_VENMO_USERNAME?.toString() || 'wheaty27')
   .trim()

@@ -9,8 +9,6 @@ export type VitePublicEnv = {
   VITE_MARKETING_ONLY?: string
   VITE_APP_URL?: string
   VITE_API_URL?: string
-  VITE_ZELLE_PHONE?: string
-  VITE_ZELLE_NAME?: string
   VITE_VENMO_USERNAME?: string
   VITE_PATIENT_USES_MEDPLUM?: string
   VITE_PUBLIC_SCHEDULING_URL?: string
@@ -26,8 +24,6 @@ export const vitePublicEnv: VitePublicEnv = {
   VITE_MARKETING_ONLY: import.meta.env.VITE_MARKETING_ONLY,
   VITE_APP_URL: import.meta.env.VITE_APP_URL,
   VITE_API_URL: import.meta.env.VITE_API_URL,
-  VITE_ZELLE_PHONE: import.meta.env.VITE_ZELLE_PHONE,
-  VITE_ZELLE_NAME: import.meta.env.VITE_ZELLE_NAME,
   VITE_VENMO_USERNAME: import.meta.env.VITE_VENMO_USERNAME,
   VITE_PATIENT_USES_MEDPLUM: import.meta.env.VITE_PATIENT_USES_MEDPLUM,
   VITE_PUBLIC_SCHEDULING_URL: import.meta.env.VITE_PUBLIC_SCHEDULING_URL,

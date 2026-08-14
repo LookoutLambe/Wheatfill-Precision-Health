@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { PRACTICE_PUBLIC_NAME, VENMO_ENABLED, ZELLE_ENABLED } from '../config/provider'
-import ZelleInstructions from '../components/ZelleInstructions'
+import { PRACTICE_PUBLIC_NAME, VENMO_ENABLED } from '../config/provider'
 import VenmoInstructions from '../components/VenmoInstructions'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
@@ -62,7 +61,6 @@ export default function OrderNowSummary() {
   const [sigDate, setSigDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [insurance, setInsurance] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [zelleInfo, setZelleInfo] = useState<{ amountCents: number; memo: string } | null>(null)
   const [venmoInfo, setVenmoInfo] = useState<{ amountCents: number; memo: string } | null>(null)
   const [shipStreet, setShipStreet] = useState('')
   const [shipCity, setShipCity] = useState('')
@@ -198,56 +196,6 @@ export default function OrderNowSummary() {
 
     sendOrderNotification('Venmo')
     setVenmoInfo({ amountCents: total, memo: sigName.trim() })
-  }
-
-  const onPayWithZelle = () => {
-    setCheckoutError(null)
-    if (!partner || items.length === 0) return
-    if (!agree) {
-      setCheckoutError('Please read and agree to the medication shipping terms and conditions above.')
-      return
-    }
-    if (!contactOk) {
-      setCheckoutError('Please agree to the contact / privacy authorization to continue.')
-      return
-    }
-    if (!shipStreet.trim() || !shipCity.trim() || !shipState || !shipZip.trim()) {
-      setCheckoutError('Please complete street, city, state, and zip for shipping.')
-      return
-    }
-    if (!sigName.trim()) {
-      setCheckoutError('Please type your name as a signature to continue.')
-      return
-    }
-    if (!isPatientSession && !emailOk(contactEmail)) {
-      setCheckoutError('Please enter a valid email so we can confirm your order and reach you if needed.')
-      return
-    }
-
-    const body = {
-      partnerSlug: partner.slug,
-      items: items.map((it) => ({ sku: it.sku, quantity: it.quantity })),
-      agreedToShippingTerms: agree,
-      contactPermission: contactOk,
-      signatureName: sigName.trim(),
-      signatureDate: sigDate,
-      shippingInsurance: insurance,
-      shippingAddress1: shipStreet.trim(),
-      shippingCity: shipCity.trim(),
-      shippingState: shipState.trim(),
-      shippingPostalCode: shipZip.trim(),
-    }
-
-    // Record the order (fire-and-forget), then show Zelle instructions. Zelle has no link — the patient
-    // sends the payment from their own bank app.
-    if (isPatientSession) {
-      apiPostBeacon('/v1/patient/orders/pharmacy', body)
-    } else {
-      apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
-    }
-
-    sendOrderNotification('Zelle')
-    setZelleInfo({ amountCents: total, memo: sigName.trim() })
   }
 
   const catalogPath = `/order-now/${encodeURIComponent(slug)}`
@@ -642,19 +590,8 @@ export default function OrderNowSummary() {
                   Pay with Venmo
                 </button>
               ) : null}
-              {ZELLE_ENABLED ? (
-                <button
-                  type="button"
-                  className="btn catalogOutlineBtn orderNowPayBtn"
-                  disabled={!canCheckOut}
-                  style={{ opacity: !canCheckOut ? 0.55 : 1 }}
-                  onClick={onPayWithZelle}
-                >
-                  Pay with Zelle
-                </button>
-              ) : null}
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
-                Pay by Venmo or Zelle. The practice confirms fulfillment details after payment.
+                Pay by Venmo. The practice confirms fulfillment details after payment.
               </p>
               {venmoInfo ? (
                 <>
@@ -662,14 +599,6 @@ export default function OrderNowSummary() {
                     Your order is recorded — complete payment with Venmo:
                   </p>
                   <VenmoInstructions amountCents={venmoInfo.amountCents} memo={venmoInfo.memo} />
-                </>
-              ) : null}
-              {zelleInfo ? (
-                <>
-                  <p style={{ fontSize: 14, marginTop: 16, marginBottom: 0, fontWeight: 800 }}>
-                    Your order is recorded — complete payment with Zelle:
-                  </p>
-                  <ZelleInstructions amountCents={zelleInfo.amountCents} memo={zelleInfo.memo} />
                 </>
               ) : null}
             </div>
