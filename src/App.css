@@ -5220,6 +5220,374 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 }
 
 /* ============================================================
+   GLP-1 units → mg converter (interactive signature tool)
+   ============================================================ */
+.glp1conv {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 100% at 100% 0%, rgba(226, 58, 46, 0.05), transparent 60%),
+    var(--surface);
+  padding: clamp(18px, 3vw, 26px);
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.glp1convHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.glp1convEyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.glp1convLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-m);
+}
+
+.glp1convDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 0 rgba(226, 58, 46, 0.5);
+  animation: glp1Pulse 1.8s ease-out infinite;
+}
+
+@keyframes glp1Pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(226, 58, 46, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0);
+  }
+}
+
+.glp1convLead {
+  margin: 12px 0 16px;
+  color: var(--text-m);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.glp1convPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.glp1convChip {
+  font: 600 13px/1 var(--sans);
+  padding: 9px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-h);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    transform 120ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glp1convChip:hover {
+  transform: translateY(-1px);
+  border-color: var(--ink);
+}
+.glp1convChip.isActive {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.glp1convChip:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.glp1convCustom {
+  display: block;
+  margin-top: 14px;
+  max-width: 240px;
+}
+
+.glp1convFieldLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-m);
+  margin-bottom: 8px;
+}
+
+.glp1convCustomInput {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.glp1convDialRow {
+  margin-top: 20px;
+}
+
+.glp1convUnitsValue {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink);
+  text-transform: none;
+}
+
+.glp1convSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(var(--accent-bg), var(--accent-bg));
+  background-color: rgba(11, 21, 36, 0.12);
+  outline: none;
+  margin: 4px 0 2px;
+}
+.glp1convSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px -1px rgba(226, 58, 46, 0.6);
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+.glp1convSlider::-webkit-slider-thumb:active {
+  transform: scale(1.12);
+}
+.glp1convSlider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px -1px rgba(226, 58, 46, 0.6);
+  cursor: pointer;
+}
+.glp1convSlider:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+/* Syringe barrel visual */
+.glp1convSyringe {
+  display: flex;
+  align-items: center;
+  margin-top: 14px;
+}
+.glp1convSyringeBarrel {
+  position: relative;
+  flex: 1 1 auto;
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 8px 4px 4px 8px;
+  background: rgba(11, 21, 36, 0.03);
+  overflow: hidden;
+}
+.glp1convSyringeFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, rgba(226, 58, 46, 0.75), var(--red));
+  border-right: 2px solid #fff;
+  transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.glp1convTick {
+  position: absolute;
+  top: 0;
+  bottom: 55%;
+  width: 1px;
+  background: rgba(11, 21, 36, 0.35);
+  pointer-events: none;
+}
+.glp1convSyringeTip {
+  width: 14px;
+  height: 4px;
+  background: var(--ink);
+  border-radius: 0 2px 2px 0;
+  flex: 0 0 auto;
+}
+
+/* Result readout */
+.glp1convResult {
+  margin-top: 22px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.glp1convResultMain {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.glp1convResultMg {
+  font-family: var(--mono);
+  font-size: clamp(30px, 6vw, 42px);
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+}
+.glp1convResultUnit {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.68);
+}
+.glp1convResultSub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
+.glp1convArrow {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.glp1convNote {
+  margin: 14px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-m);
+}
+
+@media (max-width: 520px) {
+  .glp1convResultSub {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ============================================================
+   Motion — scroll reveals + hero entrance choreography.
+   All motion is opt-in via JS-added classes and disabled under reduced-motion.
+   ============================================================ */
+.wphReveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--wph-reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.wphReveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hero entrance: staggered rise on first paint. */
+@keyframes wphHeroRise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes wphHeroFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pageLanding .landingHeroIntro > .brandSlogan {
+  animation: wphHeroRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.pageLanding .landingHeroIntro > .heroHeadline {
+  animation: wphHeroRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+.pageLanding .landingHeroIntro > .pageSubtitle {
+  animation: wphHeroRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.16s both;
+}
+.pageLanding .landingHeroIntro > .btnRow {
+  animation: wphHeroRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.24s both;
+}
+.pageLanding .heroVisual {
+  animation: wphHeroFade 0.9s ease 0.2s both;
+}
+
+/* Richer, springier micro-interactions on the primary controls. */
+.btn {
+  transition:
+    transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease,
+    background 160ms ease,
+    border-color 160ms ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btnPrimary:hover,
+.btnAccent:hover {
+  box-shadow: 0 10px 22px -12px rgba(11, 21, 36, 0.55);
+}
+.card {
+  transition:
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    border-color 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wphReveal,
+  .wphReveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .pageLanding .landingHeroIntro > *,
+  .pageLanding .heroVisual {
+    animation: none;
+  }
+  .btn:hover {
+    transform: none;
+  }
+}
+
+/* ============================================================
    Hero signature — precision "aperture" graphic (branded; no data)
    Deep ink panel + concentric instrument rings + vermilion signal.
    ============================================================ */
@@ -5233,9 +5601,9 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 .heroGraphic {
   position: relative;
   width: 100%;
-  max-width: 440px;
+  max-width: 300px;
   aspect-ratio: 1 / 1;
-  border-radius: 24px;
+  border-radius: 20px;
   overflow: hidden;
   background: radial-gradient(120% 92% at 50% 30%, #1d3252 0%, #10203a 46%, #0b1524 100%);
   border: 1px solid rgba(255, 255, 255, 0.09);
@@ -5355,9 +5723,14 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 @media (min-width: 901px) {
   .landingGridHeroBand {
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.9fr);
-    gap: clamp(28px, 4vw, 60px);
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    gap: clamp(28px, 4vw, 56px);
     align-items: center;
+  }
+
+  /* Keep the (now smaller) aperture graphic tidily aligned to the headline column. */
+  .landingGridHeroBand .heroVisual {
+    justify-content: flex-end;
   }
 
   .landingGridHeroBand .landingHeroIntro {

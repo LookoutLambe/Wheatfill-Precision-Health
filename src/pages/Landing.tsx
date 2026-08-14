@@ -5,6 +5,7 @@ import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import glp1PenImg from '../assets/glp1-pen.png'
 import ImageKitImage from '../components/ImageKitImage'
+import Glp1UnitConverter from '../components/Glp1UnitConverter'
 import { apiPost } from '../api/client'
 import { notifyByEmail } from '../lib/notifyEmail'
 import { BrandSlogan } from '../components/BrandSlogan'
@@ -525,6 +526,8 @@ export default function Landing() {
                     Most patients know their units, but not what that means in actual milligrams.
                   </p>
                 </div>
+
+                <Glp1UnitConverter />
 
                 <div className="landingPenBanners">
                   <div className="landingPenBanner landingPenBanner--soon">Coming Soon</div>

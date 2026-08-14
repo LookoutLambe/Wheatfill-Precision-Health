@@ -11,6 +11,7 @@ import {
   isMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import StickyShareDock from './StickyShareDock'
+import { initScrollReveal } from '../lib/scrollReveal'
 import { SITE_LOGO_ARIA_LABEL_HOME } from '../config/branding'
 import { optionalCustomerAccountUrl, publicSchedulingUrlForFullApp } from '../config/patientFeatures'
 import { PROVIDER_DISPLAY_NAME, PROVIDER_LICENSED_STATES } from '../config/provider'
@@ -129,6 +130,24 @@ export default function Shell() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // Scroll-reveal choreography, re-armed on each route. Lazy pages resolve async, so
+  // run once content has painted and retry once for late-loading Suspense chunks.
+  useEffect(() => {
+    let cleanup = () => {}
+    const t1 = window.setTimeout(() => {
+      cleanup = initScrollReveal()
+    }, 140)
+    const t2 = window.setTimeout(() => {
+      cleanup()
+      cleanup = initScrollReveal()
+    }, 480)
+    return () => {
+      window.clearTimeout(t1)
+      window.clearTimeout(t2)
+      cleanup()
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 901px)')
