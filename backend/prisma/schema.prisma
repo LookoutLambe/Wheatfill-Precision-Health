@@ -50,12 +50,12 @@ enum BillingItemType {
 enum PaymentMethod {
   /// Primary (and only) active payment rail — patients pay the practice at @wheaty27.
   venmo
-  /// Deprecated (kept for DB compatibility with historical rows; no longer used by the app).
+  /// Deprecated values kept to match the live DB enum (so `db push` stays additive and the
+  /// Prisma Client can read historical rows). The app no longer uses any of these rails.
   paypal
+  stripe
   clover
-  /// Deprecated (kept for DB compatibility; app no longer uses these rails).
   manual_venmo
-  /// Deprecated (kept for DB compatibility; app no longer uses these rails).
   manual_paypal
 }
 

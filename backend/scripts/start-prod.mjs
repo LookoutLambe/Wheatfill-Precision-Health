@@ -89,12 +89,29 @@ if (isTruthy(env.WPH_SKIP_PRISMA)) {
     // no failed migration to mark rolled back
   }
 
+  // `db push` is best-effort, NOT a deploy gate. The live Supabase DB is the source of truth and
+  // intentionally carries legacy tables/columns/enums (Subscription, Stripe, activePaymentProvider,
+  // the `stripe` PaymentMethod value, etc.) that the trimmed schema no longer declares. Without
+  // --accept-data-loss, `db push` can't reconcile that drift and exits non-zero — which was crashing
+  // the whole Render deploy ("unhealthy"). The generated Prisma Client only uses its own subset of
+  // columns, so the server runs fine against the fuller DB. Log and continue instead of failing.
   const acceptDataLoss = isTruthy(env.WPH_ACCEPT_DATA_LOSS)
-  runStep(
-    'prisma db push',
-    `npx prisma db push${acceptDataLoss ? ' --accept-data-loss' : ''}`,
-    { inherit: true }
-  )
+  const skipDbPush = isTruthy(env.WPH_SKIP_DB_PUSH)
+  if (!skipDbPush) {
+    try {
+      execSync(`npx prisma db push${acceptDataLoss ? ' --accept-data-loss' : ''}`, {
+        stdio: 'inherit',
+        env,
+        shell: true,
+      })
+    } catch {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[wph] prisma db push did not apply (schema drift vs live DB) — continuing to start the server. ' +
+          'Apply intended schema changes manually via SQL/migration; set WPH_SKIP_DB_PUSH=1 to skip this step.',
+      )
+    }
+  }
 
   const child = spawn('node', [path.join(root, 'dist', 'server.js')], { stdio: 'inherit', env, shell: true })
   child.on('exit', (code) => process.exit(code ?? 0))
