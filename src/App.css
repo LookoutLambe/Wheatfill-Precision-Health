@@ -5646,44 +5646,50 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   display: block;
 }
 
-.heroRings circle {
+/* Orbital ring system around the sphere. */
+.heroOrbit {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.12);
-  stroke-width: 1.5;
+  stroke: rgba(255, 255, 255, 0.11);
+  stroke-width: 1;
 }
 
-.heroRingAccent {
-  fill: none;
+.heroOrbit--accent {
   stroke: var(--red);
-  stroke-width: 2;
-  opacity: 0.92;
-  filter: drop-shadow(0 0 6px rgba(226, 58, 46, 0.5));
+  stroke-width: 1.4;
+  opacity: 0.68;
+  filter: drop-shadow(0 0 5px rgba(226, 58, 46, 0.5));
 }
 
-.heroCrosshair line {
-  stroke: rgba(255, 255, 255, 0.28);
-  stroke-width: 1.5;
-  stroke-linecap: round;
+/* Luminous core sphere (vitality / precision). */
+.heroSphere {
+  filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.45));
+}
+
+.heroSphereRim {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.16);
+  stroke-width: 1;
+}
+
+/* Orbiting signal nodes. */
+.heroSatellite {
+  fill: #fff;
+  filter: drop-shadow(0 0 7px rgba(226, 58, 46, 0.95));
+}
+
+.heroSatelliteFaint {
+  fill: rgba(255, 255, 255, 0.55);
 }
 
 .heroSpin {
-  fill: none;
-  stroke: rgba(226, 58, 46, 0.55);
-  stroke-width: 2;
-  stroke-dasharray: 3 14;
-  stroke-linecap: round;
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: heroSpin 28s linear infinite;
+  transform-box: view-box;
+  transform-origin: 220px 214px;
+  animation: heroSpin 22s linear infinite;
 }
 
-.heroCoreGlow {
-  fill: rgba(226, 58, 46, 0.28);
-}
-
-.heroCore {
-  fill: #fff;
-  filter: drop-shadow(0 0 7px rgba(226, 58, 46, 0.9));
+.heroSpin--slow {
+  animation-duration: 42s;
+  animation-direction: reverse;
 }
 
 .heroGraphicTag {

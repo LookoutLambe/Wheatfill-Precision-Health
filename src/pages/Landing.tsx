@@ -267,22 +267,34 @@ export default function Landing() {
               <div className="heroGraphic">
                 <span className="heroGraphicGlow" />
                 <svg className="heroGraphicSvg" viewBox="0 0 440 440" preserveAspectRatio="xMidYMid meet" role="presentation">
-                  <g className="heroRings">
-                    <circle cx="220" cy="214" r="48" />
-                    <circle cx="220" cy="214" r="96" />
-                    <circle cx="220" cy="214" r="144" />
-                    <circle cx="220" cy="214" r="192" />
+                  <defs>
+                    <radialGradient id="wphSphere" cx="39%" cy="33%" r="76%">
+                      <stop offset="0%" stopColor="#32517c" />
+                      <stop offset="52%" stopColor="#17293f" />
+                      <stop offset="100%" stopColor="#0a1422" />
+                    </radialGradient>
+                    <radialGradient id="wphSpec" cx="50%" cy="50%" r="50%">
+                      <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
+                      <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                    </radialGradient>
+                  </defs>
+
+                  <g className="heroOrbits">
+                    <ellipse className="heroOrbit" cx="220" cy="214" rx="176" ry="64" transform="rotate(-24 220 214)" />
+                    <ellipse className="heroOrbit" cx="220" cy="214" rx="150" ry="150" />
+                    <ellipse className="heroOrbit heroOrbit--accent" cx="220" cy="214" rx="118" ry="184" transform="rotate(26 220 214)" />
                   </g>
-                  <circle className="heroRingAccent" cx="220" cy="214" r="144" />
-                  <g className="heroCrosshair">
-                    <line x1="220" y1="10" x2="220" y2="66" />
-                    <line x1="220" y1="362" x2="220" y2="418" />
-                    <line x1="10" y1="214" x2="66" y2="214" />
-                    <line x1="362" y1="214" x2="418" y2="214" />
+
+                  <circle className="heroSphere" cx="220" cy="214" r="78" fill="url(#wphSphere)" />
+                  <circle className="heroSphereRim" cx="220" cy="214" r="78" />
+                  <ellipse cx="196" cy="188" rx="34" ry="26" fill="url(#wphSpec)" />
+
+                  <g className="heroSpin">
+                    <circle className="heroSatellite" cx="220" cy="64" r="5.5" />
                   </g>
-                  <circle className="heroSpin" cx="220" cy="214" r="192" />
-                  <circle className="heroCoreGlow" cx="220" cy="214" r="20" />
-                  <circle className="heroCore" cx="220" cy="214" r="6" />
+                  <g className="heroSpin heroSpin--slow">
+                    <circle className="heroSatelliteFaint" cx="396" cy="214" r="3.5" />
+                  </g>
                 </svg>
                 <span className="heroGraphicTag">Precision-guided care</span>
               </div>
