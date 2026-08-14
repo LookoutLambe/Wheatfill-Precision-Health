@@ -265,7 +265,7 @@ export async function apiPost<T>(path: string, body: unknown, token?: string): P
 
 /**
  * Fire-and-forget POST that survives a page navigation (uses `keepalive`), so the request still
- * completes after we redirect the tab (e.g. handing off to PayPal). Never awaits, never throws.
+ * completes after we redirect the tab (e.g. handing off to Venmo). Never awaits, never throws.
  */
 export function apiPostBeacon(path: string, body: unknown, token?: string): void {
   try {

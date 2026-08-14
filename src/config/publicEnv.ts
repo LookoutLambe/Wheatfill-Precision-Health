@@ -9,8 +9,6 @@ export type VitePublicEnv = {
   VITE_MARKETING_ONLY?: string
   VITE_APP_URL?: string
   VITE_API_URL?: string
-  VITE_PAYPAL_BUSINESS_EMAIL?: string
-  VITE_PAYPAL_PAY_URL?: string
   VITE_ZELLE_PHONE?: string
   VITE_ZELLE_NAME?: string
   VITE_VENMO_USERNAME?: string
@@ -28,8 +26,6 @@ export const vitePublicEnv: VitePublicEnv = {
   VITE_MARKETING_ONLY: import.meta.env.VITE_MARKETING_ONLY,
   VITE_APP_URL: import.meta.env.VITE_APP_URL,
   VITE_API_URL: import.meta.env.VITE_API_URL,
-  VITE_PAYPAL_BUSINESS_EMAIL: import.meta.env.VITE_PAYPAL_BUSINESS_EMAIL,
-  VITE_PAYPAL_PAY_URL: import.meta.env.VITE_PAYPAL_PAY_URL,
   VITE_ZELLE_PHONE: import.meta.env.VITE_ZELLE_PHONE,
   VITE_ZELLE_NAME: import.meta.env.VITE_ZELLE_NAME,
   VITE_VENMO_USERNAME: import.meta.env.VITE_VENMO_USERNAME,

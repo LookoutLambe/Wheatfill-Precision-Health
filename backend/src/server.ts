@@ -104,51 +104,24 @@ function requireProductionSecrets() {
 requireProductionSecrets()
 
 /**
- * PayPal is the only supported payment rail. Patient checkout (and provider "pay later" links) send the
- * customer to a hosted PayPal page with the order total prefilled.
+ * Venmo is the only supported payment rail. Patient checkout and provider "pay later" / bill links send the
+ * customer to a Venmo pay page with the amount + note prefilled. Payment is peer-to-peer (no server
+ * confirmation), so the office reconciles once the transfer lands.
  *
  * Configure in your host (Render, etc.):
- * - PAYPAL_BUSINESS_EMAIL=you@practice.com  — builds hosted "Buy Now" (cmd=_xclick) links with the amount prefilled
- * - PAYPAL_PAY_URL=...                       — optional override: a paypal.me/<handle> link or a hosted button URL
+ * - VENMO_USERNAME=wheatfill   — the practice's Venmo handle (without the leading @)
  */
-const PAYPAL_BUSINESS_EMAIL = (process.env.PAYPAL_BUSINESS_EMAIL || 'brett.wheatfill@gmail.com').trim()
-const PAYPAL_PAY_URL = (process.env.PAYPAL_PAY_URL || '').trim()
+const VENMO_USERNAME = (process.env.VENMO_USERNAME || 'wheaty27').trim().replace(/^@+/, '')
 
 /**
- * Builds a PayPal checkout link with a prefilled USD amount for an order total.
- * Resolution order: PAYPAL_PAY_URL override → PAYPAL_BUSINESS_EMAIL "Buy Now" link. Returns '' when unconfigured.
+ * Builds a Venmo pay link with a prefilled USD amount + note. On mobile it opens the Venmo app ready to
+ * pay the practice; on desktop it opens the practice's Venmo page. Returns '' when no username is set.
  */
-function paypalPayUrlForAmountCents(totalCents: number, itemName: string): string {
-  const n = Math.max(0, Math.round(totalCents))
-  const amountStr = (n / 100).toFixed(2)
-  const name = itemName.slice(0, 120)
-  if (PAYPAL_PAY_URL) {
-    if (/paypal\.me\//i.test(PAYPAL_PAY_URL)) {
-      const path = PAYPAL_PAY_URL.replace(/\/$/, '')
-      if (/\/\d+(\.\d+)?$/.test(path)) return path
-      return `${path}/${amountStr}`
-    }
-    try {
-      const u = new URL(PAYPAL_PAY_URL)
-      u.searchParams.set('amount', amountStr)
-      u.searchParams.set('currency_code', 'USD')
-      u.searchParams.set('item_name', name)
-      return u.toString()
-    } catch {
-      // fall through to the business-email builder
-    }
-  }
-  if (PAYPAL_BUSINESS_EMAIL) {
-    const u = new URL('https://www.paypal.com/cgi-bin/webscr')
-    u.searchParams.set('cmd', '_xclick')
-    u.searchParams.set('business', PAYPAL_BUSINESS_EMAIL)
-    u.searchParams.set('amount', amountStr)
-    u.searchParams.set('currency_code', 'USD')
-    u.searchParams.set('item_name', name)
-    u.searchParams.set('no_shipping', '2')
-    return u.toString()
-  }
-  return ''
+function venmoPayUrlForAmountCents(totalCents: number, note: string): string {
+  if (!VENMO_USERNAME) return ''
+  const amountStr = (Math.max(0, Math.round(totalCents)) / 100).toFixed(2)
+  const params = new URLSearchParams({ txn: 'pay', amount: amountStr, note: note.slice(0, 240) })
+  return `https://venmo.com/${encodeURIComponent(VENMO_USERNAME)}?${params.toString()}`
 }
 
 const PROVIDER_PRACTITIONER_ID = process.env.PROVIDER_PRACTITIONER_ID || ''
@@ -1428,9 +1401,9 @@ await app.register(async (protectedScope) => {
     },
   )
 
-  // Provider: create a PayPal payment link for an existing Order (pay later requests).
+  // Provider: create a Venmo payment link for an existing Order (pay later requests).
   protectedScope.post(
-    '/v1/provider/orders/:id/paypal-checkout',
+    '/v1/provider/orders/:id/venmo-checkout',
     { preHandler: requireRole(['provider', 'admin']) },
     async (req, reply) => {
       const orderId = String((req.params as any).id || '').trim()
@@ -1450,10 +1423,9 @@ await app.register(async (protectedScope) => {
         (order.shippingCents || 0) +
         (order.shippingInsuranceCents || 0)
 
-      const itemSummary = order.items.map((it) => `${it.name} (x${it.quantity})`).join(', ')
-      const url = paypalPayUrlForAmountCents(totalCents, `Order ${order.id} — ${itemSummary}`)
+      const url = venmoPayUrlForAmountCents(totalCents, `WPH order ${order.id}`)
       if (!url) {
-        return reply.badRequest('PayPal is not configured. Set PAYPAL_BUSINESS_EMAIL (or PAYPAL_PAY_URL).')
+        return reply.badRequest('Venmo is not configured. Set VENMO_USERNAME.')
       }
 
       // Record best-effort so an un-migrated payments table can't block the link.
@@ -1461,7 +1433,7 @@ await app.register(async (protectedScope) => {
       try {
         const payment = await prisma.payment.create({
           data: {
-            method: 'paypal',
+            method: 'venmo',
             status: 'pending',
             amountCents: totalCents,
             currency: 'usd',
@@ -1476,16 +1448,16 @@ await app.register(async (protectedScope) => {
         })
         paymentId = payment.id
       } catch (e) {
-        req.log.warn({ err: e }, 'paypal order checkout: could not record Payment row')
+        req.log.warn({ err: e }, 'venmo order checkout: could not record Payment row')
       }
 
       return { ok: true, url, paymentId, totalCents }
     },
   )
 
-  // Provider: create a custom-amount PayPal payment link (a "bill" to send to a patient).
+  // Provider: create a custom-amount Venmo payment link (a "bill" to send to a patient).
   protectedScope.post(
-    '/v1/provider/payments/paypal/payment-request',
+    '/v1/provider/payments/venmo/payment-request',
     { preHandler: requireRole(['provider', 'admin']) },
     async (req, reply) => {
       const body = z
@@ -1496,18 +1468,18 @@ await app.register(async (protectedScope) => {
         })
         .parse((req as any).body)
 
-      const url = paypalPayUrlForAmountCents(body.amountCents, body.description)
+      const url = venmoPayUrlForAmountCents(body.amountCents, body.description)
       if (!url) {
-        return reply.badRequest('PayPal is not configured. Set PAYPAL_BUSINESS_EMAIL (or PAYPAL_PAY_URL).')
+        return reply.badRequest('Venmo is not configured. Set VENMO_USERNAME.')
       }
 
       // Record the bill best-effort — generating/returning the link must not fail if the payments table
-      // isn't migrated yet. The provider still gets a usable PayPal link.
+      // isn't migrated yet. The provider still gets a usable Venmo link.
       let paymentId: string | null = null
       try {
         const payment = await prisma.payment.create({
           data: {
-            method: 'paypal',
+            method: 'venmo',
             status: 'pending',
             amountCents: body.amountCents,
             currency: 'usd',
@@ -1521,7 +1493,7 @@ await app.register(async (protectedScope) => {
         })
         paymentId = payment.id
       } catch (e) {
-        req.log.warn({ err: e }, 'paypal payment-request: could not record Payment row')
+        req.log.warn({ err: e }, 'venmo payment-request: could not record Payment row')
       }
 
       return { ok: true, url, paymentId }

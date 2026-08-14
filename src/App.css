@@ -320,31 +320,41 @@ html.pharmacyCartOpen body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 14px;
   width: fit-content;
-  max-width: min(100%, 40rem);
-  margin: 0 auto 14px;
-  padding: 14px 24px 16px;
+  max-width: min(100%, 48rem);
+  margin: 0 auto 18px;
+  padding: 0;
   box-sizing: border-box;
-  font-family: var(--font-slogan);
-  font-size: clamp(20px, 2.2vw, 30px);
+  font-family: var(--heading);
+  font-size: clamp(18px, 2.6vw, 30px);
   font-weight: 700;
   font-style: normal;
-  letter-spacing: 0.01em;
-  color: var(--brand-wordmark-rose);
-  line-height: 1.28;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-h);
+  line-height: 1.18;
   text-align: center;
   text-wrap: balance;
-  border-radius: 9999px;
-  background: #fff;
-  border: 1px solid rgba(10, 30, 63, 0.1);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 8px 28px -18px rgba(10, 30, 63, 0.2);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 
-@media (min-width: 901px) {
-  .brandSlogan {
-    padding: 16px 32px 18px;
+/* Signal tick flanking the motto — the precision "instrument" cue. */
+.brandSlogan::before,
+.brandSlogan::after {
+  content: '';
+  width: clamp(20px, 4vw, 40px);
+  height: 3px;
+  flex: 0 0 auto;
+  background: var(--red);
+}
+
+@media (max-width: 640px) {
+  .brandSlogan::before,
+  .brandSlogan::after {
+    width: 18px;
   }
 }
 
@@ -1851,25 +1861,26 @@ button.pill:active {
 
 .heroHeadline {
   /* Keep top margin inside content box so global h1 margins cannot collapse up under the sticky bar. */
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   padding-top: 14px;
-  font-size: clamp(28px, 3.2vw, 40px) !important;
-  line-height: 1.55 !important;
-  letter-spacing: 0px !important;
+  font-size: clamp(32px, 4.4vw, 52px) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.01em !important;
+  font-weight: 700;
   text-wrap: balance;
 }
 
 @media (max-width: 900px) {
   .heroHeadline {
-    line-height: 1.5 !important;
-    letter-spacing: 0px !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.02em !important;
   }
 }
 
 @media (max-width: 520px) {
   .heroHeadline {
-    font-size: clamp(20px, 6.2vw, 28px) !important;
-    line-height: 1.4 !important;
+    font-size: clamp(26px, 8vw, 34px) !important;
+    line-height: 1.14 !important;
   }
 
   .pageSubtitle {
@@ -5206,4 +5217,176 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   hyphens: auto;
   -webkit-hyphens: auto;
   text-wrap: pretty;
+}
+
+/* ============================================================
+   Hero signature — precision "aperture" graphic (branded; no data)
+   Deep ink panel + concentric instrument rings + vermilion signal.
+   ============================================================ */
+.heroVisual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 0;
+}
+
+.heroGraphic {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1 / 1;
+  border-radius: 24px;
+  overflow: hidden;
+  background: radial-gradient(120% 92% at 50% 30%, #1d3252 0%, #10203a 46%, #0b1524 100%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 30px 60px -30px rgba(11, 21, 36, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* Faint instrument grid, faded toward the edges. */
+.heroGraphic::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 36px 36px, 36px 36px;
+  -webkit-mask-image: radial-gradient(closest-side at 50% 48%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(closest-side at 50% 48%, #000 55%, transparent 100%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.heroGraphicGlow {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: 64%;
+  height: 64%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(226, 58, 46, 0.22) 0%, rgba(226, 58, 46, 0) 68%);
+  pointer-events: none;
+}
+
+.heroGraphicSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.heroRings circle {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1.5;
+}
+
+.heroRingAccent {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 2;
+  opacity: 0.92;
+  filter: drop-shadow(0 0 6px rgba(226, 58, 46, 0.5));
+}
+
+.heroCrosshair line {
+  stroke: rgba(255, 255, 255, 0.28);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.heroSpin {
+  fill: none;
+  stroke: rgba(226, 58, 46, 0.55);
+  stroke-width: 2;
+  stroke-dasharray: 3 14;
+  stroke-linecap: round;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: heroSpin 28s linear infinite;
+}
+
+.heroCoreGlow {
+  fill: rgba(226, 58, 46, 0.28);
+}
+
+.heroCore {
+  fill: #fff;
+  filter: drop-shadow(0 0 7px rgba(226, 58, 46, 0.9));
+}
+
+.heroGraphicTag {
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.heroGraphicTag::before {
+  content: '';
+  width: 16px;
+  height: 2px;
+  background: var(--red);
+}
+
+@keyframes heroSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroSpin {
+    animation: none;
+  }
+}
+
+/* Two-column hero on desktop; graphic sits beside the headline. */
+@media (min-width: 901px) {
+  .landingGridHeroBand {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.9fr);
+    gap: clamp(28px, 4vw, 60px);
+    align-items: center;
+  }
+
+  .landingGridHeroBand .landingHeroIntro {
+    text-align: left;
+  }
+
+  .landingGridHeroBand .landingHeroIntro .brandSlogan {
+    align-self: flex-start;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .landingGridHeroBand .landingHeroIntro .btnRow {
+    justify-content: flex-start;
+  }
+
+  /* Left-aligned hero motto keeps only its leading tick (trailing one would float to the column edge). */
+  .landingGridHeroBand .landingHeroIntro .brandSlogan::after {
+    display: none;
+  }
+}
+
+/* Mobile: graphic drops below the copy, capped smaller. */
+@media (max-width: 900px) {
+  .heroVisual {
+    margin-top: 24px;
+  }
+
+  .heroGraphic {
+    max-width: 300px;
+  }
 }

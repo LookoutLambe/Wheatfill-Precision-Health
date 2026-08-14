@@ -48,6 +48,9 @@ enum BillingItemType {
 }
 
 enum PaymentMethod {
+  /// Primary (and only) active payment rail — patients pay the practice at @wheaty27.
+  venmo
+  /// Deprecated (kept for DB compatibility with historical rows; no longer used by the app).
   paypal
   clover
   /// Deprecated (kept for DB compatibility; app no longer uses these rails).

@@ -4,6 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
 import glp1PenImg from '../assets/glp1-pen.png'
+import ImageKitImage from '../components/ImageKitImage'
 import { apiPost } from '../api/client'
 import { notifyByEmail } from '../lib/notifyEmail'
 import { BrandSlogan } from '../components/BrandSlogan'
@@ -260,6 +261,31 @@ export default function Landing() {
                 <PatientPortalCta className="btn catalogOutlineBtn" style={{ textDecoration: 'none' }} />
               </div>
             </div>
+
+            <div className="heroVisual" aria-hidden="true">
+              <div className="heroGraphic">
+                <span className="heroGraphicGlow" />
+                <svg className="heroGraphicSvg" viewBox="0 0 440 440" preserveAspectRatio="xMidYMid meet" role="presentation">
+                  <g className="heroRings">
+                    <circle cx="220" cy="214" r="48" />
+                    <circle cx="220" cy="214" r="96" />
+                    <circle cx="220" cy="214" r="144" />
+                    <circle cx="220" cy="214" r="192" />
+                  </g>
+                  <circle className="heroRingAccent" cx="220" cy="214" r="144" />
+                  <g className="heroCrosshair">
+                    <line x1="220" y1="10" x2="220" y2="66" />
+                    <line x1="220" y1="362" x2="220" y2="418" />
+                    <line x1="10" y1="214" x2="66" y2="214" />
+                    <line x1="362" y1="214" x2="418" y2="214" />
+                  </g>
+                  <circle className="heroSpin" cx="220" cy="214" r="192" />
+                  <circle className="heroCoreGlow" cx="220" cy="214" r="20" />
+                  <circle className="heroCore" cx="220" cy="214" r="6" />
+                </svg>
+                <span className="heroGraphicTag">Precision-guided care</span>
+              </div>
+            </div>
           </section>
 
           <div className="divider landingHeroFullDivider" aria-hidden="true" />
@@ -407,7 +433,13 @@ export default function Landing() {
               <div className="landingTeamGrid">
                 <article className="landingTeamMember">
                   <div className="portrait">
-                    <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
+                    <ImageKitImage
+                      path="brett.png"
+                      fallbackSrc={brettPortrait}
+                      alt="Brett Wheatfill, FNP-C"
+                      widths={[320, 640]}
+                      sizes="(max-width: 900px) 100vw, 320px"
+                    />
                   </div>
                   <div className="card cardAccentNavy landingBioCard">
                     <div className="cardTitle">
@@ -423,7 +455,13 @@ export default function Landing() {
                 </article>
                 <article className="landingTeamMember">
                   <div className="portrait">
-                    <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
+                    <ImageKitImage
+                      path="bridgette.png"
+                      fallbackSrc={bridgettePortrait}
+                      alt="Bridgette Wheatfill, RN"
+                      widths={[320, 640]}
+                      sizes="(max-width: 900px) 100vw, 320px"
+                    />
                   </div>
                   <div className="card cardAccentNavy landingBioCard">
                     <div className="cardTitle">
@@ -516,10 +554,13 @@ export default function Landing() {
               </div>
 
               <div className="landingPenPromoArt">
-                <img
-                  src={glp1PenImg}
+                <ImageKitImage
+                  path="glp1-pen.png"
+                  fallbackSrc={glp1PenImg}
                   alt="Auto-inject pen showing a 2.5 mg dose — simple, clear, confident"
                   className="landingPenImg"
+                  widths={[320, 640]}
+                  sizes="(max-width: 900px) 80vw, 360px"
                 />
               </div>
             </div>

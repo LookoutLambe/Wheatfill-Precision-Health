@@ -1,6 +1,6 @@
 /**
  * Consultation fees — single source of truth for both the patient checkout (visit type) and the
- * provider "Create a PayPal bill" presets. Amounts match the Pricing page. Change them here only.
+ * provider "Create a Venmo bill" presets. Amounts match the Pricing page. Change them here only.
  */
 export type PaidConsultType = 'new_patient' | 'follow_up'
 

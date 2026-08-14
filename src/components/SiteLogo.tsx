@@ -1,4 +1,5 @@
 import brandMarkImg from '../assets/wheatfill-logo-new.png'
+import ImageKitImage from './ImageKitImage'
 
 export type SiteLogoMode = 'marketing' | 'provider'
 
@@ -13,7 +14,16 @@ export function SiteLogo({ mode = 'marketing' }: SiteLogoProps) {
   return (
     <>
       <span className="brandMarkCrop" aria-hidden="true">
-        <img src={brandMarkImg} alt="" className="brandMarkImg" decoding="async" />
+        <ImageKitImage
+          path="wheatfill-logo-new.png"
+          fallbackSrc={brandMarkImg}
+          alt=""
+          className="brandMarkImg"
+          widths={[64, 128]}
+          sizes="64px"
+          loading="eager"
+          decoding="async"
+        />
       </span>
       <span className="brandDivider" aria-hidden="true" />
       {mode === 'provider' ? (

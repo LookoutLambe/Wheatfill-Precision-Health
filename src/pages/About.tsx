@@ -1,5 +1,6 @@
 import bridgettePortrait from '../assets/bridgette.png'
 import brettPortrait from '../assets/brett.png'
+import ImageKitImage from '../components/ImageKitImage'
 import { BrandSlogan } from '../components/BrandSlogan'
 import Page from '../components/Page'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
@@ -58,7 +59,13 @@ export default function About() {
             </div>
             <aside className="aboutProfileAside aboutProfileAside--compact">
               <div className="portrait">
-                <img src={brettPortrait} alt="Brett Wheatfill, FNP-C" />
+                <ImageKitImage
+                  path="brett.png"
+                  fallbackSrc={brettPortrait}
+                  alt="Brett Wheatfill, FNP-C"
+                  widths={[320, 640]}
+                  sizes="(max-width: 900px) 100vw, 400px"
+                />
               </div>
             </aside>
           </div>
@@ -113,7 +120,13 @@ export default function About() {
             </div>
             <aside className="aboutProfileAside aboutProfileAside--compact">
               <div className="portrait">
-                <img src={bridgettePortrait} alt="Bridgette Wheatfill, RN" />
+                <ImageKitImage
+                  path="bridgette.png"
+                  fallbackSrc={bridgettePortrait}
+                  alt="Bridgette Wheatfill, RN"
+                  widths={[320, 640]}
+                  sizes="(max-width: 900px) 100vw, 400px"
+                />
               </div>
             </aside>
           </div>

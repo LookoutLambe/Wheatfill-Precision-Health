@@ -25,18 +25,6 @@ export const TEAM_ADMIN_FORWARD_EMAIL = 'lookoutlambe@gmail.com'
 /** Shown in the back-office UI — consumer / brand tone (not a clinical EHR). */
 export const PROVIDER_TEAM_LABEL = 'Brett & Bridget — team'
 
-/** PayPal business (merchant) email — used to build hosted "Buy Now" checkout links with a prefilled amount. */
-export const PAYPAL_BUSINESS_EMAIL = (
-  vitePublicEnv.VITE_PAYPAL_BUSINESS_EMAIL?.toString() || 'brett.wheatfill@gmail.com'
-).trim()
-
-/** Optional override: a full PayPal pay URL (`paypal.me/...` or a hosted button). Takes precedence over the business email. */
-export const PAYPAL_PAY_URL_OVERRIDE = (vitePublicEnv.VITE_PAYPAL_PAY_URL?.toString() || '').trim()
-
-/** PayPal is a supported payment rail. Treated as "configured" when an email or override URL is present. */
-export const CATALOG_PAYPAL: { readonly label: string } | null =
-  PAYPAL_BUSINESS_EMAIL || PAYPAL_PAY_URL_OVERRIDE ? { label: 'PayPal' } : null
-
 /** Zelle recipient — patients send payment from their own bank's Zelle to this phone number. */
 export const ZELLE_PHONE = (vitePublicEnv.VITE_ZELLE_PHONE?.toString() || '714-489-7506').trim()
 
@@ -46,7 +34,7 @@ export const ZELLE_RECIPIENT_NAME = (vitePublicEnv.VITE_ZELLE_NAME?.toString() |
 /** Zelle is offered as a payment option when a recipient phone is configured. */
 export const ZELLE_ENABLED = ZELLE_PHONE.length > 0
 
-/** Venmo username (without the leading @) — patients pay the practice here (primary rail, replaces PayPal). */
+/** Venmo username (without the leading @) — patients pay the practice here (the only payment rail). */
 export const VENMO_USERNAME = (vitePublicEnv.VITE_VENMO_USERNAME?.toString() || 'wheaty27')
   .trim()
   .replace(/^@+/, '')

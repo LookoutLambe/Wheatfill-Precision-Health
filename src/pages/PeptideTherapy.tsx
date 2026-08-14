@@ -13,7 +13,8 @@ import {
   type PeptideId,
   peptideAnchorId,
 } from '../data/peptideEducation'
-import { peptideVialImageSrc, peptideVialRibbonClass } from '../data/peptideVialImages'
+import { peptideVialImageSrc, peptideVialImageKitPath, peptideVialRibbonClass } from '../data/peptideVialImages'
+import ImageKitImage from '../components/ImageKitImage'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 
 function hashToPeptideId(raw: string): PeptideId | null {
@@ -209,12 +210,15 @@ export default function PeptideTherapy() {
                 <div className="landingAccordionTop">
                   <div className={`peptideCardVial peptideCardVial--tone${itemIndex % 3}`}>
                     <div className="peptideCardVialFrame">
-                      <img
-                        src={peptideVialImageSrc(item.id)}
+                      <ImageKitImage
+                        path={peptideVialImageKitPath(item.id)}
+                        fallbackSrc={peptideVialImageSrc(item.id)}
                         alt={`${item.vialDisplayName} (illustrative vial, education only)`}
                         className="peptideCardVialImg"
                         width={320}
                         height={400}
+                        widths={[320, 640]}
+                        sizes="320px"
                         loading="lazy"
                         decoding="async"
                       />

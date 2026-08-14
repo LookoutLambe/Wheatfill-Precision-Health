@@ -28,8 +28,6 @@ services:
         sync: false
       - key: USE_SUPABASE_AUTH
         value: "0"
-      # PayPal payments (catalog checkout + provider pay-later links)
-      - key: PAYPAL_BUSINESS_EMAIL
-        sync: false
-      - key: PAYPAL_PAY_URL
-        sync: false
+      # Venmo payments (catalog checkout + provider pay-later links). Defaults to wheaty27 if unset.
+      - key: VENMO_USERNAME
+        value: wheaty27

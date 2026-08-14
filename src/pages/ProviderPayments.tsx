@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
-import { paypalBillUrlForAmountCents } from '../lib/catalogPaypalAmountUrl'
+import { venmoBillUrlForAmountCents } from '../lib/venmo'
 import { CONSULT_FEES, formatConsultFee, type PaidConsultType } from '../config/consultFees'
 import { ZELLE_ENABLED, ZELLE_RECIPIENT_NAME } from '../config/provider'
 import { formatZellePhone, zelleRequestMessage } from '../lib/zelle'
@@ -43,9 +43,9 @@ export default function ProviderPayments() {
       return
     }
     // Built entirely in the browser — no backend/API call needed.
-    const url = paypalBillUrlForAmountCents(amountCents, description)
+    const url = venmoBillUrlForAmountCents(amountCents, description)
     if (!url) {
-      setError('PayPal is not configured. Set the practice PayPal email (VITE_PAYPAL_BUSINESS_EMAIL).')
+      setError('Venmo is not configured. Set the practice Venmo username (VITE_VENMO_USERNAME).')
       return
     }
     setLink(url)
@@ -70,7 +70,7 @@ export default function ProviderPayments() {
     ? `mailto:${encodeURIComponent(email.trim())}?subject=${encodeURIComponent(
         `Payment link — ${amtLabel}`,
       )}&body=${encodeURIComponent(
-        `Here is your secure PayPal payment link for ${amtLabel}${desc.trim() ? ` (${desc.trim()})` : ''}:\n\n${link}\n\nIf you have any questions, just reply to this email.`,
+        `Here is your Venmo payment link for ${amtLabel}${desc.trim() ? ` (${desc.trim()})` : ''}:\n\n${link}\n\nIf you have any questions, just reply to this email.`,
       )}`
     : ''
 
@@ -103,8 +103,8 @@ export default function ProviderPayments() {
         <div>
           <h1 style={{ margin: 0 }}>Payments</h1>
           <p className="muted" style={{ marginTop: 8 }}>
-            Create a PayPal bill for any amount and send the link to a patient. Payments go to the practice PayPal
-            account. Nothing is charged until the patient pays.
+            Create a Venmo bill for any amount and send the link to a patient. Payments go to the practice Venmo
+            (@wheaty27). Nothing is charged until the patient pays.
           </p>
         </div>
         <ProviderSubpageNavActions />
@@ -121,8 +121,8 @@ export default function ProviderPayments() {
 
       <section className="card cardAccentNavy">
         <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Create a PayPal bill</h2>
-          <span className="pill">PayPal</span>
+          <h2 style={{ margin: 0 }}>Create a Venmo bill</h2>
+          <span className="pill">Venmo</span>
         </div>
         <div className="divider" />
 
@@ -219,7 +219,7 @@ export default function ProviderPayments() {
               ) : null}
             </div>
             <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>
-              Send this link to the patient. When they pay, it goes to the practice PayPal account.
+              Send this link to the patient. When they pay, it goes to the practice Venmo (@wheaty27).
             </p>
           </div>
         ) : null}
@@ -258,13 +258,13 @@ export default function ProviderPayments() {
       <section className="card cardAccentSoft" style={{ marginTop: 16 }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>How payments work</h2>
-          <span className="pill">PayPal</span>
+          <span className="pill">Venmo</span>
         </div>
         <div className="divider" />
         <p className="muted" style={{ marginTop: 0 }}>
-          Catalog checkout and the bills you create here both send the customer to PayPal with the amount prefilled.
-          The merchant account is set in the app environment via <code>VITE_PAYPAL_BUSINESS_EMAIL</code> /{' '}
-          <code>PAYPAL_BUSINESS_EMAIL</code> (or a <code>VITE_PAYPAL_PAY_URL</code> override).
+          Catalog checkout and the bills you create here both send the customer to Venmo (@wheaty27) with the amount
+          prefilled. The Venmo handle is set in the app environment via <code>VITE_VENMO_USERNAME</code> /{' '}
+          <code>VENMO_USERNAME</code> (defaults to <code>wheaty27</code>).
         </p>
       </section>
     </Page>

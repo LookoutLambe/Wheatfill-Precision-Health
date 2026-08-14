@@ -43,8 +43,8 @@ export type PharmacyOrderCheckoutResult =
   | { ok: false; status: 400 | 404 | 500; message: string }
 
 /**
- * Creates a pharmacy Order + line items and records a pending PayPal payment for the total.
- * Payment is collected via a hosted PayPal link (built on the frontend / provider tools); confirmation is manual.
+ * Creates a pharmacy Order + line items and records a pending Venmo payment for the total.
+ * Payment is collected via a Venmo pay link (emailed to the customer / built by provider tools); confirmation is manual.
  */
 export async function runPharmacyOrderCheckout(input: {
   body: z.infer<typeof CreatePharmacyOrderBody>
@@ -128,11 +128,11 @@ export async function runPharmacyOrderCheckout(input: {
     shipTo: `${hasShip ? body.shippingAddress1!.trim() : patient.address1 || ''}, ${hasShip ? body.shippingCity!.trim() : patient.city || ''}, ${hasShip ? body.shippingState!.trim() : patient.state || ''} ${hasShip ? body.shippingPostalCode!.trim() : patient.postalCode || ''}`.trim(),
   })
 
-  // Record a pending PayPal payment for the order total. The hosted PayPal page is opened client-side
-  // (or via the provider "pay later" link); payment confirmation is reconciled manually by the office.
+  // Record a pending Venmo payment for the order total. The Venmo pay link is emailed to the customer
+  // (or opened via the provider "pay later" link); payment confirmation is reconciled manually by the office.
   await prisma.payment.create({
     data: {
-      method: 'paypal',
+      method: 'venmo',
       status: 'pending',
       amountCents: total,
       currency: 'usd',

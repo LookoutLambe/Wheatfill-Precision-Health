@@ -1,53 +1,64 @@
 :root {
-  /* Wheatfill Precision Health theme (light) */
-  --text: #000000;
-  --text-h: #000000;
-  --text-m: #000000;
-  /* Flat page background (warm light ivory — no gradients) */
-  --ivory-mid: #f8f4ec;
-  --bg: var(--ivory-mid);
-  --border: rgba(10, 30, 63, 0.14); /* navy tint */
-  --code-bg: rgba(10, 30, 63, 0.06);
+  /* Wheatfill Precision Health — precision-tech theme (light instrument panel) */
+  --ink: #0b1524;        /* near-black navy — primary ink */
+  --ink-2: #16273f;
+  --text: #1a2331;       /* body text — softer than pure black */
+  --text-h: #0b1524;     /* headings */
+  --text-m: #5b6879;     /* muted steel */
 
-  --navy: #0a1e3f;
-  --navy-2: #0f2e5a;
-  --red: #7a0f1c;
-  --red-2: #991b1b;
-  /* Sticky header: matches wheatfill-mark.png flat background (sampled ~#c4b0b0). */
-  --header-bar-bg: #c4b0b0;
-  --header-bar-border: #aea0a0;
-  --header-bar-shadow: rgba(0, 0, 0, 0.07);
+  /* Cool paper background (flat, no warm ivory) */
+  --ivory-mid: #f2f4f8;  /* legacy token name kept for back-compat */
+  --paper: #f2f4f8;
+  --bg: var(--paper);
+  --surface: #ffffff;
+  --border: rgba(11, 21, 36, 0.12);
+  --border-strong: rgba(11, 21, 36, 0.22);
+  --code-bg: rgba(11, 21, 36, 0.05);
 
-  /* Use the same site font everywhere (including brand lockups). */
-  --brand-wordmark-sans: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
-  --brand-wordmark-rose: #5a3c46;
+  --navy: #0b1524;
+  --navy-2: #16273f;
+  /* Signal accent — pulse vermilion (energetic precision "readout" highlight) */
+  --red: #e23a2e;
+  --red-2: #c02b20;
+  --signal: var(--red);
+  /* Data accent — instrument cyan (charts, precise numeric callouts) */
+  --data: #10a5b6;
 
-  --accent: var(--navy);
-  --accent-bg: rgba(10, 30, 63, 0.10);
-  --accent-border: rgba(10, 30, 63, 0.45);
-  --social-bg: rgba(10, 30, 63, 0.05);
-  --focus: rgba(122, 15, 28, 0.45);
+  /* Sticky header: clean white instrument panel */
+  --header-bar-bg: #ffffff;
+  --header-bar-border: rgba(11, 21, 36, 0.10);
+  --header-bar-shadow: rgba(11, 21, 36, 0.12);
 
-  /* Pills (.pill / .pillRed / .pillGreen in App.css) — taupe, blush, sage; all harmonize with header + navy */
-  --pill-default-fg: var(--navy-2);
-  --pill-default-bg: #ebe6e1;
-  --pill-default-border: rgba(10, 30, 63, 0.2);
+  --brand-wordmark-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --brand-wordmark-rose: #3a4658;  /* muted steel for brand sub-lines */
+
+  --accent: var(--ink);
+  --accent-bg: rgba(11, 21, 36, 0.08);
+  --accent-border: rgba(11, 21, 36, 0.40);
+  --social-bg: rgba(11, 21, 36, 0.05);
+  --focus: rgba(226, 58, 46, 0.55);
+
+  /* Pills (.pill / .pillRed / .pillGreen in App.css) — steel, blush, sage; harmonize with ink + signal */
+  --pill-default-fg: var(--ink-2);
+  --pill-default-bg: #eaeef4;
+  --pill-default-border: rgba(11, 21, 36, 0.16);
 
   --pill-accent-fg: var(--red-2);
-  --pill-accent-bg: #f4e9eb;
-  --pill-accent-border: rgba(122, 15, 28, 0.24);
+  --pill-accent-bg: #fdeceb;
+  --pill-accent-border: rgba(226, 58, 46, 0.28);
 
-  --pill-positive-fg: #143d30;
-  --pill-positive-bg: #e9f1ec;
-  --pill-positive-border: rgba(20, 61, 48, 0.26);
+  --pill-positive-fg: #0f5c46;
+  --pill-positive-bg: #e6f4ee;
+  --pill-positive-border: rgba(15, 92, 70, 0.26);
   --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+    rgba(11, 21, 36, 0.10) 0 12px 24px -14px, rgba(11, 21, 36, 0.06) 0 4px 8px -4px;
 
-  --sans: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Display / headlines / motto — David Libre keeps the brand's elegant serif character */
   --heading: 'David Libre', ui-serif, Georgia, 'Times New Roman', serif;
-  /* Practice slogan — Caveat has clear 400–700 masters so lead vs emphasized line reads on screen */
-  --font-slogan: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Eyebrow / data-readout utility face — the precision "instrument" signature */
+  --font-slogan: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
 
   /* Layout system */
   --container-max: 1120px;
@@ -67,8 +78,8 @@
   --space-9: 48px;
   --space-10: 64px;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  font: 17px/150% var(--sans);
+  letter-spacing: 0;
   color-scheme: light;
   color: var(--text);
   font-synthesis: none;
@@ -85,7 +96,7 @@ html {
   scroll-padding-top: 112px;
   min-height: 100dvh;
   min-height: 100svh;
-  background: #fff;
+  background: var(--paper);
 }
 
 @media (max-width: 900px) {
@@ -128,12 +139,13 @@ body::before {
   position: fixed;
   /* Pull past viewport so a light blur doesn’t show a hard clipped edge */
   inset: -18px;
-  background-image: url('./assets/bg-page-texture.png');
-  background-repeat: no-repeat;
+  /* Precision-tech base: faint cool grid wash instead of warm plaster texture. */
+  background-image:
+    linear-gradient(rgba(11, 21, 36, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 21, 36, 0.028) 1px, transparent 1px);
+  background-size: 44px 44px, 44px 44px;
   background-position: center;
-  background-size: cover;
-  opacity: 0.62;
-  filter: blur(1.25px);
+  opacity: 1;
   pointer-events: none;
   /* Must be >= 0 or it can end up behind the html background and disappear */
   z-index: 0;
@@ -142,7 +154,7 @@ body::before {
 h1,
 h2 {
   font-family: var(--heading);
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-h);
 }
 
