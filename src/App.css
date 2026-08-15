@@ -298,7 +298,8 @@ html.pharmacyCartOpen body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--header-bar-bg);
+  /* Transparent so the header's gradient shows straight through — no darker box behind the mark. */
+  background: transparent;
 }
 
 .brandMarkImg {
