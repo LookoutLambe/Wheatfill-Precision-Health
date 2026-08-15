@@ -229,9 +229,12 @@ body {
 }
 
 .navDrawerTitle {
-  font-weight: 800;
-  color: var(--text-h);
-  font-size: 15px;
+  font-family: var(--mono);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 .navDrawerClose {
@@ -242,12 +245,15 @@ body {
   height: 40px;
   padding: 0;
   border-radius: 12px;
-  border: 1px solid rgba(10, 30, 63, 0.18);
-  background: rgba(10, 30, 63, 0.06);
-  color: var(--text-h);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
+}
+.navDrawerClose:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .navDrawerClose:focus-visible {
@@ -466,16 +472,17 @@ html.pharmacyCartOpen body {
 
 .navLinks a {
   text-decoration: none;
-  color: var(--text-h);
-  padding: 8px 10px;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid transparent;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 
 .navLinks a:hover {
-  background: rgba(10, 30, 63, 0.10);
-  border-color: var(--accent-border);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .navLinks a:focus-visible {
@@ -484,8 +491,9 @@ html.pharmacyCartOpen body {
 }
 
 .navLinks a[aria-current='page'] {
-  background: rgba(10, 30, 63, 0.14);
-  border-color: rgba(10, 30, 63, 0.22);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
 }
 
 /* Ensure nav "button links" keep readable button text color */
@@ -2395,10 +2403,9 @@ button.pill:active {
     padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom))
       max(16px, env(safe-area-inset-right));
     margin: 0;
-    background: rgba(255, 255, 255, 0.99);
-    backdrop-filter: blur(14px);
-    box-shadow: -12px 0 40px rgba(10, 30, 63, 0.18);
-    border-left: 1px solid var(--border);
+    background: radial-gradient(120% 90% at 100% 0%, #16273f 0%, var(--ink) 60%);
+    box-shadow: -18px 0 50px rgba(0, 0, 0, 0.4);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     transform: translateX(100%);
     transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.24s ease;
     overflow-y: auto;
@@ -2544,10 +2551,9 @@ button.pill:active {
     padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom))
       max(16px, env(safe-area-inset-right));
     margin: 0;
-    background: rgba(255, 255, 255, 0.99);
-    backdrop-filter: blur(14px);
-    box-shadow: -12px 0 40px rgba(10, 30, 63, 0.18);
-    border-left: 1px solid var(--border);
+    background: radial-gradient(120% 90% at 100% 0%, #16273f 0%, var(--ink) 60%);
+    box-shadow: -18px 0 50px rgba(0, 0, 0, 0.4);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
     transform: translateX(100%);
     transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.24s ease;
     overflow-y: auto;
