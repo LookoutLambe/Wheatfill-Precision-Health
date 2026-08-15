@@ -4115,7 +4115,10 @@ button.pill:active {
 }
 
 .orderNowHubPage--cart {
-  padding-bottom: max(100px, calc(88px + env(safe-area-inset-bottom)));
+  /* No reserved space: the cart bar is now sticky (in flow), and a negative bottom
+     margin cancels main's bottom padding so the bar docks flush against the CTA band. */
+  padding-bottom: 0;
+  margin-bottom: calc(-1 * var(--space-10));
 }
 
 /* Breadcrumb is first, so the global *:first-child:has(h1) misses; header:has(h1) + this flex stack center the hero. */
@@ -4449,26 +4452,16 @@ button.pill:active {
 }
 
 .orderNowMiniCart {
-  position: fixed;
+  /* Sticky (not fixed): floats at the viewport bottom while scrolling the catalog,
+     then docks flush above the CTA band at the end instead of hiding behind the footer. */
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
   z-index: 90;
   padding: 14px 16px max(14px, env(safe-area-inset-bottom));
   background: radial-gradient(120% 200% at 50% 100%, #16273f 0%, var(--ink) 62%);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 16px 16px 0 0;
   box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.35);
-}
-/* Gold signal line (from the logo) along the top edge. */
-.orderNowMiniCart::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -1px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #d4af37, transparent);
-  opacity: 0.6;
 }
 
 .orderNowMiniCartInner {
