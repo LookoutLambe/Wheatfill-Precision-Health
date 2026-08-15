@@ -263,7 +263,7 @@ export default function OrderNowSummary() {
         </header>
 
         {loadError ? (
-          <div className="card cardAccentRed" style={{ marginTop: 14 }}>
+          <div className="card cardAccentGold" style={{ marginTop: 14 }}>
             <div style={{ fontWeight: 800 }}>Unable To Load Catalog</div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">{loadError}</div>
@@ -573,7 +573,7 @@ export default function OrderNowSummary() {
             </div>
 
             {checkoutError ? (
-              <div style={{ marginTop: 14, color: '#7a0f1c', fontSize: 13, fontWeight: 800, whiteSpace: 'pre-line' }}>
+              <div style={{ marginTop: 14, color: 'var(--gold-2)', fontSize: 13, fontWeight: 800, whiteSpace: 'pre-line' }}>
                 {checkoutError}
               </div>
             ) : null}

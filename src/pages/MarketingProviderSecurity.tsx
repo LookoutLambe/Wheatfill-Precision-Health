@@ -127,7 +127,7 @@ export default function MarketingProviderSecurity() {
           </label>
 
           {usernameError ? (
-            <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>{usernameError}</div>
+            <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>{usernameError}</div>
           ) : null}
           {usernameSaved ? (
             <div style={{ marginTop: 10, color: '#0f4c28', fontSize: 12, fontWeight: 800 }}>
@@ -236,7 +236,7 @@ export default function MarketingProviderSecurity() {
           </label>
         </div>
 
-        {error ? <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>{error}</div> : null}
+        {error ? <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>{error}</div> : null}
         {saved ? <div style={{ marginTop: 10, color: '#0f4c28', fontSize: 12, fontWeight: 800 }}>Saved.</div> : null}
 
         <div className="btnRow" style={{ marginTop: 12 }}>

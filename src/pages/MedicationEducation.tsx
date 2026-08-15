@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
+import TitrationTimeline from '../components/TitrationTimeline'
 
 import { PEPTIDE_EDUCATION, peptideAnchorId } from '../data/peptideEducation'
 
@@ -93,6 +94,8 @@ export default function MedicationEducation() {
             </p>
           </div>
         </div>
+        <div className="divider" />
+        <TitrationTimeline />
         <div className="divider" />
         <ul className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6, fontSize: 14 }}>
           <li>
@@ -231,7 +234,7 @@ export default function MedicationEducation() {
         </ul>
       </section>
 
-      <section className="card cardAccentRed" style={{ marginTop: 12 }}>
+      <section className="card cardAccentGold" style={{ marginTop: 12 }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Key risks to know</h2>
           <span className="pill pillRed">Safety</span>

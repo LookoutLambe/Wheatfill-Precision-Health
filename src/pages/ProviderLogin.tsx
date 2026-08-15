@@ -171,7 +171,7 @@ export default function ProviderLogin() {
           ) : null}
 
           {error ? (
-            <div style={{ marginTop: 10, color: '#7a0f1c', fontSize: 12, fontWeight: 800, textAlign: 'left' }}>{error}</div>
+            <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800, textAlign: 'left' }}>{error}</div>
           ) : null}
 
           <div className="btnRow" style={{ marginTop: 12 }}>

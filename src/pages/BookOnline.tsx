@@ -9,6 +9,7 @@ import { notifyByEmail } from '../lib/notifyEmail'
 import ApiConnectionHint from '../components/ApiConnectionHint'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
+import Glp1EligibilityCheck from '../components/Glp1EligibilityCheck'
 
 type UiApptType = 'New Patient Consultation' | 'Follow-Up Consultation'
 
@@ -264,6 +265,8 @@ export default function BookOnline() {
           </p>
         </section>
       ) : null}
+
+      {step === 'choose' ? <Glp1EligibilityCheck /> : null}
 
       {step === 'choose' ? (
         <section className="card cardAccentSoft">
@@ -569,7 +572,7 @@ export default function BookOnline() {
             <div className="divider" />
 
             {availError ? (
-              <div style={{ marginBottom: 12, color: '#7a0f1c', fontSize: 12, fontWeight: 800 }}>
+              <div style={{ marginBottom: 12, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>
                 {availError}
               </div>
             ) : null}
@@ -637,9 +640,9 @@ export default function BookOnline() {
                           padding: '10px 0',
                           borderRadius: 12,
                           opacity: dayClosed ? 1 : disabled ? 0.35 : 1,
-                          borderColor: isSelected ? 'rgba(122, 15, 28, 0.55)' : undefined,
+                          borderColor: isSelected ? 'rgba(185, 147, 46, 0.6)' : undefined,
                           background: isSelected
-                            ? 'rgba(122, 15, 28, 0.10)'
+                            ? 'rgba(212, 175, 55, 0.14)'
                             : state === 'closed'
                               ? '#111827'
                             : state === 'open'

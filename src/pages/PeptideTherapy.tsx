@@ -441,7 +441,7 @@ export default function PeptideTherapy() {
 
         <label style={{ display: 'block', marginTop: 14 }}>
           <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-            Email <span style={{ color: 'var(--red)' }}>*</span>
+            Email <span style={{ color: 'var(--gold-2)' }}>*</span>
           </div>
           <input
             className="input"

@@ -20,7 +20,7 @@
   /* Signal accent — pulse vermilion (energetic precision "readout" highlight) */
   --red: #e23a2e;
   --red-2: #c02b20;
-  --signal: var(--red);
+  --signal: var(--gold);
   /* Data accent — instrument cyan (charts, precise numeric callouts) */
   --data: #10a5b6;
   /* Gold accent (from the logo) — used on dark/ink surfaces instead of the red signal. */
@@ -41,16 +41,16 @@
   --accent-bg: rgba(11, 21, 36, 0.08);
   --accent-border: rgba(11, 21, 36, 0.40);
   --social-bg: rgba(11, 21, 36, 0.05);
-  --focus: rgba(226, 58, 46, 0.55);
+  --focus: rgba(185, 147, 46, 0.65);
 
   /* Pills (.pill / .pillRed / .pillGreen in App.css) — steel, blush, sage; harmonize with ink + signal */
   --pill-default-fg: var(--ink-2);
   --pill-default-bg: #eaeef4;
   --pill-default-border: rgba(11, 21, 36, 0.16);
 
-  --pill-accent-fg: var(--red-2);
-  --pill-accent-bg: #fdeceb;
-  --pill-accent-border: rgba(226, 58, 46, 0.28);
+  --pill-accent-fg: #7d5e0e;
+  --pill-accent-bg: #faf3dd;
+  --pill-accent-border: rgba(185, 147, 46, 0.42);
 
   --pill-positive-fg: #0f5c46;
   --pill-positive-bg: #e6f4ee;

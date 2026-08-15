@@ -120,7 +120,7 @@ export default function HallandalePharmacy() {
       ) : null}
 
       {error ? (
-        <section className="card cardAccentRed" style={{ maxWidth: 980 }}>
+        <section className="card cardAccentGold" style={{ maxWidth: 980 }}>
           <div style={{ fontWeight: 900 }}>Catalog error</div>
           <div className="divider" />
           <div className="muted">{error}</div>

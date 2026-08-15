@@ -86,7 +86,7 @@ export default function ProviderPayments() {
       </div>
 
       {error ? (
-        <div className="card cardAccentRed" style={{ marginBottom: 16 }}>
+        <div className="card cardAccentGold" style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 900, marginBottom: 6 }}>Action needed</div>
           <div className="muted" style={{ fontSize: 13 }}>
             {error}

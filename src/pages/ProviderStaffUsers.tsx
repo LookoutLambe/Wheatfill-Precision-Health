@@ -179,7 +179,7 @@ export default function ProviderStaffUsers() {
 
       {err ? (
         <section className="card cardAccentSoft">
-          <p className="muted" style={{ color: '#7a0f1c', fontWeight: 800, margin: 0 }}>
+          <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 800, margin: 0 }}>
             {err}
           </p>
         </section>
@@ -356,7 +356,7 @@ export default function ProviderStaffUsers() {
         </div>
       </section>
 
-      <section className="card cardAccentRed" style={{ maxWidth: 980 }}>
+      <section className="card cardAccentGold" style={{ maxWidth: 980 }}>
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Reset password</h2>
           <span className="pill pillRed">Admin</span>

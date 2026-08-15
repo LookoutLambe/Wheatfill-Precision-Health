@@ -5,6 +5,7 @@ import { BrandSlogan } from '../components/BrandSlogan'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { PEPTIDE_EDUCATION, PEPTIDE_MARKET_AND_PROTOCOL_DISCLAIMER, peptideAnchorId } from '../data/peptideEducation'
 import { WHEATFILL_PEPTIDE_PRICE_LIST } from '../data/wheatfillPeptidePriceList'
+import PlanCostEstimator from '../components/PlanCostEstimator'
 
 function renderBoldSegments(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g)
@@ -100,7 +101,7 @@ export default function Pricing() {
               Monthly medication cost varies by dose and vial size.
             </p>
           </div>
-          <div className="card cardAccentRed">
+          <div className="card cardAccentGold">
             <div className="cardTitle">
               <h2 style={{ margin: 0 }}>Tirzepatide</h2>
               <span className="pill">$260+</span>
@@ -120,6 +121,8 @@ export default function Pricing() {
           </Link>
         </div>
       </section>
+
+      <PlanCostEstimator />
 
       <section className="card" id="peptide-pricing" style={{ scrollMarginTop: 88 }}>
         <div className="cardTitle">

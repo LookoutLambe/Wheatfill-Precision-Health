@@ -136,7 +136,7 @@ export default function PharmacyPartner() {
         </div>
 
         {error ? (
-          <div className="card cardAccentRed">
+          <div className="card cardAccentGold">
             <div style={{ fontWeight: 800 }}>Error</div>
             <div className="divider" style={{ margin: '12px 0' }} />
             <div className="muted">{error}</div>

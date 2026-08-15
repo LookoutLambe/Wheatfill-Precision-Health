@@ -71,7 +71,7 @@ export default function NoticeOfPrivacyPractices() {
         </p>
       </section>
 
-      <section className="card cardAccentRed">
+      <section className="card cardAccentGold">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Your rights</h2>
           <span className="pill">HIPAA</span>

@@ -68,7 +68,7 @@ export default function Privacy() {
         </div>
       </section>
 
-      <section className="card cardAccentRed">
+      <section className="card cardAccentGold">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>CTIA guidelines</h2>
           <span className="pill">Policy</span>

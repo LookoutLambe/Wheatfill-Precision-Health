@@ -13,7 +13,7 @@ export default function About() {
         <h1 style={{ margin: 0 }}>About</h1>
       </div>
 
-      <section className="card cardAccentRed aboutMissionBlock">
+      <section className="card cardAccentGold aboutMissionBlock">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Mission</h2>
           <span className="pill pillRed">Elevated Living</span>

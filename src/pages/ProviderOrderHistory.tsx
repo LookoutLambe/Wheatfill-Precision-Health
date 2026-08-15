@@ -242,14 +242,14 @@ export default function ProviderOrderHistory() {
           {toast}
         </p>
       ) : null}
-      <section className="card cardAccentRed">
+      <section className="card cardAccentGold">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Pharmacy orders (full list)</h2>
           <span className="pill">Showing {filteredOrders.length}</span>
         </div>
         <div className="divider" />
         {ordersError ? (
-          <p style={{ color: '#7a0f1c', fontWeight: 700, margin: '0 0 10px' }}>{ordersError}</p>
+          <p style={{ color: 'var(--gold-2)', fontWeight: 700, margin: '0 0 10px' }}>{ordersError}</p>
         ) : null}
         {hasApiCredential() && !ordersLoading && orders.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>
@@ -350,7 +350,7 @@ export default function ProviderOrderHistory() {
                       <button
                         type="button"
                         className="btn"
-                        style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                        style={{ color: 'var(--ink)', borderColor: 'rgba(11, 21, 36, 0.35)' }}
                         title="Hide this order from the list (closed or declined only)"
                         disabled={ordersLoading || Boolean(deletingId)}
                         onClick={() => void removeOrderFromList(o)}

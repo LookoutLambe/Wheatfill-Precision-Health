@@ -45,7 +45,7 @@ export default function TermsOfService() {
         </p>
       </section>
 
-      <section className="card cardAccentRed">
+      <section className="card cardAccentGold">
         <div className="cardTitle">
           <h2 style={{ margin: 0 }}>Use of the site &amp; account security</h2>
           <span className="pill">Acceptable Use</span>

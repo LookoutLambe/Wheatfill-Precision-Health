@@ -217,7 +217,7 @@ export default function MarketingProviderAdmin() {
           </a>
         </section>
 
-        <section className="card cardAccentRed">
+        <section className="card cardAccentGold">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Order Now</h2>
             <span className="pill pillRed">Catalog</span>

@@ -261,7 +261,7 @@ export default function ProviderTeamInbox() {
         </div>
 
         {inboxError ? (
-          <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, marginTop: 0 }}>
+          <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 700, marginTop: 0 }}>
             {inboxError}
           </p>
         ) : null}
@@ -391,7 +391,7 @@ export default function ProviderTeamInbox() {
                         <button
                           type="button"
                           className="btn"
-                          style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                          style={{ color: 'var(--ink)', borderColor: 'rgba(11, 21, 36, 0.35)' }}
                           disabled={!hasApiCredential()}
                           onClick={() => {
                             if (!hasApiCredential()) return

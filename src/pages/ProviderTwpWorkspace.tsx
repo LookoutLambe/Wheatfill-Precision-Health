@@ -772,7 +772,7 @@ export default function ProviderTwpWorkspace() {
           </div>
 
           {inboxError ? (
-            <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, marginTop: 0 }}>
+            <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 700, marginTop: 0 }}>
               {inboxError}
             </p>
           ) : null}
@@ -848,7 +848,7 @@ export default function ProviderTwpWorkspace() {
                           <button
                             type="button"
                             className="btn"
-                            style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                            style={{ color: 'var(--ink)', borderColor: 'rgba(11, 21, 36, 0.35)' }}
                             disabled={!hasApiCredential()}
                             onClick={() => {
                               if (!hasApiCredential()) return
@@ -982,7 +982,7 @@ export default function ProviderTwpWorkspace() {
                           <button
                             type="button"
                             className="btn"
-                            style={{ color: '#7a0f1c', borderColor: 'rgba(122, 15, 28, 0.35)' }}
+                            style={{ color: 'var(--ink)', borderColor: 'rgba(11, 21, 36, 0.35)' }}
                             onClick={() => {
                               if (!window.confirm('Remove this row from the preview list? (Only this browser; not the API inbox.)')) return
                               const portalId = (a as any).portalApptId as string | undefined
@@ -1257,7 +1257,7 @@ export default function ProviderTwpWorkspace() {
 
         {/* Payments + audit panels removed. */}
 
-        <section className="card cardAccentRed" id="twp-orders">
+        <section className="card cardAccentGold" id="twp-orders">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <div className="btnRow" style={{ margin: 0, flexWrap: 'wrap' }}>
@@ -1274,7 +1274,7 @@ export default function ProviderTwpWorkspace() {
           </div>
           <div className="divider" />
           {ordersError ? (
-            <p className="muted" style={{ color: '#7a0f1c', fontWeight: 700, margin: '0 0 10px' }}>
+            <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 700, margin: '0 0 10px' }}>
               {ordersError}
             </p>
           ) : null}

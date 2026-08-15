@@ -21,7 +21,7 @@ export class RouteErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="page">
-          <div className="card cardAccentRed" style={{ maxWidth: 560, margin: '24px auto' }}>
+          <div className="card cardAccentGold" style={{ maxWidth: 560, margin: '24px auto' }}>
             <h1 style={{ margin: 0, fontSize: 20 }}>This page couldn’t load</h1>
             <p className="muted" style={{ marginTop: 10, marginBottom: 0 }}>
               {this.state.message}

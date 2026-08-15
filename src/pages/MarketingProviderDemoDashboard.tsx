@@ -288,7 +288,7 @@ export default function MarketingProviderDemoDashboard() {
           )}
         </section>
 
-        <section className="card cardAccentRed">
+        <section className="card cardAccentGold">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Orders</h2>
             <span className="pill pillRed">Order Now</span>
@@ -367,7 +367,7 @@ export default function MarketingProviderDemoDashboard() {
           <div className="pill">No messages (demo)</div>
         </section>
 
-        <section className="card cardAccentRed">
+        <section className="card cardAccentGold">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Schedule (preview)</h2>
             <span className="pill pillRed">Demo</span>

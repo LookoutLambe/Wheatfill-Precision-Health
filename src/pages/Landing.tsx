@@ -75,7 +75,7 @@ type AccordionItem = {
 
 const ACCENT_CLASS: Record<AccordionItem['accent'], string> = {
   soft: 'cardAccentSoft',
-  red: 'cardAccentRed',
+  red: 'cardAccentGold',
   navy: 'cardAccentNavy',
 }
 

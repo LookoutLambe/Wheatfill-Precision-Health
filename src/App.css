@@ -147,7 +147,8 @@ body {
   border-color: #fff;
 }
 .topNavShell .pharmacyCartBadge--header {
-  background: var(--red);
+  background: var(--gold);
+  color: var(--gold-ink);
 }
 
 .topNav {
@@ -422,7 +423,7 @@ html.pharmacyCartOpen body {
   width: clamp(20px, 4vw, 40px);
   height: 3px;
   flex: 0 0 auto;
-  background: var(--red);
+  background: var(--gold);
 }
 
 @media (max-width: 640px) {
@@ -1328,13 +1329,13 @@ a.btn:focus-visible {
 }
 
 .btnAccent {
-  background: var(--red);
-  border-color: rgba(122, 15, 28, 0.55);
-  color: white;
+  background: var(--gold);
+  border-color: rgba(185, 147, 46, 0.6);
+  color: var(--gold-ink);
 }
 
 .btnAccent:hover {
-  background: var(--red-2);
+  background: var(--gold-bright);
 }
 
 .cardGrid {
@@ -1367,6 +1368,11 @@ a.btn:focus-visible {
 .cardAccentNavy {
   border-left: 5px solid var(--ink);
   background: linear-gradient(180deg, rgba(11, 21, 36, 0.05), #ffffff 44%);
+}
+
+.cardAccentGold {
+  border-left: 5px solid var(--gold);
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.09), #ffffff 44%);
 }
 
 .cardAccentRed {
@@ -1692,8 +1698,8 @@ button.pill:not(.pillRed):not(.pillGreen):hover {
 
 a.pill.pillRed:hover,
 button.pill.pillRed:hover {
-  background: #eddfe2;
-  border-color: rgba(122, 15, 28, 0.34);
+  background: #f3e9c9;
+  border-color: rgba(185, 147, 46, 0.55);
 }
 
 a.pill.pillGreen:hover,
@@ -2095,7 +2101,7 @@ button.pill:active {
 .textarea:focus {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-color: rgba(122, 15, 28, 0.35);
+  border-color: rgba(185, 147, 46, 0.5);
 }
 
 .formRow {
@@ -2123,7 +2129,7 @@ button.pill:active {
   height: 3px;
   margin: 16px auto 0;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--red), rgba(226, 58, 46, 0.25));
+  background: linear-gradient(90deg, var(--gold-2), rgba(212, 175, 55, 0.3));
 }
 
 /* ============================================================
@@ -2159,7 +2165,7 @@ button.pill:active {
   height: 30px;
   border-radius: 8px;
   background: var(--pill-accent-bg);
-  color: var(--red);
+  color: var(--gold-2);
   flex: 0 0 auto;
 }
 @media (max-width: 560px) {
@@ -2224,7 +2230,7 @@ button.pill:active {
 }
 .contactInfoIcon--alert {
   background: var(--pill-accent-bg);
-  color: var(--red);
+  color: var(--gold-2);
 }
 
 /* ============================================================
@@ -2677,9 +2683,9 @@ button.pill:active {
   }
 
   .navLinks .navProviderBtn {
-    background: rgba(122, 15, 28, 0.08);
-    color: var(--red);
-    border-color: rgba(122, 15, 28, 0.35);
+    background: rgba(212, 175, 55, 0.12);
+    color: var(--gold-bright);
+    border-color: rgba(212, 175, 55, 0.4);
     font-weight: 750;
   }
 
@@ -2823,9 +2829,9 @@ button.pill:active {
   }
 
   .topNavShell--alwaysDrawer .navLinks .navProviderBtn {
-    background: rgba(122, 15, 28, 0.08);
-    color: var(--red);
-    border-color: rgba(122, 15, 28, 0.35);
+    background: rgba(212, 175, 55, 0.12);
+    color: var(--gold-bright);
+    border-color: rgba(212, 175, 55, 0.4);
     font-weight: 750;
   }
 }
@@ -3128,8 +3134,8 @@ button.pill:active {
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--red);
-  color: white;
+  background: var(--gold);
+  color: var(--gold-ink);
   font-size: 11px;
   font-weight: 800;
   display: inline-flex;
@@ -3316,7 +3322,7 @@ button.pill:active {
 }
 
 .landingWhyUsItem--stripeRed {
-  border-left-color: var(--red);
+  border-left-color: var(--gold);
 }
 
 .landingWhyUsItem--stripeWhite {
@@ -3493,8 +3499,8 @@ button.pill:active {
 }
 
 .landingConsultNotice--err {
-  border-color: rgba(122, 15, 28, 0.22);
-  background: rgba(122, 15, 28, 0.06);
+  border-color: rgba(11, 21, 36, 0.25);
+  background: rgba(11, 21, 36, 0.05);
 }
 
 @media (max-width: 900px) {
@@ -3619,7 +3625,8 @@ button.pill:active {
 }
 
 .landingPriceTable--tz .landingPriceTableHead {
-  background: var(--red);
+  background: linear-gradient(135deg, var(--gold-2), var(--gold));
+  color: var(--gold-ink);
 }
 
 .landingPriceTableRows {
@@ -3657,7 +3664,7 @@ button.pill:active {
 }
 
 .landingPriceTable--tz .landingPricePrice {
-  color: var(--red);
+  color: var(--gold-2);
 }
 
 .landingShipBanner {
@@ -3675,7 +3682,7 @@ button.pill:active {
 .landingShipBannerIcon {
   display: inline-flex;
   align-items: center;
-  color: var(--red);
+  color: var(--gold-2);
   line-height: 1;
 }
 
@@ -3744,7 +3751,8 @@ button.pill:active {
 }
 
 .landingPenTitleAccent {
-  color: var(--red);
+  color: var(--gold-2);
+  font-weight: 800;
 }
 
 .landingPenLead {
@@ -3771,7 +3779,8 @@ button.pill:active {
 }
 
 .landingPenBanner--soon {
-  background: var(--red);
+  background: var(--ink);
+  color: var(--gold-bright);
 }
 
 .landingPenBanner--option {
@@ -3811,7 +3820,7 @@ button.pill:active {
   flex: 0 0 auto;
   border-radius: 8px;
   background: var(--pill-accent-bg);
-  color: var(--red);
+  color: var(--gold-2);
   line-height: 1;
 }
 
@@ -3821,7 +3830,7 @@ button.pill:active {
 }
 
 .landingPenFeatureText b {
-  color: var(--red);
+  color: var(--text-h);
   font-size: 16px;
 }
 
@@ -3841,7 +3850,7 @@ button.pill:active {
 .landingPenNoteIcon {
   display: inline-flex;
   align-items: center;
-  color: var(--red);
+  color: var(--gold-2);
   line-height: 1.2;
 }
 
@@ -4097,7 +4106,7 @@ button.pill:active {
 .pharmacyDrawerTotalAmt {
   font-size: 20px;
   font-weight: 850;
-  color: var(--red);
+  color: var(--gold-bright);
 }
 
 .pharmacyDrawerActions {
@@ -4266,8 +4275,8 @@ button.pill:active {
   line-height: 1.45;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(122, 15, 28, 0.22);
-  background: rgba(122, 15, 28, 0.06);
+  border: 1px solid rgba(11, 21, 36, 0.25);
+  background: rgba(11, 21, 36, 0.05);
   color: #000000;
   display: flex;
   flex-direction: column;
@@ -4364,12 +4373,12 @@ button.pill:active {
   right: 0;
   height: 4px;
   border-radius: 16px 16px 0 0;
-  background: linear-gradient(90deg, var(--red), #ffffff, var(--navy));
+  background: linear-gradient(90deg, var(--gold), #ffffff, var(--navy));
   opacity: 0.9;
 }
 
 .orderNowDualCatalogCol--mv::before {
-  background: linear-gradient(90deg, var(--red), rgba(255, 255, 255, 0.9));
+  background: linear-gradient(90deg, var(--gold), rgba(255, 255, 255, 0.9));
 }
 
 .orderNowDualCatalogCol--hall::before {
@@ -4557,7 +4566,7 @@ button.pill:active {
 .orderNowPartnerChipAction {
   font-size: 13px;
   font-weight: 700;
-  color: var(--red);
+  color: var(--gold-2);
 }
 
 .orderNowMiniCart {
@@ -4629,8 +4638,8 @@ button.pill:active {
   background:
     linear-gradient(
         90deg,
-        var(--red) 0%,
-        var(--red) 33.33%,
+        var(--gold) 0%,
+        var(--gold) 33.33%,
         #ffffff 33.33%,
         #ffffff 66.66%,
         var(--navy) 66.66%,
@@ -4652,8 +4661,8 @@ button.pill:active {
   background:
     linear-gradient(
         90deg,
-        var(--red) 0%,
-        var(--red) 33.33%,
+        var(--gold) 0%,
+        var(--gold) 33.33%,
         #ffffff 33.33%,
         #ffffff 66.66%,
         var(--navy) 66.66%,
@@ -5973,7 +5982,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   border: 1px solid var(--border);
   border-radius: 18px;
   background:
-    radial-gradient(120% 100% at 100% 0%, rgba(226, 58, 46, 0.05), transparent 60%),
+    radial-gradient(120% 100% at 100% 0%, rgba(212, 175, 55, 0.09), transparent 60%),
     var(--surface);
   padding: clamp(18px, 3vw, 26px);
   box-shadow: var(--shadow);
@@ -5989,10 +5998,11 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 
 .glp1convEyebrow {
   font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.22em;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--red);
+  color: var(--gold-2);
 }
 
 .glp1convLive {
@@ -6010,20 +6020,20 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--red);
-  box-shadow: 0 0 0 0 rgba(226, 58, 46, 0.5);
+  background: var(--gold);
+  box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.55);
   animation: glp1Pulse 1.8s ease-out infinite;
 }
 
 @keyframes glp1Pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0.45);
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.5);
   }
   70% {
-    box-shadow: 0 0 0 7px rgba(226, 58, 46, 0);
+    box-shadow: 0 0 0 7px rgba(212, 175, 55, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(226, 58, 46, 0);
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
   }
 }
 
@@ -6122,9 +6132,9 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--gold-2);
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px -1px rgba(226, 58, 46, 0.6);
+  box-shadow: 0 2px 8px -1px rgba(185, 147, 46, 0.65);
   cursor: pointer;
   transition: transform 120ms ease;
 }
@@ -6135,9 +6145,9 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--gold-2);
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px -1px rgba(226, 58, 46, 0.6);
+  box-shadow: 0 2px 8px -1px rgba(185, 147, 46, 0.65);
   cursor: pointer;
 }
 .glp1convSlider:focus-visible {
@@ -6163,7 +6173,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 .glp1convSyringeFill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: linear-gradient(90deg, rgba(226, 58, 46, 0.75), var(--red));
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.75), var(--gold-2));
   border-right: 2px solid #fff;
   transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -6222,7 +6232,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   color: rgba(255, 255, 255, 0.82);
 }
 .glp1convArrow {
-  color: var(--red);
+  color: var(--gold-bright);
   font-weight: 700;
 }
 
@@ -6231,6 +6241,169 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   font-size: 12px;
   line-height: 1.5;
   color: var(--text-m);
+}
+
+/* —— Eligibility pre-check (shares the .glp1conv tool family) —— */
+.eligInputsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.eligInputsRow label {
+  display: block;
+}
+
+.eligInputsRow .glp1convFieldLabel {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.eligCondBlock {
+  margin-top: 14px;
+}
+
+.eligCondBlock .glp1convFieldLabel {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.eligVerdict {
+  display: grid;
+  gap: 6px;
+  padding-left: 14px;
+  border-left: 3px solid var(--gold);
+  font-size: 14px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.eligVerdict strong {
+  color: #fff;
+  font-size: 15px;
+}
+
+.eligVerdict--info {
+  border-left-color: rgba(255, 255, 255, 0.4);
+}
+
+.eligVerdictCta {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+@media (max-width: 640px) {
+  .eligInputsRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .eligInputsRow label:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* —— Plan cost estimator —— */
+.costPickRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.costPickRow .glp1convFieldLabel {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.costVialPick {
+  display: block;
+  margin-top: 14px;
+}
+
+.costVialPick .glp1convFieldLabel {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.costLines {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+
+.costLine {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.costLine--after {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.66);
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* —— Titration timeline —— */
+.titrChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 150px;
+  margin-top: 16px;
+  padding: 0 2px;
+}
+
+.titrStep {
+  flex: 1 1 0;
+  min-width: 0;
+  border-radius: 10px 10px 4px 4px;
+  border: 1px solid rgba(11, 21, 36, 0.14);
+  background: rgba(11, 21, 36, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  padding-top: 8px;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.titrStep.isPassed {
+  background: rgba(212, 175, 55, 0.16);
+  border-color: rgba(185, 147, 46, 0.35);
+}
+
+.titrStep.isActive {
+  background: linear-gradient(180deg, rgba(212, 175, 55, 0.4), rgba(212, 175, 55, 0.18));
+  border-color: var(--gold-2);
+  box-shadow: 0 6px 18px -10px rgba(185, 147, 46, 0.7);
+}
+
+.titrStepMg {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.titrStepWks {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-m);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .titrStepWks {
+    display: none;
+  }
 }
 
 @media (max-width: 520px) {
