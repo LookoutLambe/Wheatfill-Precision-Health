@@ -3438,7 +3438,9 @@ button.pill:active {
 }
 
 .landingShipBannerIcon {
-  font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--red);
   line-height: 1;
 }
 
@@ -3566,7 +3568,15 @@ button.pill:active {
 }
 
 .landingPenFeatureIcon {
-  font-size: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--pill-accent-bg);
+  color: var(--red);
   line-height: 1;
 }
 
@@ -3594,7 +3604,9 @@ button.pill:active {
 }
 
 .landingPenNoteIcon {
-  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--red);
   line-height: 1.2;
 }
 

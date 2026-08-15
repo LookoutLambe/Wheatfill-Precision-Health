@@ -6,6 +6,7 @@ import brettPortrait from '../assets/brett.png'
 import glp1PenImg from '../assets/glp1-pen.png'
 import ImageKitImage from '../components/ImageKitImage'
 import Glp1UnitConverter from '../components/Glp1UnitConverter'
+import Icon from '../components/Icon'
 import { apiPost } from '../api/client'
 import { notifyByEmail } from '../lib/notifyEmail'
 import { BrandSlogan } from '../components/BrandSlogan'
@@ -513,7 +514,9 @@ export default function Landing() {
             </div>
 
             <div className="landingShipBanner" role="note">
-              <span className="landingShipBannerIcon" aria-hidden="true">🚚</span>
+              <span className="landingShipBannerIcon" aria-hidden="true">
+                <Icon name="truck" size={20} />
+              </span>
               <span className="landingShipBannerText">$10 Overnight Shipping</span>
             </div>
             <p className="muted landingShipNote">
@@ -548,21 +551,29 @@ export default function Landing() {
 
                 <ul className="landingPenFeatures">
                   <li className="landingPenFeature">
-                    <span className="landingPenFeatureIcon" aria-hidden="true">🏷️</span>
+                    <span className="landingPenFeatureIcon" aria-hidden="true">
+                      <Icon name="tag" size={18} />
+                    </span>
                     <span className="landingPenFeatureText">
                       <b>+$10</b> per order
                     </span>
                   </li>
                   <li className="landingPenFeature">
-                    <span className="landingPenFeatureIcon" aria-hidden="true">🎯</span>
+                    <span className="landingPenFeatureIcon" aria-hidden="true">
+                      <Icon name="target" size={18} />
+                    </span>
                     <span className="landingPenFeatureText">Dial your actual dose</span>
                   </li>
                   <li className="landingPenFeature">
-                    <span className="landingPenFeatureIcon" aria-hidden="true">🚫</span>
+                    <span className="landingPenFeatureIcon" aria-hidden="true">
+                      <Icon name="ban" size={18} />
+                    </span>
                     <span className="landingPenFeatureText">No confusing unit conversions</span>
                   </li>
                   <li className="landingPenFeature">
-                    <span className="landingPenFeatureIcon" aria-hidden="true">✅</span>
+                    <span className="landingPenFeatureIcon" aria-hidden="true">
+                      <Icon name="check" size={18} />
+                    </span>
                     <span className="landingPenFeatureText">Less math. Less guesswork.</span>
                   </li>
                 </ul>
@@ -581,7 +592,9 @@ export default function Landing() {
             </div>
 
             <div className="landingPenNote" role="note">
-              <span className="landingPenNoteIcon" aria-hidden="true">📅</span>
+              <span className="landingPenNoteIcon" aria-hidden="true">
+                <Icon name="calendar" size={18} />
+              </span>
               <span>
                 Within the next month, your medication can be provided in an <b>auto-inject pen</b> that
                 lets you dial the <b>actual dose</b> instead of units.

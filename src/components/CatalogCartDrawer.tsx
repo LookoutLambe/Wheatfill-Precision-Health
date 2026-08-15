@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from './CatalogVialThumb'
+import Icon from './Icon'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
 
 export type CartLineProduct = {
@@ -173,7 +174,7 @@ export default function CatalogCartDrawer({
                               })
                             }
                           >
-                            <span aria-hidden="true">🗑</span>
+                            <Icon name="trash" size={17} />
                           </button>
                         </div>
                         <div className="pharmacyDrawerQtyRow">

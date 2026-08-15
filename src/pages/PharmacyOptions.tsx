@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CatalogVialThumb from '../components/CatalogVialThumb'
+import Icon from '../components/Icon'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS } from '../data/catalogHighlight'
@@ -99,8 +100,8 @@ export default function PharmacyOptions() {
         </p>
 
         <div className="orderNowShipNote" role="note" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', margin: '4px 0 14px', fontWeight: 800 }}>
-          <span className="pill" style={{ background: '#b9932e', color: '#fff', borderColor: '#b9932e' }}>
-            🚚 $10 overnight shipping
+          <span className="pill" style={{ background: '#b9932e', color: '#fff', borderColor: '#b9932e', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="truck" size={15} /> $10 overnight shipping
           </span>
           <span className="muted" style={{ fontWeight: 600, fontSize: 13 }}>
             Auto-inject pen coming soon (+$10/order) — dial your actual dose, no unit conversions.
