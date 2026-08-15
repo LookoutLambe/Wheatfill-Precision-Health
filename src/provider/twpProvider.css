@@ -1,12 +1,13 @@
 :root {
-  --twp-header: #0a1e3f;
-  --twp-header-2: #081732;
-  --twp-border: rgba(10, 30, 63, 0.18);
-  --twp-border-strong: rgba(10, 30, 63, 0.3);
+  /* Aligned with the site scheme (ink + gold), see index.css tokens. */
+  --twp-header: #0b1524;
+  --twp-header-2: #16273f;
+  --twp-border: rgba(11, 21, 36, 0.14);
+  --twp-border-strong: rgba(11, 21, 36, 0.22);
   --twp-surface: #ffffff;
-  --twp-surface-2: rgba(10, 30, 63, 0.06);
-  --twp-text: #000000;
-  --twp-text-muted: #000000;
+  --twp-surface-2: rgba(11, 21, 36, 0.05);
+  --twp-text: #1a2331;
+  --twp-text-muted: #5b6879;
 }
 
 .twpApp {
@@ -19,7 +20,7 @@
   height: 46px;
   background: linear-gradient(0deg, var(--twp-header-2), var(--twp-header));
   color: white;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(212, 175, 55, 0.45);
   display: flex;
   align-items: center;
   padding: 0 12px;
@@ -118,9 +119,9 @@
 }
 
 .twpInput:focus {
-  outline: 2px solid rgba(122, 15, 28, 0.35);
+  outline: 2px solid rgba(226, 58, 46, 0.4);
   outline-offset: 2px;
-  border-color: rgba(122, 15, 28, 0.35);
+  border-color: rgba(226, 58, 46, 0.4);
 }
 
 .twpBtn {
@@ -134,13 +135,13 @@
 }
 
 .twpBtnPrimary {
-  background: #0a1e3f;
+  background: var(--ink);
   color: white;
   border-color: rgba(255, 255, 255, 0.25);
 }
 
 .twpBtnPrimary:hover {
-  background: #0f2e5a;
+  background: var(--ink-2);
 }
 
 .twpBtn:disabled {
