@@ -78,9 +78,75 @@ body {
   justify-content: space-between;
   gap: 0;
   background-color: var(--header-bar-bg);
-  background: var(--header-bar-bg);
+  background: radial-gradient(130% 220% at 50% 100%, #16273f 0%, var(--ink) 62%);
   border-bottom: 1px solid var(--header-bar-border);
-  box-shadow: var(--header-bar-shadow) 0 8px 18px -10px;
+  box-shadow: var(--header-bar-shadow) 0 12px 26px -14px;
+}
+
+/* Vermilion signal line along the bottom edge — mirrors the footer's top line. */
+.topNavShell::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--red), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Logo + controls flip to light-on-dark inside the ink header. */
+.topNavShell .brandPrimary {
+  color: #fff;
+}
+.topNavShell .brandSub {
+  color: rgba(255, 255, 255, 0.66);
+}
+.topNavShell .brandSecondary {
+  color: rgba(255, 255, 255, 0.6);
+}
+.topNavShell .brandSecondaryLine {
+  background: rgba(255, 255, 255, 0.32);
+}
+.topNavShell .brandDivider {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* "Book online" CTA becomes the vermilion signal so it pops on the dark bar. */
+.topNavShell .topNavCta {
+  background: var(--red);
+  border-color: rgba(226, 58, 46, 0.65);
+  color: #fff;
+}
+.topNavShell .topNavCta:hover {
+  background: var(--red-2);
+}
+
+/* Hamburger + cart controls: subtle light-on-dark. */
+.topNavShell .navMenuToggle {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.topNavShell .navMenuToggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.topNavShell .pharmacyCartBtn--header {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.topNavShell .pharmacyCartBtn--header:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.topNavShell .pharmacyCartBtn--header .pharmacyCartIcon,
+.topNavShell .pharmacyCartBtn--header .pharmacyCartIcon::after {
+  border-color: #fff;
+}
+.topNavShell .pharmacyCartBadge--header {
+  background: var(--red);
 }
 
 .topNav {

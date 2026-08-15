@@ -24,10 +24,10 @@
   /* Data accent — instrument cyan (charts, precise numeric callouts) */
   --data: #10a5b6;
 
-  /* Sticky header: clean white instrument panel */
-  --header-bar-bg: #ffffff;
-  --header-bar-border: rgba(11, 21, 36, 0.10);
-  --header-bar-shadow: rgba(11, 21, 36, 0.12);
+  /* Sticky header: deep ink band (matches the footer, brackets the page) */
+  --header-bar-bg: #0b1524;
+  --header-bar-border: rgba(255, 255, 255, 0.08);
+  --header-bar-shadow: rgba(0, 0, 0, 0.30);
 
   --brand-wordmark-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --brand-wordmark-rose: #3a4658;  /* muted steel for brand sub-lines */
