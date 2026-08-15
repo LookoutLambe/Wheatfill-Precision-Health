@@ -2093,6 +2093,21 @@ button.pill:active {
 }
 
 /* ============================================================
+   Designed page-header signature — short accent rule under interior page titles.
+   ============================================================ */
+.page:not(.pageLanding) .pageHeaderRow h1::after,
+.page:not(.pageLanding) .aboutHeader h1::after,
+.page:not(.pageLanding) .orderNowHubTitle::after {
+  content: '';
+  display: block;
+  width: 52px;
+  height: 3px;
+  margin: 16px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--red), rgba(226, 58, 46, 0.25));
+}
+
+/* ============================================================
    Trust strip — factual credentials (no testimonials/claims)
    ============================================================ */
 .trustStrip {
