@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
+import Icon from '../components/Icon'
 import { MARKETING_ONLY } from '../config/mode'
-import { TEAM_BRETT_FORWARD_EMAIL } from '../config/provider'
+import { TEAM_BRETT_FORWARD_EMAIL, PROVIDER_LICENSED_STATES } from '../config/provider'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 
 const CONTACT_DRAFT_KEY = 'wph_contact_draft_v2'
@@ -94,8 +95,10 @@ export default function Contact() {
     }
   }, [draftPayload])
 
+  const licensedStates = PROVIDER_LICENSED_STATES.filter(Boolean).join(', ')
+
   return (
-    <Page variant="prose">
+    <Page variant="wide">
       <div className="pageHeaderRow">
         <div>
           <BrandSlogan />
@@ -107,8 +110,8 @@ export default function Contact() {
         </div>
       </div>
 
-      <div className="cardGrid" style={{ gridTemplateColumns: '1fr' }}>
-        <section className="card cardAccentNavy" style={{ maxWidth: 920 }}>
+      <div className="contactGrid">
+        <section className="card cardAccentNavy contactFormCard">
           <div className="cardTitle">
             <h2 style={{ margin: 0 }}>Email</h2>
             <span className="pill">{MARKETING_ONLY ? 'Marketing' : 'Patients'}</span>
@@ -272,6 +275,54 @@ export default function Contact() {
             </section>
           ) : null}
         </section>
+
+        <aside className="card contactInfoCard" aria-label="What to expect">
+          <div className="cardTitle">
+            <h2 style={{ margin: 0 }}>What to expect</h2>
+            <span className="pill">Info</span>
+          </div>
+          <div className="divider" />
+          <ul className="contactInfoList">
+            <li className="contactInfoItem">
+              <span className="contactInfoIcon">
+                <Icon name="mail" size={18} />
+              </span>
+              <div>
+                <strong>Reply time</strong>
+                <p>{TYPICAL_INBOX_REPLY_LINE}</p>
+              </div>
+            </li>
+            <li className="contactInfoItem">
+              <span className="contactInfoIcon">
+                <Icon name="shield" size={18} />
+              </span>
+              <div>
+                <strong>Privacy &amp; security</strong>
+                <p>We use HIPAA-appropriate workflows. Please don’t send sensitive medical details over email.</p>
+              </div>
+            </li>
+            <li className="contactInfoItem">
+              <span className="contactInfoIcon contactInfoIcon--alert">
+                <Icon name="pulse" size={18} />
+              </span>
+              <div>
+                <strong>Not for emergencies</strong>
+                <p>If it’s an emergency, call 911. Please don’t use this form for urgent medical needs.</p>
+              </div>
+            </li>
+            {licensedStates ? (
+              <li className="contactInfoItem">
+                <span className="contactInfoIcon">
+                  <Icon name="check" size={18} />
+                </span>
+                <div>
+                  <strong>Where we practice</strong>
+                  <p>Licensed in {licensedStates}. Telehealth visits from a private space you choose.</p>
+                </div>
+              </li>
+            ) : null}
+          </ul>
+        </aside>
       </div>
     </Page>
   )
