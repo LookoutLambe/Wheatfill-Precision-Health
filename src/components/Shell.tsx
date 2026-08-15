@@ -80,6 +80,8 @@ export default function Shell() {
   const navigate = useNavigate()
   const location = useLocation()
   const isProviderArea = location.pathname.startsWith('/provider')
+  // Order Now flow has its own sticky cart bar — the patient dock would collide with it on mobile.
+  const isOrderNowArea = location.pathname.startsWith('/order-now')
   const headerCartSlug = useMemo(() => headerCatalogSlugForPath(location.pathname), [location.pathname])
   const [headerCartProducts, setHeaderCartProducts] = useState<CartLineProduct[]>([])
   const [mobileUi, setMobileUi] = useState(false)
@@ -257,13 +259,20 @@ export default function Shell() {
 
   const bookHref = MARKETING_ONLY ? extBookMarketing : extBookFull
 
-  const showMobilePatientDock = mobileUi && !isProviderArea && !menuOpen
+  const showMobilePatientDock = mobileUi && !isProviderArea && !isOrderNowArea && !menuOpen
 
   useEffect(() => {
     if (showMobilePatientDock) document.documentElement.classList.add('hasMobilePatientDock')
     else document.documentElement.classList.remove('hasMobilePatientDock')
     return () => document.documentElement.classList.remove('hasMobilePatientDock')
   }, [showMobilePatientDock])
+
+  // Order Now has a sticky cart bar at the bottom — lift the floating Share dock above it.
+  useEffect(() => {
+    if (isOrderNowArea) document.documentElement.classList.add('hasStickyCartBar')
+    else document.documentElement.classList.remove('hasStickyCartBar')
+    return () => document.documentElement.classList.remove('hasStickyCartBar')
+  }, [isOrderNowArea])
 
   return (
     <div className="appShell">

@@ -5371,9 +5371,10 @@ button.pill:active {
 }
 
 @media (max-width: 900px) {
-  html.hasMobilePatientDock .main {
-    /* Dock may wrap to two rows on small devices. */
-    padding-bottom: calc(132px + env(safe-area-inset-bottom, 0px));
+  html.hasMobilePatientDock .footer {
+    /* The fixed patient dock is a sibling AFTER main, so pad the footer (the real last
+       element) — not main — so its last line clears the dock instead of hiding behind it. */
+    padding-bottom: calc(34px + 84px + env(safe-area-inset-bottom, 0px));
   }
 
   .mobilePatientDock {
@@ -5425,6 +5426,11 @@ button.pill:active {
 
 html.hasMobilePatientDock .stickyShareDock {
   bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Order Now: lift the Share dock above the sticky cart bar so it doesn't cover Checkout. */
+html.hasStickyCartBar .stickyShareDock {
+  bottom: calc(100px + env(safe-area-inset-bottom, 0px));
 }
 
 .stickyShareDock > * {

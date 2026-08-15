@@ -168,7 +168,7 @@ export default function PharmacyOptions() {
                 className="btn btnPrimary orderNowMiniCartCta"
                 style={{ textDecoration: 'none' }}
               >
-                View {resolvedFulfillmentPharmacyName()}
+                Checkout
               </Link>
             </div>
           </div>
