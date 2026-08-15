@@ -582,9 +582,8 @@ export default function OrderNowSummary() {
               {VENMO_ENABLED ? (
                 <button
                   type="button"
-                  className="btn btnAccent orderNowPayBtn"
+                  className="btn orderNowPayBtn"
                   disabled={!canCheckOut}
-                  style={{ opacity: !canCheckOut ? 0.55 : 1 }}
                   onClick={onPayWithVenmo}
                 >
                   Check Out
