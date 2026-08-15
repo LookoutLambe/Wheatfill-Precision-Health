@@ -5509,26 +5509,254 @@ button.pill:active {
   }
 }
 
-/* Provider schedule: settings + calendar side-by-side on desktop */
-.providerScheduleGrid {
+/* —— Provider schedule: agenda-style week view ——
+   Appointments and requests draw as blocks; open time collapses to one quiet line
+   per day. Settings live behind the "Hours & slot size" toggle in the toolbar. */
+.schedToolbarRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.schedWeekLabel {
+  font-weight: 900;
+  color: var(--text-h);
+  margin-right: auto;
+}
+
+.schedWeekGrid {
   display: grid;
-  grid-template-columns: 420px minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  align-items: stretch;
 }
-.providerScheduleSettings {
-  grid-column: 1;
+
+.schedDay {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 10px 24px -22px rgba(11, 21, 36, 0.35);
 }
-.providerScheduleCalendar {
-  grid-column: 2;
+
+.schedDay--today {
+  border-color: rgba(212, 175, 55, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(212, 175, 55, 0.45),
+    0 10px 24px -20px rgba(11, 21, 36, 0.4);
 }
-@media (max-width: 980px) {
-  .providerScheduleGrid {
+
+.schedDayHead {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.schedDayName {
+  font-weight: 850;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.schedDayNum {
+  color: var(--text-m);
+  font-size: 13px;
+}
+
+.schedTodayTag {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-2);
+}
+
+.schedItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(11, 21, 36, 0.16);
+  border-left: 3px solid var(--ink);
+  border-radius: 10px;
+  background: rgba(11, 21, 36, 0.05);
+  padding: 8px 10px;
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.schedItem:hover {
+  background: rgba(11, 21, 36, 0.09);
+  transform: translateY(-1px);
+}
+
+.schedItem--pending {
+  border-color: rgba(185, 147, 46, 0.45);
+  border-left-color: var(--gold);
+  background: rgba(212, 175, 55, 0.12);
+}
+
+.schedItem--pending:hover {
+  background: rgba(212, 175, 55, 0.2);
+}
+
+.schedItem--done {
+  border-left-color: rgba(11, 21, 36, 0.3);
+  background: rgba(11, 21, 36, 0.03);
+  opacity: 0.75;
+}
+
+.schedItemTime {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.schedItemFlag {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-2);
+}
+
+.schedItemFlag--done {
+  color: var(--text-m);
+}
+
+.schedItemName {
+  display: block;
+  font-weight: 800;
+  color: var(--text-h);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.schedItemType {
+  display: block;
+  color: var(--text-m);
+  font-size: 12px;
+}
+
+.schedOpenNote {
+  margin: auto 0 0;
+  padding-top: 8px;
+  text-align: center;
+  color: var(--text-m);
+  font-size: 12px;
+}
+
+.schedClosed {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px dashed rgba(11, 21, 36, 0.25);
+  border-radius: 10px;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(11, 21, 36, 0.045),
+    rgba(11, 21, 36, 0.045) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  color: var(--text-m);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 14px 10px;
+}
+
+.schedClosedSub {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.schedLegend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin-top: 14px;
+}
+
+.schedLegendSwatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  margin-left: 10px;
+}
+
+.schedLegendSwatch:first-child {
+  margin-left: 0;
+}
+
+.schedLegendSwatch--appt {
+  background: rgba(11, 21, 36, 0.55);
+}
+
+.schedLegendSwatch--pending {
+  background: var(--gold);
+}
+
+.schedLegendSwatch--closed {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(11, 21, 36, 0.25),
+    rgba(11, 21, 36, 0.25) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  border: 1px dashed rgba(11, 21, 36, 0.35);
+}
+
+.schedOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(11, 21, 36, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.schedOverlayPanel {
+  width: min(560px, 100%);
+  max-height: min(80svh, 640px);
+  overflow-y: auto;
+}
+
+@media (max-width: 820px) {
+  .schedWeekGrid {
     grid-template-columns: 1fr;
   }
-  .providerScheduleSettings,
-  .providerScheduleCalendar {
-    grid-column: auto;
+
+  .schedDay {
+    min-height: 0;
+  }
+
+  .schedOpenNote {
+    margin-top: 0;
   }
 }
 

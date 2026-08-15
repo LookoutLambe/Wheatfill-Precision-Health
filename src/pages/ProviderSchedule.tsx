@@ -4,14 +4,15 @@ import {
   getPortalState,
   getScheduleConfig,
   isDateBlackout,
-  isSlotClosed,
   isSlotBooked,
   removeAppointment,
   removeBlackoutDate,
+  scheduleAppointment,
   setScheduleConfig,
   slotsForDate,
   subscribePortalState,
   updateAppointmentStatus,
+  type AppointmentRequest,
 } from '../data/portalStore'
 
 function ymdLocal(d: Date) {
@@ -46,6 +47,12 @@ function timeLabel(hhmm: string) {
   return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
+function friendlyDate(ymd: string) {
+  const [y, m, d] = ymd.split('-').map((x) => Number(x))
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return ymd
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
 const DOW_LABEL: Record<number, string> = {
   0: 'Sun',
   1: 'Mon',
@@ -56,9 +63,22 @@ const DOW_LABEL: Record<number, string> = {
   6: 'Sat',
 }
 
+type DayItem = {
+  kind: 'appt' | 'pending'
+  time: string
+  appt: AppointmentRequest
+}
+
+type Selected =
+  | { kind: 'appt'; appt: AppointmentRequest; date: string; time: string; pending: boolean }
+  | { kind: 'closed'; date: string }
+
 export default function ProviderSchedule() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [, setTick] = useState(0)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [selected, setSelected] = useState<Selected | null>(null)
+
   const weekStart = useMemo(() => {
     const base = startOfWeekMonday(new Date())
     return addDays(base, weekOffset * 7)
@@ -66,6 +86,14 @@ export default function ProviderSchedule() {
 
   useEffect(() => {
     return subscribePortalState(() => setTick((n) => (n + 1) % 1_000_000))
+  }, [])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelected(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   const visibleDows = useMemo(() => {
@@ -85,35 +113,36 @@ export default function ProviderSchedule() {
       return addDays(weekStart, delta)
     })
   }, [visibleDows, weekStart])
-  const dayKeys = useMemo(() => days.map((d) => ymdLocal(d)), [days])
 
+  const todayKey = ymdLocal(new Date())
   const { appointments } = getPortalState()
-  const apptsBySlot = useMemo(() => {
-    const m = new Map<string, { id: string; name: string; type: string; status: string; notes?: string }>()
-    for (const a of appointments) {
-      if (!a.scheduledDate || !a.scheduledTime) continue
-      const key = `${a.scheduledDate}T${a.scheduledTime.slice(0, 5)}`
-      m.set(key, {
-        id: a.id,
-        name: a.patientName,
-        type: a.type,
-        status: a.status,
-        notes: a.notes || undefined,
-      })
+
+  /** Calendar items per date: confirmed/completed appointments plus pending requests at their preferred time. */
+  const itemsByDate = useMemo(() => {
+    const m = new Map<string, DayItem[]>()
+    const push = (date: string, item: DayItem) => {
+      const list = m.get(date) || []
+      list.push(item)
+      m.set(date, list)
     }
+    for (const a of appointments) {
+      if (a.status === 'Cancelled') continue
+      if (a.status === 'Requested') {
+        if (a.preferredDate && a.preferredTime) {
+          push(a.preferredDate, { kind: 'pending', time: a.preferredTime.slice(0, 5), appt: a })
+        }
+        continue
+      }
+      if (a.scheduledDate && a.scheduledTime) {
+        push(a.scheduledDate, { kind: 'appt', time: a.scheduledTime.slice(0, 5), appt: a })
+      }
+    }
+    for (const list of m.values()) list.sort((x, y) => x.time.localeCompare(y.time))
     return m
   }, [appointments])
 
-  // Build rows: union of slot times across the visible days.
   const cfg = getScheduleConfig()
   const slotMinutes = cfg.slotMinutes
-  const times = useMemo(() => {
-    const set = new Set<string>()
-    for (const k of dayKeys) {
-      for (const s of slotsForDate(k)) set.add(s.time)
-    }
-    return [...set].sort((a, b) => a.localeCompare(b))
-  }, [dayKeys])
 
   const [draftCfg, setDraftCfg] = useState(() => getScheduleConfig())
   useEffect(() => {
@@ -123,6 +152,7 @@ export default function ProviderSchedule() {
 
   const saveCfg = useCallback(() => {
     setScheduleConfig(draftCfg)
+    setSettingsOpen(false)
   }, [draftCfg])
 
   const weekLabel = useMemo(() => {
@@ -135,353 +165,357 @@ export default function ProviderSchedule() {
     return `${fmt(a)} – ${fmt(b)}${year}`
   }, [days])
 
-  const [selected, setSelected] = useState<
-    | null
-    | { kind: 'appt'; id: string; slotKey: string; date: string; time: string; name: string; type: string; status: string; notes?: string }
-    | { kind: 'closed'; date: string }
-  >(null)
+  const closeOverlay = useCallback(() => setSelected(null), [])
 
   return (
     <div className="page">
       <div className="pageHeaderRow">
         <div>
           <h1 style={{ margin: 0 }}>Weekly Schedule</h1>
-          <p className="muted pageSubtitle">Slots are generated from your hours (slot size: {slotMinutes} min).</p>
+          <p className="muted pageSubtitle">Visits and requests at a glance. Open time stays quiet.</p>
         </div>
         <ProviderSubpageNavActions>
           <span className="pill pillRed">Provider</span>
         </ProviderSubpageNavActions>
       </div>
 
-      <section className="card cardAccentSoft cardSpan12">
-        <div className="btnRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <button type="button" className="btn" onClick={() => setWeekOffset((n) => n - 1)}>
-            ‹ Prev week
-          </button>
-          <div style={{ fontWeight: 900, color: 'var(--text-h)' }}>{weekLabel}</div>
-          <button type="button" className="btn" onClick={() => setWeekOffset((n) => n + 1)}>
-            Next week ›
-          </button>
-        </div>
-      </section>
-
-      <div className="providerScheduleGrid">
-      <section className="card cardAccentSoft providerScheduleSettings">
-        <div className="cardTitle">
-          <h2 style={{ margin: 0 }}>Schedule Settings</h2>
-          <span className="pill">Hours + Slot Size</span>
-        </div>
-        <p className="muted" style={{ marginTop: 6 }}>
-          These settings control the slots patients can request on the booking page and the times shown below.
-        </p>
-        <div className="divider" />
-
-        <div className="formRow" style={{ gridTemplateColumns: '1fr 1fr' }}>
-          <label>
-            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Slot size (minutes)
-            </div>
-            <select
-              className="select"
-              value={String(draftCfg.slotMinutes)}
-              onChange={(e) => setDraftCfg((p) => ({ ...p, slotMinutes: Number(e.target.value) || 30 }))}
+      <section className="card cardAccentSoft cardSpan12 schedToolbar">
+        <div className="schedToolbarRow">
+          <div className="btnRow" style={{ gap: 8 }}>
+            <button type="button" className="btn" onClick={() => setWeekOffset((n) => n - 1)} aria-label="Previous week">
+              ‹
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setWeekOffset(0)}
+              disabled={weekOffset === 0}
+              style={{ opacity: weekOffset === 0 ? 0.55 : 1 }}
             >
-              <option value="10">10</option>
-              <option value="15">15</option>
-              <option value="20">20</option>
-              <option value="30">30</option>
-              <option value="45">45</option>
-              <option value="60">60</option>
-            </select>
-          </label>
-          <div>
-            <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Color key
-            </div>
-            <div className="btnRow" style={{ gap: 8 }}>
-              <span className="pill pillGreen">Open</span>
-              <span className="pill">Booked</span>
-              <span className="pill pillRed">Closed</span>
-            </div>
+              Today
+            </button>
+            <button type="button" className="btn" onClick={() => setWeekOffset((n) => n + 1)} aria-label="Next week">
+              ›
+            </button>
           </div>
-        </div>
-
-        <div className="divider" />
-        <div className="tableWrap">
-          <table className="table" aria-label="Schedule settings by day">
-            <thead>
-              <tr>
-                <th style={{ width: 120 }}>Day</th>
-                <th style={{ width: 120 }}>Enabled</th>
-                <th>Start</th>
-                <th>End</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.keys(draftCfg.hoursByDow)
-                .map((k) => Number(k))
-                .sort((a, b) => a - b)
-                .map((dow) => {
-                  const row = draftCfg.hoursByDow[dow]
-                  return (
-                    <tr key={dow}>
-                      <td style={{ fontWeight: 850 }}>{DOW_LABEL[dow] || `Day ${dow}`}</td>
-                      <td>
-                        <label className="muted" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(row.enabled)}
-                            onChange={(e) =>
-                              setDraftCfg((p) => ({
-                                ...p,
-                                hoursByDow: {
-                                  ...p.hoursByDow,
-                                  [dow]: { ...p.hoursByDow[dow], enabled: e.target.checked },
-                                },
-                              }))
-                            }
-                          />
-                          On
-                        </label>
-                      </td>
-                      <td>
-                        <input
-                          className="input"
-                          type="time"
-                          value={row.start}
-                          disabled={!row.enabled}
-                          onChange={(e) =>
-                            setDraftCfg((p) => ({
-                              ...p,
-                              hoursByDow: {
-                                ...p.hoursByDow,
-                                [dow]: { ...p.hoursByDow[dow], start: e.target.value },
-                              },
-                            }))
-                          }
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="input"
-                          type="time"
-                          value={row.end}
-                          disabled={!row.enabled}
-                          onChange={(e) =>
-                            setDraftCfg((p) => ({
-                              ...p,
-                              hoursByDow: {
-                                ...p.hoursByDow,
-                                [dow]: { ...p.hoursByDow[dow], end: e.target.value },
-                              },
-                            }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                  )
-                })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="divider" />
-        <div className="btnRow">
-          <button type="button" className="btn btnPrimary" onClick={saveCfg}>
-            Save schedule settings
-          </button>
-          <button type="button" className="btn" onClick={() => setDraftCfg(getScheduleConfig())}>
-            Reset changes
+          <div className="schedWeekLabel">{weekLabel}</div>
+          <button
+            type="button"
+            className="btn"
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((o) => !o)}
+          >
+            {settingsOpen ? 'Hide hours & slot size' : 'Hours & slot size'}
           </button>
         </div>
-      </section>
 
-      <section className="card cardAccentNavy providerScheduleCalendar">
-        <div className="tableWrap">
-          <table className="table" aria-label="Weekly schedule">
-            <thead>
-              <tr>
-                <th style={{ width: 120 }}>Time</th>
-                {days.map((d) => (
-                  <th key={d.toISOString()}>
-                    {DOW_LABEL[d.getDay()] || d.toLocaleDateString(undefined, { weekday: 'short' })}{' '}
-                    <span className="muted">{d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {times.length === 0 ? (
-                <tr>
-                  <td colSpan={1 + days.length} className="muted">
-                    No hours set for this week. (We generate slots from your schedule settings.)
-                  </td>
-                </tr>
-              ) : (
-                times.map((t) => (
-                  <tr key={t}>
-                    <td className="muted" style={{ whiteSpace: 'nowrap' }}>
-                      {timeLabel(t)}
-                    </td>
-                    {dayKeys.map((dateKey) => {
-                      const slotKey = `${dateKey}T${t}`
-                      const appt = apptsBySlot.get(slotKey)
-                      const closed = isDateBlackout(dateKey) || isSlotClosed(dateKey, t)
-                      const booked = isSlotBooked(dateKey, t)
+        {settingsOpen ? (
+          <div className="schedSettingsPanel">
+            <div className="divider" />
+            <p className="muted" style={{ marginTop: 0 }}>
+              These settings control the slots patients can request on the booking page and the times shown here.
+              Slot size: {slotMinutes} min.
+            </p>
+            <div className="formRow" style={{ gridTemplateColumns: 'minmax(0, 220px)' }}>
+              <label>
+                <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                  Slot size (minutes)
+                </div>
+                <select
+                  className="select"
+                  value={String(draftCfg.slotMinutes)}
+                  onChange={(e) => setDraftCfg((p) => ({ ...p, slotMinutes: Number(e.target.value) || 30 }))}
+                >
+                  <option value="10">10</option>
+                  <option value="15">15</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="45">45</option>
+                  <option value="60">60</option>
+                </select>
+              </label>
+            </div>
+            <div className="tableWrap" style={{ marginTop: 12 }}>
+              <table className="table" aria-label="Schedule settings by day">
+                <thead>
+                  <tr>
+                    <th style={{ width: 120 }}>Day</th>
+                    <th style={{ width: 120 }}>Enabled</th>
+                    <th>Start</th>
+                    <th>End</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(draftCfg.hoursByDow)
+                    .map((k) => Number(k))
+                    .sort((a, b) => a - b)
+                    .map((dow) => {
+                      const row = draftCfg.hoursByDow[dow]
                       return (
-                        <td key={slotKey}>
-                          {closed ? (
-                            <button
-                              type="button"
-                              className="pill pillRed"
-                              onClick={() => setSelected({ kind: 'closed', date: dateKey })}
-                              title="Click to manage blackout"
-                            >
-                              Closed
-                            </button>
-                          ) : appt ? (
-                            <button
-                              type="button"
-                              className="btn"
-                              style={{
-                                width: '100%',
-                                textAlign: 'left',
-                                padding: 10,
-                                borderRadius: 10,
-                                border: '1px solid rgba(10, 30, 63, 0.18)',
-                                background: 'rgba(10, 30, 63, 0.06)',
-                              }}
-                              onClick={() =>
-                                setSelected({
-                                  kind: 'appt',
-                                  id: appt.id,
-                                  slotKey,
-                                  date: dateKey,
-                                  time: t,
-                                  name: appt.name,
-                                  type: appt.type,
-                                  status: appt.status,
-                                  notes: appt.notes,
-                                })
+                        <tr key={dow}>
+                          <td style={{ fontWeight: 850 }} data-label="Day">{DOW_LABEL[dow] || `Day ${dow}`}</td>
+                          <td data-label="Enabled">
+                            <label className="muted" style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={Boolean(row.enabled)}
+                                onChange={(e) =>
+                                  setDraftCfg((p) => ({
+                                    ...p,
+                                    hoursByDow: {
+                                      ...p.hoursByDow,
+                                      [dow]: { ...p.hoursByDow[dow], enabled: e.target.checked },
+                                    },
+                                  }))
+                                }
+                              />
+                              On
+                            </label>
+                          </td>
+                          <td data-label="Start">
+                            <input
+                              className="input"
+                              type="time"
+                              value={row.start}
+                              disabled={!row.enabled}
+                              onChange={(e) =>
+                                setDraftCfg((p) => ({
+                                  ...p,
+                                  hoursByDow: {
+                                    ...p.hoursByDow,
+                                    [dow]: { ...p.hoursByDow[dow], start: e.target.value },
+                                  },
+                                }))
                               }
-                              title="Click to manage appointment"
-                            >
-                              <div style={{ fontWeight: 850, color: 'var(--text-h)' }}>{appt.name}</div>
-                              <div className="muted" style={{ fontSize: 12 }}>
-                                {appt.type} · {appt.status}
-                              </div>
-                            </button>
-                          ) : booked ? (
-                            <span className="pill">Booked</span>
-                          ) : (
-                            <span className="pill pillGreen">Open</span>
-                          )}
-                        </td>
+                            />
+                          </td>
+                          <td data-label="End">
+                            <input
+                              className="input"
+                              type="time"
+                              value={row.end}
+                              disabled={!row.enabled}
+                              onChange={(e) =>
+                                setDraftCfg((p) => ({
+                                  ...p,
+                                  hoursByDow: {
+                                    ...p.hoursByDow,
+                                    [dow]: { ...p.hoursByDow[dow], end: e.target.value },
+                                  },
+                                }))
+                              }
+                            />
+                          </td>
+                        </tr>
                       )
                     })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+            <div className="btnRow" style={{ marginTop: 12 }}>
+              <button type="button" className="btn btnPrimary" onClick={saveCfg}>
+                Save schedule settings
+              </button>
+              <button type="button" className="btn" onClick={() => setDraftCfg(getScheduleConfig())}>
+                Reset changes
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
+
+      <div className="schedWeekGrid">
+        {days.map((d) => {
+          const dateKey = ymdLocal(d)
+          const isToday = dateKey === todayKey
+          const closed = isDateBlackout(dateKey)
+          const items = itemsByDate.get(dateKey) || []
+          const slots = closed ? [] : slotsForDate(dateKey)
+          const openCount = slots.filter((s) => !isSlotBooked(s.date, s.time)).length
+          return (
+            <section key={dateKey} className={`schedDay ${isToday ? 'schedDay--today' : ''}`}>
+              <header className="schedDayHead">
+                <span className="schedDayName">{DOW_LABEL[d.getDay()] || ''}</span>
+                <span className="schedDayNum">{d.getDate()}</span>
+                {isToday ? <span className="schedTodayTag">Today</span> : null}
+              </header>
+
+              {closed ? (
+                <button
+                  type="button"
+                  className="schedClosed"
+                  onClick={() => setSelected({ kind: 'closed', date: dateKey })}
+                  title="Manage blackout"
+                >
+                  <span>Closed</span>
+                  <span className="schedClosedSub">Blackout day</span>
+                </button>
+              ) : (
+                <>
+                  {items.map(({ kind, time, appt }) => {
+                    const done = appt.status === 'Completed'
+                    return (
+                      <button
+                        key={`${appt.id}_${time}`}
+                        type="button"
+                        className={`schedItem ${kind === 'pending' ? 'schedItem--pending' : ''} ${done ? 'schedItem--done' : ''}`}
+                        onClick={() =>
+                          setSelected({ kind: 'appt', appt, date: dateKey, time, pending: kind === 'pending' })
+                        }
+                        title={kind === 'pending' ? 'Pending request — click to review' : 'Click to manage appointment'}
+                      >
+                        <span className="schedItemTime">
+                          {timeLabel(time)}
+                          {kind === 'pending' ? <em className="schedItemFlag">Pending</em> : null}
+                          {done ? <em className="schedItemFlag schedItemFlag--done">Done</em> : null}
+                        </span>
+                        <span className="schedItemName">{appt.patientName}</span>
+                        <span className="schedItemType">{appt.type}</span>
+                      </button>
+                    )
+                  })}
+                  {items.length === 0 && openCount === 0 ? (
+                    <p className="schedOpenNote">No hours</p>
+                  ) : (
+                    <p className="schedOpenNote">
+                      {openCount === 1 ? '1 open slot' : `${openCount} open slots`}
+                    </p>
+                  )}
+                </>
+              )}
+            </section>
+          )
+        })}
       </div>
 
+      <p className="muted schedLegend">
+        <span className="schedLegendSwatch schedLegendSwatch--appt" aria-hidden="true" /> Scheduled
+        <span className="schedLegendSwatch schedLegendSwatch--pending" aria-hidden="true" /> Pending request
+        <span className="schedLegendSwatch schedLegendSwatch--closed" aria-hidden="true" /> Closed
+      </p>
+
       {selected ? (
-        <section className="card cardAccentSoft cardSpan12" style={{ maxWidth: 980 }}>
-          {selected.kind === 'closed' ? (
-            <>
-              <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Blackout Day</h2>
-                <span className="pill pillRed">Closed</span>
-              </div>
-              <div className="divider" />
-              <p className="muted" style={{ marginTop: 0 }}>
-                Date: <strong>{selected.date}</strong>
-              </p>
-              <div className="btnRow">
-                <button
-                  type="button"
-                  className="btn btnDanger"
-                  onClick={() => {
-                    if (!confirm(`Remove blackout for ${selected.date}?`)) return
-                    removeBlackoutDate(selected.date)
-                    setSelected(null)
-                  }}
-                >
-                  Remove blackout
-                </button>
-                <button type="button" className="btn" onClick={() => setSelected(null)}>
-                  Close
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Appointment</h2>
-                <span className="pill">{selected.status}</span>
-              </div>
-              <div className="divider" />
-              <div style={{ display: 'grid', gap: 6 }}>
-                <div>
-                  <span className="muted">Patient:</span> <strong>{selected.name}</strong>
+        <div className="schedOverlay" role="dialog" aria-modal="true" onClick={closeOverlay}>
+          <div className="schedOverlayPanel card" onClick={(e) => e.stopPropagation()}>
+            {selected.kind === 'closed' ? (
+              <>
+                <div className="cardTitle">
+                  <h2 style={{ margin: 0 }}>Blackout Day</h2>
+                  <span className="pill pillRed">Closed</span>
                 </div>
-                <div>
-                  <span className="muted">Type:</span> {selected.type}
+                <div className="divider" />
+                <p className="muted" style={{ marginTop: 0 }}>
+                  Date: <strong>{friendlyDate(selected.date)}</strong>
+                </p>
+                <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btnDanger"
+                    onClick={() => {
+                      if (!confirm(`Remove blackout for ${selected.date}?`)) return
+                      removeBlackoutDate(selected.date)
+                      closeOverlay()
+                    }}
+                  >
+                    Remove blackout
+                  </button>
+                  <button type="button" className="btn" onClick={closeOverlay}>
+                    Close
+                  </button>
                 </div>
-                <div>
-                  <span className="muted">When:</span> {selected.date} · {timeLabel(selected.time)}
+              </>
+            ) : (
+              <>
+                <div className="cardTitle">
+                  <h2 style={{ margin: 0 }}>{selected.pending ? 'Pending Request' : 'Appointment'}</h2>
+                  <span className="pill">{selected.appt.status}</span>
                 </div>
-                {selected.notes?.trim() ? (
+                <div className="divider" />
+                <div style={{ display: 'grid', gap: 6 }}>
                   <div>
-                    <span className="muted">Notes:</span> {selected.notes}
+                    <span className="muted">Patient:</span> <strong>{selected.appt.patientName}</strong>
                   </div>
-                ) : null}
-              </div>
-              <div className="divider" />
-              <div className="btnRow" style={{ flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    updateAppointmentStatus(selected.id, 'Completed')
-                    setSelected((p) => (p && p.kind === 'appt' ? { ...p, status: 'Completed' } : p))
-                  }}
-                >
-                  Mark completed
-                </button>
-                <button
-                  type="button"
-                  className="btn btnDanger"
-                  onClick={() => {
-                    if (!confirm(`Delete this appointment for ${selected.name}?`)) return
-                    removeAppointment(selected.id)
-                    setSelected(null)
-                  }}
-                >
-                  Delete appointment
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    updateAppointmentStatus(selected.id, 'Cancelled')
-                    setSelected((p) => (p && p.kind === 'appt' ? { ...p, status: 'Cancelled' } : p))
-                  }}
-                >
-                  Cancel (keep record)
-                </button>
-                <button type="button" className="btn" onClick={() => setSelected(null)}>
-                  Close
-                </button>
-              </div>
-            </>
-          )}
-        </section>
+                  <div>
+                    <span className="muted">Type:</span> {selected.appt.type}
+                  </div>
+                  <div>
+                    <span className="muted">When:</span> {friendlyDate(selected.date)} · {timeLabel(selected.time)}
+                    {selected.pending ? <span className="muted"> (requested)</span> : null}
+                  </div>
+                  {selected.appt.notes?.trim() ? (
+                    <div>
+                      <span className="muted">Notes:</span> {selected.appt.notes}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="divider" />
+                <div className="btnRow" style={{ flexWrap: 'wrap' }}>
+                  {selected.pending ? (
+                    <button
+                      type="button"
+                      className="btn btnPrimary"
+                      disabled={isSlotBooked(selected.date, selected.time)}
+                      title={
+                        isSlotBooked(selected.date, selected.time)
+                          ? 'That slot is already booked — use Quick schedule to pick another time.'
+                          : 'Confirm this visit at the requested time'
+                      }
+                      onClick={() => {
+                        scheduleAppointment({
+                          appointmentId: selected.appt.id,
+                          patientName: selected.appt.patientName,
+                          type: selected.appt.type,
+                          date: selected.date,
+                          time: selected.time,
+                        })
+                        closeOverlay()
+                      }}
+                    >
+                      Confirm at this time
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={selected.appt.status === 'Completed'}
+                      onClick={() => {
+                        updateAppointmentStatus(selected.appt.id, 'Completed')
+                        closeOverlay()
+                      }}
+                    >
+                      Mark completed
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      updateAppointmentStatus(selected.appt.id, 'Cancelled')
+                      closeOverlay()
+                    }}
+                  >
+                    Cancel (keep record)
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btnDanger"
+                    onClick={() => {
+                      if (!confirm(`Delete this appointment for ${selected.appt.patientName}?`)) return
+                      removeAppointment(selected.appt.id)
+                      closeOverlay()
+                    }}
+                  >
+                    Delete
+                  </button>
+                  <button type="button" className="btn" onClick={closeOverlay}>
+                    Close
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       ) : null}
     </div>
   )
 }
-
