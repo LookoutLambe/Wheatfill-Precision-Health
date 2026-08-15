@@ -3834,9 +3834,10 @@ button.pill:active {
   z-index: 250;
   width: min(380px, 94vw);
   max-width: 100vw;
-  background: rgba(255, 255, 255, 0.99);
-  border-right: 1px solid var(--border);
-  box-shadow: 14px 0 40px rgba(10, 30, 63, 0.16);
+  background: radial-gradient(120% 90% at 0% 0%, #16273f 0%, var(--ink) 60%);
+  color: rgba(255, 255, 255, 0.9);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 18px 0 50px rgba(0, 0, 0, 0.4);
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   overflow-y: auto;
   display: flex;
@@ -4029,6 +4030,65 @@ button.pill:active {
   border-bottom: none;
   border-radius: 3px 3px 0 0;
   transform: translateX(-50%);
+}
+
+/* Dark cart drawer — light-on-dark to match the ink header/footer/nav. */
+.pharmacyDrawerTop {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+.pharmacyDrawerTitle,
+.pharmacyDrawerLineName,
+.pharmacyDrawerLineTotal {
+  color: #fff;
+}
+.pharmacyDrawer .muted,
+.pharmacyDrawerLineMeta {
+  color: rgba(255, 255, 255, 0.55);
+}
+.pharmacyDrawerClose {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.pharmacyDrawerClose:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.pharmacyDrawerTrash {
+  color: rgba(255, 255, 255, 0.7);
+}
+.pharmacyDrawerTrash:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.pharmacyDrawerDivider {
+  background: rgba(255, 255, 255, 0.1);
+}
+.pharmacyDrawerTotalAmt {
+  color: #ff7a6d;
+}
+.pharmacyDrawerSecure {
+  color: rgba(255, 255, 255, 0.6);
+}
+.pharmacyDrawerSecureIcon,
+.pharmacyDrawerSecureIcon::after {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.pharmacyDrawer .btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.pharmacyDrawer .btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.pharmacyDrawer .btn.btnPrimary {
+  background: var(--red);
+  border-color: rgba(226, 58, 46, 0.65);
+  color: #fff;
+}
+.pharmacyDrawer .btn.btnPrimary:hover {
+  background: var(--red-2);
 }
 
 @media (max-width: 560px) {
