@@ -1339,18 +1339,18 @@ a.btn:focus-visible {
 }
 
 .cardAccentNavy {
-  border-left: 6px solid rgba(10, 30, 63, 0.55);
-  background: linear-gradient(180deg, rgba(10, 30, 63, 0.06), rgba(255, 255, 255, 0.92));
+  border-left: 5px solid var(--ink);
+  background: linear-gradient(180deg, rgba(11, 21, 36, 0.05), #ffffff 44%);
 }
 
 .cardAccentRed {
-  border-left: 6px solid rgba(122, 15, 28, 0.55);
-  background: linear-gradient(180deg, rgba(122, 15, 28, 0.06), rgba(255, 255, 255, 0.92));
+  border-left: 5px solid var(--red);
+  background: linear-gradient(180deg, rgba(226, 58, 46, 0.055), #ffffff 44%);
 }
 
 .cardAccentSoft {
-  border-left: 6px solid rgba(10, 30, 63, 0.18);
-  background: linear-gradient(180deg, rgba(10, 30, 63, 0.03), rgba(255, 255, 255, 0.92));
+  border-left: 5px solid rgba(11, 21, 36, 0.16);
+  background: linear-gradient(180deg, rgba(11, 21, 36, 0.025), #ffffff 44%);
 }
 
 @media (max-width: 900px) {

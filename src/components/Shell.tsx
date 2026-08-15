@@ -131,6 +131,13 @@ export default function Shell() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // Scroll to the top on every route change (SPA navigation otherwise keeps the old
+  // scroll position). Skip when navigating to an in-page anchor (#id).
+  useEffect(() => {
+    if (location.hash) return
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [location.pathname, location.hash])
+
   // Scroll-reveal choreography, re-armed on each route. Lazy pages resolve async, so
   // run once content has painted and retry once for late-loading Suspense chunks.
   useEffect(() => {
