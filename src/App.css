@@ -2242,18 +2242,21 @@ button.pill:active {
 .ctaBandEyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.22em;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--red);
+  /* Brighter coral so it reads clearly over the dark band + red glow. */
+  color: #ff7a6d;
 }
 .ctaBandEyebrow::before {
   content: '';
-  width: 22px;
-  height: 2px;
-  background: var(--red);
+  width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: #ff7a6d;
 }
 
 .ctaBandTitle {
