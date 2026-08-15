@@ -2388,6 +2388,62 @@ button.pill:active {
   border-color: rgba(212, 175, 55, 0.4);
 }
 
+/* Inbox / provider tables: keep long messages readable (preserve line breaks, wrap). */
+.appShell--provider .table td[data-label='Message'] {
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 220px;
+}
+
+/* Narrow screens: stack each table row into a readable, self-contained card
+   (no crammed columns, no nested scroll, no content spilling below the box). */
+@media (max-width: 900px) {
+  .appShell--provider .tableWrap {
+    overflow-x: visible;
+  }
+  .appShell--provider .table,
+  .appShell--provider .table tbody,
+  .appShell--provider .table tr,
+  .appShell--provider .table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .appShell--provider .table {
+    border: 0;
+    border-radius: 0;
+  }
+  .appShell--provider .table thead {
+    display: none;
+  }
+  .appShell--provider .table tr {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 8px 20px -18px rgba(11, 21, 36, 0.2);
+  }
+  .appShell--provider .table td {
+    border: 0 !important;
+    padding: 5px 0;
+    min-width: 0;
+  }
+  .appShell--provider .table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-m);
+    margin-bottom: 2px;
+  }
+  .appShell--provider .table td[data-label='Action'] {
+    margin-top: 6px;
+  }
+}
+
 .footerContent {
   width: 100%;
   max-width: 980px;

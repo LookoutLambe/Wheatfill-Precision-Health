@@ -286,11 +286,11 @@ export default function ProviderTeamInbox() {
               <tbody>
                 {filteredMsgs.map((m) => (
                   <tr key={m.id}>
-                    <td className="muted">{m.when}</td>
-                    <td className="muted">{m.from}</td>
-                    <td className="muted">{m.category}</td>
-                    <td>{m.body}</td>
-                    <td>
+                    <td className="muted" data-label="When">{m.when}</td>
+                    <td className="muted" data-label="From">{m.from}</td>
+                    <td className="muted" data-label="Category">{m.category}</td>
+                    <td data-label="Message">{m.body}</td>
+                    <td data-label="Action">
                       <div className="btnRow" style={{ flexWrap: 'wrap', gap: 8 }}>
                         {m.category === 'order_request' && m.meta?.orderId ? (
                           <>
