@@ -119,9 +119,9 @@
 }
 
 .twpInput:focus {
-  outline: 2px solid rgba(226, 58, 46, 0.4);
+  outline: 2px solid rgba(212, 175, 55, 0.6);
   outline-offset: 2px;
-  border-color: rgba(226, 58, 46, 0.4);
+  border-color: rgba(212, 175, 55, 0.6);
 }
 
 .twpBtn {

@@ -50,7 +50,7 @@ export default function ProviderShell() {
   }, [menuOpen])
 
   return (
-    <div className="appShell">
+    <div className="appShell appShell--provider">
       <div className={`topNavShell topNavShell--alwaysDrawer ${menuOpen ? 'isMenuOpen' : ''}`}>
         <header className="topNav">
           <div className="topNavInner">
