@@ -2098,7 +2098,8 @@ button.pill:active {
    ============================================================ */
 .page:not(.pageLanding) .pageHeaderRow h1::after,
 .page:not(.pageLanding) .aboutHeader h1::after,
-.page:not(.pageLanding) .orderNowHubTitle::after {
+.page:not(.pageLanding) .orderNowHubTitle::after,
+.page:not(.pageLanding) .orderNowCheckoutTitle::after {
   content: '';
   display: block;
   width: 52px;

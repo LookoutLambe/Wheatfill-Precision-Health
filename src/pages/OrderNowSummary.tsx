@@ -370,7 +370,7 @@ export default function OrderNowSummary() {
             </label>
 
             <div className="orderNowCheckoutGrid" style={{ marginTop: 22 }}>
-              <div className="card" style={{ padding: '18px 16px' }}>
+              <div className="card cardAccentSoft" style={{ padding: '18px 16px' }}>
                 <h2 className="orderNowPanelTitle">Calculate shipping</h2>
                 <p className="muted" style={{ fontSize: 13, margin: '0 0 12px' }}>
                   Where to ship — used when your order is processed.
@@ -479,7 +479,7 @@ export default function OrderNowSummary() {
                 </label>
               </div>
 
-              <div className="card" style={{ padding: '18px 16px' }}>
+              <div className="card cardAccentNavy" style={{ padding: '18px 16px' }}>
                 <h2 className="orderNowPanelTitle">Order summary</h2>
                 <div
                   className="muted"
@@ -542,7 +542,7 @@ export default function OrderNowSummary() {
                 <div className="orderNowSummaryDivider" style={{ margin: '14px 0' }} />
                 <div className="orderNowSummaryTableRow" style={{ fontSize: 18, fontWeight: 800 }}>
                   <span>Total due</span>
-                  <span style={{ textAlign: 'right' }}>{moneyCents(total)}</span>
+                  <span style={{ textAlign: 'right', fontSize: 22, color: 'var(--red)' }}>{moneyCents(total)}</span>
                 </div>
                 <p className="muted" style={{ fontSize: 12, margin: '10px 0 0' }}>
                   Pay with Venmo shows the amount to send for <strong>this</strong> total. Any adjustments are
@@ -582,12 +582,12 @@ export default function OrderNowSummary() {
               {VENMO_ENABLED ? (
                 <button
                   type="button"
-                  className="btn btnPrimary orderNowPayBtn"
+                  className="btn btnAccent orderNowPayBtn"
                   disabled={!canCheckOut}
                   style={{ opacity: !canCheckOut ? 0.55 : 1 }}
                   onClick={onPayWithVenmo}
                 >
-                  Pay with Venmo
+                  Check Out
                 </button>
               ) : null}
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
