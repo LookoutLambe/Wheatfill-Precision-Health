@@ -700,14 +700,21 @@ html.pharmacyCartOpen body {
 }
 
 .teamWorkspacePage .cardGrid > .card:not(.cardSpan12) {
-  /* Cap height so long tables don't make the whole page enormous. */
+  /* Cap height so long tables don't make the whole page enormous. Flex column so the
+     scroll widget (.teamWidgetScroll) is sized to fit INSIDE the cap — previously the
+     cap + overflow:visible let tall content pour out of the card's bottom edge and
+     bleed under the next section. */
   max-height: min(72svh, 760px);
   overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .teamWorkspacePage--panel .cardGrid > .card {
   max-height: min(78svh, 860px);
   overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Keep widget headers visible while scrolling. */
@@ -736,7 +743,8 @@ html.pharmacyCartOpen body {
    the card. The column header stays pinned while the rows scroll. */
 .teamWorkspacePage .teamWidgetScroll thead th {
   position: sticky;
-  top: 0;
+  /* Pin flush with the scroll box's inner top edge (cancels the box's 10px padding). */
+  top: -10px;
   z-index: 2;
   background: var(--card, #fff);
   box-shadow: 0 1px 0 var(--border);
@@ -747,23 +755,26 @@ html.pharmacyCartOpen body {
 }
 
 .teamWorkspacePage .teamWidgetScroll {
-  max-height: 440px;
+  /* Fills whatever room remains inside the card's height cap, so the scrollable area
+     always ends exactly at the card's boundary — rows scroll inside the box, never past it. */
+  flex: 1 1 auto;
+  min-height: 180px;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: auto;
+  /* Visible wall so the scroll region reads as its own box. */
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(11, 21, 36, 0.025);
+  padding: 10px;
+  box-sizing: border-box;
 }
 
-@media (max-width: 900px) {
-  /* On narrow screens the rows stack into cards; a fixed-height nested scroll box
-     would clip the last card mid-way ("bleeding") and trap scrolling. Let the widget
-     grow to fit every card it's showing so it reads as one contained box and the
-     page scrolls normally. */
-  .teamWorkspacePage .teamWidgetScroll {
-    max-height: none;
-    overflow: visible;
-  }
+/* Other children of a flex-column card must not shrink — only the scroll widget gives way. */
+.teamWorkspacePage .cardGrid > .card > :not(.teamWidgetScroll) {
+  flex-shrink: 0;
 }
 
 .pageLanding {
