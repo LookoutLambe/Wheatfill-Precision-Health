@@ -2251,7 +2251,8 @@ button.pill:active {
   /* Brighter coral so it reads clearly over the dark band + red glow. */
   color: #ff7a6d;
 }
-.ctaBandEyebrow::before {
+.ctaBandEyebrow::before,
+.ctaBandEyebrow::after {
   content: '';
   width: 28px;
   height: 3px;
