@@ -1254,11 +1254,18 @@ a.btn:focus-visible {
 .card {
   grid-column: span 6;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.88);
+  background: linear-gradient(180deg, #ffffff, #fdfefe);
   border-radius: 16px;
-  padding: 16px;
+  padding: 20px;
   box-sizing: border-box;
-  box-shadow: rgba(10, 30, 63, 0.10) 0 18px 32px -24px;
+  box-shadow:
+    0 1px 2px rgba(11, 21, 36, 0.04),
+    0 16px 34px -22px rgba(11, 21, 36, 0.22);
+}
+.card:hover {
+  box-shadow:
+    0 1px 2px rgba(11, 21, 36, 0.05),
+    0 22px 44px -24px rgba(11, 21, 36, 0.28);
 }
 
 .cardSpan12 {
@@ -2012,12 +2019,25 @@ button.pill:active {
 }
 
 .footer {
-  border-top: 1px solid var(--border);
-  /* Opaque cool grey (matches former rgba(10,30,63,.08) over white) — no silk bleed-through */
-  background: #ebedf0;
-  padding: 18px 16px;
-  color: #000000;
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  /* Deep ink band — premium anchor on every page. */
+  background:
+    radial-gradient(120% 140% at 50% 0%, #16273f 0%, var(--ink) 60%);
+  padding: 42px 16px 34px;
+  color: rgba(255, 255, 255, 0.68);
   font-size: 13px;
+}
+/* Thin vermilion signal line along the top edge. */
+.footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--red), transparent);
+  opacity: 0.55;
 }
 
 .footerInner {
@@ -2067,7 +2087,7 @@ button.pill:active {
 }
 
 .footerFineprint {
-  color: #000000;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
   line-height: 1.35;
 }
@@ -2077,7 +2097,7 @@ button.pill:active {
 }
 
 .footerStaffLink {
-  color: #000000;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 11px;
   text-decoration: none;
   font-weight: 500;
@@ -2430,16 +2450,18 @@ button.pill:active {
 }
 
 .footerLinks a {
-  color: #000000;
+  color: rgba(255, 255, 255, 0.82);
   text-decoration: none;
   padding: 6px 8px;
   border-radius: 10px;
   border: 1px solid transparent;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
 .footerLinks a:hover {
-  border-color: var(--accent-border);
-  background: rgba(10, 30, 63, 0.10);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .footerLinks a:focus-visible {
@@ -5533,7 +5555,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   }
 }
 
-.pageLanding .landingHeroIntro > .brandSlogan {
+.pageLanding .landingGridHeroBand > .brandSlogan {
   animation: wphHeroRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .pageLanding .landingHeroIntro > .heroHeadline {
@@ -5578,6 +5600,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
     transform: none;
     transition: none;
   }
+  .pageLanding .landingGridHeroBand > .brandSlogan,
   .pageLanding .landingHeroIntro > *,
   .pageLanding .heroVisual {
     animation: none;
@@ -5730,11 +5753,16 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   .landingGridHeroBand {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
-    gap: clamp(28px, 4vw, 56px);
+    gap: clamp(18px, 2.6vw, 34px) clamp(28px, 4vw, 56px);
     align-items: center;
   }
 
-  /* Keep the (now smaller) aperture graphic tidily aligned to the headline column. */
+  /* Motto spans the full hero width, centered above the two columns (both ticks). */
+  .landingGridHeroBand > .brandSlogan {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
   .landingGridHeroBand .heroVisual {
     justify-content: flex-end;
   }
@@ -5743,19 +5771,8 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
     text-align: left;
   }
 
-  .landingGridHeroBand .landingHeroIntro .brandSlogan {
-    align-self: flex-start;
-    margin-left: 0;
-    margin-right: auto;
-  }
-
   .landingGridHeroBand .landingHeroIntro .btnRow {
     justify-content: flex-start;
-  }
-
-  /* Left-aligned hero motto keeps only its leading tick (trailing one would float to the column edge). */
-  .landingGridHeroBand .landingHeroIntro .brandSlogan::after {
-    display: none;
   }
 }
 
