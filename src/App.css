@@ -756,8 +756,13 @@ html.pharmacyCartOpen body {
 }
 
 @media (max-width: 900px) {
+  /* On narrow screens the rows stack into cards; a fixed-height nested scroll box
+     would clip the last card mid-way ("bleeding") and trap scrolling. Let the widget
+     grow to fit every card it's showing so it reads as one contained box and the
+     page scrolls normally. */
   .teamWorkspacePage .teamWidgetScroll {
-    max-height: 60vh;
+    max-height: none;
+    overflow: visible;
   }
 }
 

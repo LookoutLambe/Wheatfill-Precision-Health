@@ -798,11 +798,11 @@ export default function ProviderTwpWorkspace() {
                 <tbody>
                   {filteredMsgs.map((m) => (
                     <tr key={m.id}>
-                      <td className="muted">{m.when}</td>
-                      <td className="muted">{m.from}</td>
-                      <td className="muted">{m.category}</td>
-                      <td>{m.body}</td>
-                      <td>
+                      <td className="muted" data-label="When">{m.when}</td>
+                      <td className="muted" data-label="From">{m.from}</td>
+                      <td className="muted" data-label="Category">{m.category}</td>
+                      <td data-label="Message">{m.body}</td>
+                      <td data-label="Action">
                         <div className="btnRow" style={{ flexWrap: 'wrap', gap: 8 }}>
                           {m.fromName.trim() ? (
                             <button
@@ -939,10 +939,10 @@ export default function ProviderTwpWorkspace() {
                 <tbody>
                   {filteredAppts.map((a) => (
                     <tr key={a.id}>
-                      <td className="muted">{rowPatientLabel(a)}</td>
-                      <td>{a.type}</td>
-                      <td className="muted">{a.when}</td>
-                      <td>
+                      <td className="muted" data-label="Name">{rowPatientLabel(a)}</td>
+                      <td data-label="Type">{a.type}</td>
+                      <td className="muted" data-label="When">{a.when}</td>
+                      <td data-label="Status">
                         {a.status === 'Requested' ? (
                           <span className="pill pillRed" title="From team inbox — use Mark handled there or add via Quick schedule">
                             Request received
@@ -973,7 +973,7 @@ export default function ProviderTwpWorkspace() {
                           </select>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Action">
                         {a.status === 'Requested' ? (
                           <span className="muted" style={{ fontSize: 12 }}>
                             —
@@ -1213,8 +1213,8 @@ export default function ProviderTwpWorkspace() {
                 <tbody>
                   {blackouts.map((d) => (
                     <tr key={d}>
-                      <td className="muted">{d}</td>
-                      <td>
+                      <td className="muted" data-label="Day closed">{d}</td>
+                      <td data-label="Action">
                         <button type="button" className="btn" onClick={() => removeBlackoutDate(d)}>
                           Re-open
                         </button>
@@ -1238,11 +1238,11 @@ export default function ProviderTwpWorkspace() {
                 <tbody>
                   {blackoutBlocks.map((b) => (
                     <tr key={`${b.date}_${b.start}_${b.end}`}>
-                      <td className="muted">{b.date}</td>
-                      <td className="muted">
+                      <td className="muted" data-label="Date">{b.date}</td>
+                      <td className="muted" data-label="Hours closed">
                         {b.start}–{b.end}
                       </td>
-                      <td>
+                      <td data-label="Action">
                         <button type="button" className="btn" onClick={() => removeBlackoutBlock(b)}>
                           Re-open
                         </button>
