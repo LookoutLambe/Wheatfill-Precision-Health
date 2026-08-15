@@ -23,6 +23,11 @@
   --signal: var(--red);
   /* Data accent — instrument cyan (charts, precise numeric callouts) */
   --data: #10a5b6;
+  /* Gold accent (from the logo) — used on dark/ink surfaces instead of the red signal. */
+  --gold: #d4af37;
+  --gold-2: #b9932e;
+  --gold-bright: #e6c556;
+  --gold-ink: #17110a;
 
   /* Sticky header: deep ink band (matches the footer, brackets the page) */
   --header-bar-bg: #0b1524;

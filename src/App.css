@@ -83,7 +83,7 @@ body {
   box-shadow: var(--header-bar-shadow) 0 12px 26px -14px;
 }
 
-/* Vermilion signal line along the bottom edge — mirrors the footer's top line. */
+/* Gold signal line along the bottom edge — mirrors the footer's top line. */
 .topNavShell::after {
   content: '';
   position: absolute;
@@ -91,8 +91,8 @@ body {
   right: 0;
   bottom: -1px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--red), transparent);
-  opacity: 0.5;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.6;
   pointer-events: none;
   z-index: 1;
 }
@@ -114,14 +114,15 @@ body {
   background: rgba(255, 255, 255, 0.22);
 }
 
-/* "Book online" CTA becomes the vermilion signal so it pops on the dark bar. */
+/* "Book online" CTA becomes gold (from the logo) so it pops on the dark bar. */
 .topNavShell .topNavCta {
-  background: var(--red);
-  border-color: rgba(226, 58, 46, 0.65);
-  color: #fff;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-2));
+  border-color: var(--gold-2);
+  color: var(--gold-ink);
+  font-weight: 800;
 }
 .topNavShell .topNavCta:hover {
-  background: var(--red-2);
+  background: linear-gradient(180deg, #efce63, var(--gold));
 }
 
 /* Hamburger + cart controls: subtle light-on-dark. */
@@ -2219,7 +2220,7 @@ button.pill:active {
   color: #fff;
   padding: clamp(40px, 7vw, 74px) 16px;
   background:
-    radial-gradient(90% 170% at 12% 0%, rgba(226, 58, 46, 0.18), transparent 55%),
+    radial-gradient(90% 170% at 12% 0%, rgba(212, 175, 55, 0.16), transparent 55%),
     linear-gradient(180deg, #101f34, #0b1524);
 }
 
@@ -2249,8 +2250,8 @@ button.pill:active {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  /* Brighter coral so it reads clearly over the dark band + red glow. */
-  color: #ff7a6d;
+  /* Gold so it reads clearly over the dark band. */
+  color: var(--gold-bright);
 }
 .ctaBandEyebrow::before,
 .ctaBandEyebrow::after {
@@ -2258,7 +2259,7 @@ button.pill:active {
   width: 28px;
   height: 3px;
   border-radius: 2px;
-  background: #ff7a6d;
+  background: var(--gold-bright);
 }
 
 .ctaBandTitle {
@@ -2285,9 +2286,16 @@ button.pill:active {
   flex-shrink: 0;
 }
 
-.ctaBandBtn {
+.ctaBand .ctaBandBtn {
   font-size: 15px;
   padding: 13px 22px;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-2));
+  border-color: var(--gold-2);
+  color: var(--gold-ink);
+  font-weight: 800;
+}
+.ctaBand .ctaBandBtn:hover {
+  background: linear-gradient(180deg, #efce63, var(--gold));
 }
 
 .ctaBand .ctaBandGhost {
@@ -2312,7 +2320,7 @@ button.pill:active {
   color: rgba(255, 255, 255, 0.68);
   font-size: 13px;
 }
-/* Thin vermilion signal line along the top edge. */
+/* Thin gold signal line along the top edge (from the logo). */
 .footer::before {
   content: '';
   position: absolute;
@@ -2320,8 +2328,8 @@ button.pill:active {
   right: 0;
   top: -1px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--red), transparent);
-  opacity: 0.55;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.6;
 }
 
 .footerInner {
@@ -4065,7 +4073,7 @@ button.pill:active {
   background: rgba(255, 255, 255, 0.1);
 }
 .pharmacyDrawerTotalAmt {
-  color: #ff7a6d;
+  color: var(--gold-bright);
 }
 .pharmacyDrawerSecure {
   color: rgba(255, 255, 255, 0.6);
@@ -4084,12 +4092,13 @@ button.pill:active {
   border-color: rgba(255, 255, 255, 0.4);
 }
 .pharmacyDrawer .btn.btnPrimary {
-  background: var(--red);
-  border-color: rgba(226, 58, 46, 0.65);
-  color: #fff;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold-2));
+  border-color: var(--gold-2);
+  color: var(--gold-ink);
+  font-weight: 800;
 }
 .pharmacyDrawer .btn.btnPrimary:hover {
-  background: var(--red-2);
+  background: linear-gradient(180deg, #efce63, var(--gold));
 }
 
 @media (max-width: 560px) {
@@ -6033,7 +6042,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   width: 64%;
   height: 64%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(226, 58, 46, 0.22) 0%, rgba(226, 58, 46, 0) 68%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.22) 0%, rgba(212, 175, 55, 0) 68%);
   pointer-events: none;
 }
 
@@ -6053,10 +6062,10 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 }
 
 .heroOrbit--accent {
-  stroke: var(--red);
+  stroke: var(--gold);
   stroke-width: 1.4;
-  opacity: 0.68;
-  filter: drop-shadow(0 0 5px rgba(226, 58, 46, 0.5));
+  opacity: 0.75;
+  filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5));
 }
 
 /* Luminous core sphere (vitality / precision). */
@@ -6072,8 +6081,8 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 
 /* Orbiting signal nodes. */
 .heroSatellite {
-  fill: #fff;
-  filter: drop-shadow(0 0 7px rgba(226, 58, 46, 0.95));
+  fill: var(--gold-bright);
+  filter: drop-shadow(0 0 7px rgba(212, 175, 55, 0.95));
 }
 
 .heroSatelliteFaint {
@@ -6109,7 +6118,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   content: '';
   width: 16px;
   height: 2px;
-  background: var(--red);
+  background: var(--gold);
 }
 
 @keyframes heroSpin {
