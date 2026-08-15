@@ -2341,6 +2341,11 @@ button.pill:active {
   flex-wrap: wrap;
 }
 
+/* Provider footer sits on the dark ink footer — its text must be light. */
+.footer .muted {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 .providerFooterAlertsBtn {
   background: transparent;
   border: none;
@@ -2348,17 +2353,18 @@ button.pill:active {
   margin: 0;
   font: inherit;
   font-size: 13px;
-  color: var(--navy-2);
+  color: rgba(255, 255, 255, 0.78);
   text-decoration: underline;
   cursor: pointer;
 }
 
 .providerFooterAlertsBtn:hover {
-  color: var(--navy);
+  color: #fff;
 }
 
 .providerFooterAlertsStatus {
   font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .footerContent {
