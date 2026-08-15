@@ -7,6 +7,7 @@ import glp1PenImg from '../assets/glp1-pen.png'
 import ImageKitImage from '../components/ImageKitImage'
 import Glp1UnitConverter from '../components/Glp1UnitConverter'
 import Icon from '../components/Icon'
+import TrustStrip from '../components/TrustStrip'
 import { apiPost } from '../api/client'
 import { notifyByEmail } from '../lib/notifyEmail'
 import { BrandSlogan } from '../components/BrandSlogan'
@@ -301,6 +302,8 @@ export default function Landing() {
               </div>
             </div>
           </section>
+
+          <TrustStrip />
 
           <div className="divider landingHeroFullDivider" aria-hidden="true" />
 

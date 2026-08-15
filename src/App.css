@@ -2093,6 +2093,48 @@ button.pill:active {
 }
 
 /* ============================================================
+   Trust strip — factual credentials (no testimonials/claims)
+   ============================================================ */
+.trustStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px clamp(18px, 4vw, 40px);
+  margin: 6px auto 0;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff, #f7f9fc);
+  box-shadow: 0 12px 28px -22px rgba(11, 21, 36, 0.2);
+}
+.trustStripItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+}
+.trustStripIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--pill-accent-bg);
+  color: var(--red);
+  flex: 0 0 auto;
+}
+@media (max-width: 560px) {
+  .trustStripItem {
+    white-space: normal;
+  }
+}
+
+/* ============================================================
    Contact page — form + info panel
    ============================================================ */
 .contactGrid {
