@@ -448,6 +448,40 @@ export default function Shell() {
         </nav>
       ) : null}
 
+      {!isProviderArea ? (
+        <section className="ctaBand" aria-label="Get started">
+          <div className="ctaBandInner">
+            <div className="ctaBandText">
+              <span className="ctaBandEyebrow">Start your plan</span>
+              <h2 className="ctaBandTitle">Ready to optimize your health?</h2>
+              <p className="ctaBandLead">
+                Book a visit and get a precision plan built around your physiology — not a one-size protocol.
+              </p>
+            </div>
+            <div className="ctaBandActions">
+              {bookHref ? (
+                <a
+                  href={bookHref}
+                  className="btn btnAccent ctaBandBtn"
+                  style={{ textDecoration: 'none' }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Book a visit
+                </a>
+              ) : (
+                <NavLink to="/book" className="btn btnAccent ctaBandBtn" style={{ textDecoration: 'none' }}>
+                  Book a visit
+                </NavLink>
+              )}
+              <NavLink to="/contact" className="btn ctaBandGhost" style={{ textDecoration: 'none' }}>
+                Contact us
+              </NavLink>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <footer className="footer">
         <div className="footerInner">
           <div className="footerContent">
