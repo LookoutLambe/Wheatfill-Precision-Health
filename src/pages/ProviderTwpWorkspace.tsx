@@ -353,7 +353,12 @@ export default function ProviderTwpWorkspace() {
         fromName: (row.fromName || '').trim(),
         category: row.kind,
         body: row.body,
-        when: new Date(row.createdAt).toLocaleString(),
+        when: new Date(row.createdAt).toLocaleString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
         status: (row.status === 'handled' ? 'handled' : 'new') as DemoMsg['status'],
       }))
       setMsgs(next)

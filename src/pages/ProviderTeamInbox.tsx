@@ -120,7 +120,12 @@ export default function ProviderTeamInbox() {
             return null
           }
         })(),
-        when: new Date(row.createdAt).toLocaleString(),
+        when: new Date(row.createdAt).toLocaleString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
         status: (row.status === 'handled' ? 'handled' : 'new') as DemoMsg['status'],
       }))
       setMsgs(next)
