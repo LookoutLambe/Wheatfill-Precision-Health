@@ -38,6 +38,8 @@ jobs:
           # Public API for /book, /contact, order flows, etc. (https, no trailing slash). Not defaulted here—
           # only provider area uses a code fallback; set this secret so the whole static site can reach the API.
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # Second Web3Forms recipient key (kept out of source by owner request; set as a repo secret).
+          VITE_WEB3FORMS_KEY_2: ${{ secrets.WEB3FORMS_KEY_2 }}
         run: npm run build:marketing
 
       - name: Upload artifact

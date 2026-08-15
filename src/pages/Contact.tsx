@@ -3,6 +3,8 @@ import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
 import Icon from '../components/Icon'
 import { MARKETING_ONLY } from '../config/mode'
+import { apiPost } from '../api/client'
+import { notifyByEmail } from '../lib/notifyEmail'
 import { TEAM_BRETT_FORWARD_EMAIL, PROVIDER_LICENSED_STATES } from '../config/provider'
 import { TYPICAL_INBOX_REPLY_LINE } from '../config/patientFeatures'
 
@@ -53,6 +55,7 @@ export default function Contact() {
   const [message, setMessage] = useState('')
   const [receipt, setReceipt] = useState<ContactReceipt | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
   const [draftStatus, setDraftStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const draftTimer = useRef<number | null>(null)
 
@@ -104,8 +107,8 @@ export default function Contact() {
           <BrandSlogan />
           <h1 style={{ margin: 0 }}>Contact</h1>
           <p className="muted pageSubtitle">
-            Fill this out on the website, then we’ll open an email draft for you to send. For privacy, don’t send
-            sensitive medical details over email. {TYPICAL_INBOX_REPLY_LINE}
+            Send us a message right from this page — it goes straight to the team. For privacy, don’t include
+            sensitive medical details. {TYPICAL_INBOX_REPLY_LINE}
           </p>
         </div>
       </div>
@@ -169,7 +172,7 @@ export default function Contact() {
           </p>
 
           {error ? (
-            <div style={{ marginTop: 10, color: '#7f1d1d', fontSize: 12, fontWeight: 800 }}>
+            <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>
               {error}
             </div>
           ) : null}
@@ -178,17 +181,40 @@ export default function Contact() {
             <button
               type="button"
               className="btn btnPrimary"
-              disabled={!name.trim() || !email.trim() || !message.trim()}
-              style={{ opacity: !name.trim() || !email.trim() || !message.trim() ? 0.6 : 1 }}
+              disabled={sending || !name.trim() || !email.trim() || !message.trim()}
+              style={{ opacity: sending || !name.trim() || !email.trim() || !message.trim() ? 0.6 : 1 }}
               onClick={() => {
                 ;(async () => {
                   setError(null)
                   setReceipt(null)
+                  setSending(true)
                   try {
                     const snapName = name.trim()
                     const snapEmail = email.trim()
                     const snapSubject = (subject || '').trim() || `Website contact: ${snapName}`
                     const snapMessage = message.trim()
+
+                    // Email the team (fires once per configured recipient inbox).
+                    notifyByEmail(
+                      snapSubject,
+                      { Type: 'Website contact', Name: snapName, Email: snapEmail, Message: snapMessage },
+                      snapEmail,
+                    )
+
+                    // Also file it in the provider portal inbox; email above already went out
+                    // regardless, so an API hiccup should not fail the whole submission.
+                    try {
+                      await apiPost('/v1/public/team-inbox', {
+                        kind: 'contact',
+                        fromName: snapName,
+                        fromEmail: snapEmail,
+                        body: [`Subject: ${snapSubject}`, '', snapMessage].join('\n'),
+                        meta: { source: 'contact_page' },
+                      })
+                    } catch {
+                      /* email notification already sent */
+                    }
+
                     setReceipt({
                       createdAt: new Date().toLocaleString(),
                       name: snapName,
@@ -196,16 +222,6 @@ export default function Contact() {
                       subject: snapSubject,
                       message: snapMessage,
                     })
-                    const body = [
-                      `Name: ${snapName}`,
-                      `Email: ${snapEmail}`,
-                      '',
-                      snapMessage,
-                    ].join('\n')
-                    const mailto = `mailto:${encodeURIComponent(CONTACT_TO_EMAIL)}?subject=${encodeURIComponent(
-                      snapSubject,
-                    )}&body=${encodeURIComponent(body)}`
-                    window.location.href = mailto
                     setName('')
                     setEmail('')
                     setSubject('')
@@ -213,11 +229,13 @@ export default function Contact() {
                     clearContactDraft()
                   } catch (e: any) {
                     setError(String(e?.message || e))
+                  } finally {
+                    setSending(false)
                   }
                 })()
               }}
             >
-              Open email draft
+              {sending ? 'Sending…' : 'Send message'}
             </button>
             <button
               type="button"
@@ -239,11 +257,12 @@ export default function Contact() {
           {receipt ? (
             <section className="card cardAccentSoft bookingReceipt" style={{ marginTop: 12 }}>
               <div className="cardTitle">
-                <h2 style={{ margin: 0 }}>Email draft opened</h2>
-                <span className="pill">Copy</span>
+                <h2 style={{ margin: 0 }}>Message sent</h2>
+                <span className="pill">Receipt</span>
               </div>
               <p className="muted" style={{ marginTop: 6, marginBottom: 0 }}>
-                If your email app didn’t open automatically, you can copy/paste the details below into an email.
+                Your message is on its way to the team. Prefer email instead? Write us directly at{' '}
+                <a href={`mailto:${CONTACT_TO_EMAIL}`}>{CONTACT_TO_EMAIL}</a>.
               </p>
               <div className="divider" />
               <div className="muted" style={{ fontSize: 13, lineHeight: 1.55 }}>
