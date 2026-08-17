@@ -757,9 +757,12 @@ html.pharmacyCartOpen body {
 
 .teamWorkspacePage .teamWidgetScroll {
   /* Fills whatever room remains inside the card's height cap, so the scrollable area
-     always ends exactly at the card's boundary — rows scroll inside the box, never past it. */
+     always ends exactly at the card's boundary — rows scroll inside the box, never past it.
+     min-height must stay 0: a fixed floor here cannot shrink, so once the card's header
+     wrapped onto extra lines the children totalled more than the cap and — because the card
+     is overflow:visible — the surplus poured out of its bottom edge and under the next panel. */
   flex: 1 1 auto;
-  min-height: 180px;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -776,6 +779,19 @@ html.pharmacyCartOpen body {
 /* Other children of a flex-column card must not shrink — only the scroll widget gives way. */
 .teamWorkspacePage .cardGrid > .card > :not(.teamWidgetScroll) {
   flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  /* Phones keep the scroll box, but need a taller cap to make it usable: rows here are
+     stacked cards (~190px each), and the header eats more of the panel once it wraps at
+     360px — the width of most Android phones, against 375px+ on iPhone. With the desktop
+     cap a phone had barely a third of a row visible inside the scroll area. */
+  .teamWorkspacePage .cardGrid > .card:not(.cardSpan12),
+  .teamWorkspacePage--panel .cardGrid > .card {
+    max-height: min(88svh, 760px);
+  }
+  /* Deliberately no min-height here: the scroll box takes the room the taller cap frees up
+     via flex, and must stay able to shrink. A fixed floor is what leaked in the first place. */
 }
 
 .pageLanding {
