@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ProviderSubpageNavActions } from '../components/ProviderSubpageNavActions'
+import { CONTRACTED_PHARMACY_NAME } from '../config/provider'
 import {
   getMarketingProviderLoginDisplay,
   getMarketingIntegrations,
@@ -104,16 +105,16 @@ export default function MarketingProviderAdmin() {
         </div>
 
         <div className="formRow" style={{ marginTop: 12 }}>
-          <label>
+          <div>
             <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-              Fulfillment partner name (patient-facing, e.g. compounding pharmacy)
+              Fulfillment partner name
             </div>
-            <input
-              className="input"
-              value={form.fulfillmentPartnerName}
-              onChange={(e) => setForm((p) => ({ ...p, fulfillmentPartnerName: e.target.value }))}
-            />
-          </label>
+            <p className="muted" style={{ margin: 0, fontSize: 13, lineHeight: 1.45 }}>
+              Patient pages always read <b>{CONTRACTED_PHARMACY_NAME}</b>. The compounding pharmacy is
+              deliberately never named to patients, so there is nothing to set here — do not enter the
+              pharmacy&rsquo;s real name anywhere on this page.
+            </p>
+          </div>
         </div>
 
         {saved ? <div style={{ marginTop: 10, color: '#14532d', fontSize: 12, fontWeight: 800 }}>Saved.</div> : null}
@@ -130,7 +131,8 @@ export default function MarketingProviderAdmin() {
                 patientPortalUrl: form.patientPortalUrl.trim(),
                 pharmacyUrl: form.pharmacyUrl.trim(),
                 videoVisitUrl: form.videoVisitUrl.trim(),
-                fulfillmentPartnerName: form.fulfillmentPartnerName.trim(),
+                // Pinned: patient copy never names the pharmacy, so this can't be set to one.
+                fulfillmentPartnerName: CONTRACTED_PHARMACY_NAME,
               })
               setSaved(true)
               setTimeout(() => setSaved(false), 1500)
@@ -225,8 +227,8 @@ export default function MarketingProviderAdmin() {
           <div className="divider" />
           <p className="muted" style={{ marginTop: 0 }}>
             Opens your patient catalog. Orders run through the practice; patients submit from the summary page and pay
-            via Venmo. Fulfillment copy references{' '}
-            <b>{form.fulfillmentPartnerName.trim() || 'your pharmacy'}</b>. Configure payments in the full app when deployed.
+            via Venmo. Fulfillment copy references <b>{CONTRACTED_PHARMACY_NAME}</b>, never the pharmacy.
+            Configure payments in the full app when deployed.
           </p>
           <div className="divider" />
           <a

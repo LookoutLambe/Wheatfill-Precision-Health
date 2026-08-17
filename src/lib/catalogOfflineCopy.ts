@@ -11,6 +11,6 @@ export const CATALOG_OFFLINE_BODY_CATALOG_PAGE =
 export const CATALOG_OFFLINE_BODY_ORDER_SUMMARY =
   "You're viewing list prices for this catalog. Connect the live API for up-to-date inventory and checkout when your deployment is ready."
 
-/** Accessible Hallandale table page (card body). */
+/** Accessible price-table page (card body). Never name the fulfilling pharmacy in patient copy. */
 export const CATALOG_OFFLINE_BODY_HALLANDALE_TABLE =
-  'Showing the latest known Hallandale list prices. Connect the live API to sync live inventory and checkout.'
+  'Showing the latest known list prices. Connect the live API to sync live inventory and checkout.'

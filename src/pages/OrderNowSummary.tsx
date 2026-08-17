@@ -10,7 +10,7 @@ import { notifyByEmail } from '../lib/notifyEmail'
 import { US_STATE_OPTIONS } from '../data/usStates'
 import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
-import { apiGet, apiPostBeacon, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
+import { apiGet, apiPost, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
@@ -61,6 +61,7 @@ export default function OrderNowSummary() {
   const [sigDate, setSigDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [insurance, setInsurance] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [placingOrder, setPlacingOrder] = useState(false)
   const [venmoInfo, setVenmoInfo] = useState<{ amountCents: number; memo: string } | null>(null)
   const [shipStreet, setShipStreet] = useState('')
   const [shipCity, setShipCity] = useState('')
@@ -198,20 +199,35 @@ export default function OrderNowSummary() {
       shippingPostalCode: shipZip.trim(),
     }
 
-    // Record the order (fire-and-forget), then show Venmo instructions with a prefilled deep link.
     // Venmo is peer-to-peer — there is no server confirmation, so the office reconciles on receipt.
-    if (isPatientSession) {
-      apiPostBeacon('/v1/patient/orders/pharmacy', body)
-    } else {
-      apiPostBeacon(
-        '/v1/public/orders/pharmacy',
-        { ...body, contactEmail: contactEmail.trim(), contactPhone: contactPhone.trim() },
-        '',
-      )
-    }
-
-    sendOrderNotification('Venmo')
-    setVenmoInfo({ amountCents: total, memo: sigName.trim() })
+    // The order must be recorded BEFORE the pay link appears: paying for an order that was never
+    // recorded leaves the customer out of pocket with nothing for staff to fulfill.
+    setPlacingOrder(true)
+    ;(async () => {
+      try {
+        if (isPatientSession) {
+          await apiPost('/v1/patient/orders/pharmacy', body)
+        } else {
+          await apiPost(
+            '/v1/public/orders/pharmacy',
+            { ...body, contactEmail: contactEmail.trim(), contactPhone: contactPhone.trim() },
+            '',
+          )
+        }
+        sendOrderNotification('Venmo')
+        setVenmoInfo({ amountCents: total, memo: sigName.trim() })
+      } catch (e: unknown) {
+        // The raw reason is developer-facing (API host, env var names) — keep it out of a customer's
+        // checkout and in the console, where staff can still read it.
+        console.error('pharmacy order submit failed', e)
+        setCheckoutError(
+          'We could not record your order, so please do not send payment yet — you would be paying for an order we cannot see. ' +
+            'Please try again in a moment, or call the office and we will take your order over the phone.',
+        )
+      } finally {
+        setPlacingOrder(false)
+      }
+    })()
   }
 
   const catalogPath = `/order-now/${encodeURIComponent(slug)}`
@@ -618,10 +634,10 @@ export default function OrderNowSummary() {
                 <button
                   type="button"
                   className="btn orderNowPayBtn"
-                  disabled={!canCheckOut}
+                  disabled={!canCheckOut || placingOrder}
                   onClick={onPayWithVenmo}
                 >
-                  Check Out
+                  {placingOrder ? 'Recording your order…' : 'Check Out'}
                 </button>
               ) : null}
               <p className="muted orderNowSecureNote" style={{ textAlign: 'left' }}>
