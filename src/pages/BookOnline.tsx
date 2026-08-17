@@ -124,6 +124,21 @@ function timeLabel24To12(hhmm: string) {
   return `${hour12}:${String(m).padStart(2, '0')} ${suffix}`
 }
 
+/** 10 digits (US) or 11 starting with 1; also accepts a longer +international number. */
+function phoneOk(p: string) {
+  const digits = p.replace(/\D/g, '')
+  if (p.trim().startsWith('+')) return digits.length >= 8 && digits.length <= 15
+  return digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))
+}
+
+/** (303) 555-0100 for 10-digit US numbers; anything else is passed through as typed. */
+function formatPhoneForStaff(p: string) {
+  const d = p.replace(/\D/g, '')
+  const ten = d.length === 11 && d.startsWith('1') ? d.slice(1) : d
+  if (ten.length !== 10) return p.trim()
+  return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`
+}
+
 export default function BookOnline() {
   const publicBookingMarketing = MARKETING_ONLY
     ? getMarketingIntegrations().publicBookingUrl?.trim() || ''
@@ -173,6 +188,7 @@ export default function BookOnline() {
   const [bookingReceipt, setBookingReceipt] = useState<BookingReceipt | null>(null)
   const [busy, setBusy] = useState(false)
   const [guestName, setGuestName] = useState('')
+  const [guestPhone, setGuestPhone] = useState('')
 
   useEffect(() => {
     setAvailError(null)
@@ -386,6 +402,23 @@ export default function BookOnline() {
 
             <label style={{ display: 'block', marginTop: 12 }}>
               <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                Phone number (required)
+              </div>
+              <input
+                className="input"
+                type="tel"
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(e.target.value)}
+                placeholder="(303) 555-0100"
+                autoComplete="tel"
+              />
+              <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                We call this number to confirm your appointment.
+              </div>
+            </label>
+
+            <label style={{ display: 'block', marginTop: 12 }}>
+              <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
                 Notes (optional)
               </div>
               <textarea className="textarea" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Goals, background, questions…" />
@@ -400,9 +433,9 @@ export default function BookOnline() {
               <button
                 type="button"
                 className="btn btnPrimary"
-                disabled={!selected || busy || !guestName.trim()}
+                disabled={!selected || busy || !guestName.trim() || !phoneOk(guestPhone)}
                 style={{
-                  opacity: !selected || busy || !guestName.trim() ? 0.6 : 1,
+                  opacity: !selected || busy || !guestName.trim() || !phoneOk(guestPhone) ? 0.6 : 1,
                 }}
                 onClick={() => {
                   setMessage(null)
@@ -413,11 +446,14 @@ export default function BookOnline() {
                     try {
                       const who = guestName.trim()
                       if (!who) throw new Error('Enter your name.')
+                      if (!phoneOk(guestPhone)) throw new Error('Enter a phone number we can reach you at.')
+                      const phone = formatPhoneForStaff(guestPhone)
 
                       // Alert the provider team inbox (server-side) so the request shows up under /provider.
                       // If this fails, we still book the slot locally (preview), but we surface the error.
                       const bodyLines = [
                         `Type: ${apptType}`,
+                        `Phone: ${phone}`,
                         `Preferred date: ${selected.date}`,
                         `Preferred time: ${selected.time} (${timeLabel24To12(selected.time)})`,
                         notes?.trim() ? `Notes: ${notes.trim()}` : null,
@@ -430,6 +466,7 @@ export default function BookOnline() {
                           body: bodyLines.join('\n'),
                           meta: {
                             apptType,
+                            phone,
                             date: selected.date,
                             time: selected.time,
                             notes: (notes || '').trim(),
@@ -444,6 +481,7 @@ export default function BookOnline() {
                       notifyByEmail(`New appointment request — ${apptType}`, {
                         'Visit type': apptType,
                         Patient: who,
+                        Phone: phone,
                         'Preferred date': `${formatDateLong(selected.date)} (${selected.date})`,
                         'Preferred time': `${selected.time} (${timeLabel24To12(selected.time)})`,
                         Notes: (notes || '').trim() || undefined,

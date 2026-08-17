@@ -67,6 +67,7 @@ export default function OrderNowSummary() {
   const [shipState, setShipState] = useState('')
   const [shipZip, setShipZip] = useState('')
   const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
   const [dob, setDob] = useState('')
   const [consultType, setConsultType] = useState<'none' | 'new_patient' | 'follow_up'>('none')
   const [apiSession, setApiSession] = useState<ApiSessionSnapshot | null>(null)
@@ -79,6 +80,12 @@ export default function OrderNowSummary() {
   const isPatientSession =
     Boolean(apiSession?.ok && apiSession.authenticated && apiSession.role === 'patient')
   const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
+  /** 10 digits (US) or 11 starting with 1; also accepts a longer +international number. */
+  const phoneOk = (p: string) => {
+    const digits = p.replace(/\D/g, '')
+    if (p.trim().startsWith('+')) return digits.length >= 8 && digits.length <= 15
+    return digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))
+  }
 
   useEffect(() => {
     if (!slug) return
@@ -141,6 +148,7 @@ export default function OrderNowSummary() {
         Patient: sigName.trim(),
         'Date of birth': dob.trim(),
         Email: isPatientSession ? '(signed-in patient)' : contactEmail.trim(),
+        Phone: isPatientSession ? '(on patient profile)' : contactPhone.trim(),
         'Ship to': `${shipStreet.trim()}, ${shipCity.trim()}, ${shipState} ${shipZip.trim()}`,
         Date: sigDate,
       },
@@ -171,6 +179,10 @@ export default function OrderNowSummary() {
       setCheckoutError('Please enter a valid email so we can confirm your order and reach you if needed.')
       return
     }
+    if (!isPatientSession && !phoneOk(contactPhone)) {
+      setCheckoutError('Please enter a valid phone number so we can call you about this order.')
+      return
+    }
 
     const body = {
       partnerSlug: partner.slug,
@@ -191,7 +203,11 @@ export default function OrderNowSummary() {
     if (isPatientSession) {
       apiPostBeacon('/v1/patient/orders/pharmacy', body)
     } else {
-      apiPostBeacon('/v1/public/orders/pharmacy', { ...body, contactEmail: contactEmail.trim() }, '')
+      apiPostBeacon(
+        '/v1/public/orders/pharmacy',
+        { ...body, contactEmail: contactEmail.trim(), contactPhone: contactPhone.trim() },
+        '',
+      )
     }
 
     sendOrderNotification('Venmo')
@@ -208,7 +224,7 @@ export default function OrderNowSummary() {
     shipZip.trim() &&
     sigName.trim() &&
     dob.trim() &&
-    (isPatientSession || emailOk(contactEmail))
+    (isPatientSession || (emailOk(contactEmail) && phoneOk(contactPhone)))
   const itemsSummaryText = items.map((it) => `${it.product.name} (x${it.quantity})`).join(', ')
 
   return (
@@ -376,19 +392,38 @@ export default function OrderNowSummary() {
                   Where to ship — used when your order is processed.
                 </p>
                 {isPatientSession ? null : (
-                  <label>
-                    <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
-                      Email <span style={{ color: 'var(--accent-rose)' }}>*</span>
-                    </div>
-                    <input
-                      className="input"
-                      type="email"
-                      autoComplete="email"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      style={{ width: '100%', boxSizing: 'border-box' }}
-                    />
-                  </label>
+                  <>
+                    <label style={{ display: 'block', marginBottom: 10 }}>
+                      <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                        Email <span style={{ color: 'var(--accent-rose)' }}>*</span>
+                      </div>
+                      <input
+                        className="input"
+                        type="email"
+                        autoComplete="email"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                    </label>
+                    <label style={{ display: 'block', marginBottom: 10 }}>
+                      <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>
+                        Phone <span style={{ color: 'var(--accent-rose)' }}>*</span>
+                      </div>
+                      <input
+                        className="input"
+                        type="tel"
+                        autoComplete="tel"
+                        placeholder="(303) 555-0100"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                      />
+                      <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                        So we can reach you about this order.
+                      </div>
+                    </label>
+                  </>
                 )}
                 <label style={{ display: 'block', marginBottom: 10 }}>
                   <div className="muted" style={{ fontSize: 13, marginBottom: 6 }}>

@@ -602,9 +602,20 @@ app.post('/v1/public/contact', async (req, reply) => {
 
 const GUEST_USER_PREFIX = 'guest_'
 
+/** Stored digits-only (matches seeded rows); keeps a leading + for international numbers. */
+function normalizeContactPhone(raw: string | undefined | null): string | null {
+  const s = String(raw ?? '').trim()
+  if (!s) return null
+  const intl = s.startsWith('+')
+  const digits = s.replace(/\D/g, '')
+  if (!digits) return null
+  return (intl ? `+${digits}` : digits).slice(0, 32)
+}
+
 /** Website checkout without a portal login: reuses a lightweight patient row keyed by email for FK + staff visibility. */
 async function getOrCreateGuestPharmacyPatient(input: {
   contactEmail: string
+  contactPhone?: string
   displayName: string
   shippingAddress1: string
   shippingCity: string
@@ -612,6 +623,7 @@ async function getOrCreateGuestPharmacyPatient(input: {
   shippingPostalCode: string
 }): Promise<PharmacyPatientForOrder> {
   const email = input.contactEmail.trim().toLowerCase()
+  const phone = normalizeContactPhone(input.contactPhone)
   const found = await prisma.user.findFirst({
     where: { role: 'patient', email, username: { startsWith: GUEST_USER_PREFIX } },
   })
@@ -628,6 +640,8 @@ async function getOrCreateGuestPharmacyPatient(input: {
       data: {
         displayName: input.displayName.trim().slice(0, 200) || found.displayName,
         email,
+        // Only overwrite a stored number when this order supplied one.
+        ...(phone ? { phone } : {}),
         ...address,
       },
       select: {
@@ -655,6 +669,7 @@ async function getOrCreateGuestPharmacyPatient(input: {
       passwordHash,
       displayName: input.displayName.trim().slice(0, 200) || 'Guest',
       email,
+      phone,
       firstName: (parts[0] || '').slice(0, 100) || null,
       lastName: parts.slice(1).join(' ').slice(0, 100) || null,
       ...address,
@@ -676,12 +691,16 @@ async function getOrCreateGuestPharmacyPatient(input: {
   return u
 }
 
+// `contactPhone` is required by the checkout UI but optional here: these routes are hit with
+// sendBeacon (fire-and-forget), so rejecting a stale cached client would drop the order silently.
 const PublicPharmacyOrderBody = CreatePharmacyOrderBody.extend({
   contactEmail: z.string().email(),
+  contactPhone: z.string().max(40).optional(),
 })
 
 const PublicPharmacyOrderRequestBody = CreatePharmacyOrderBody.extend({
   contactEmail: z.string().email(),
+  contactPhone: z.string().max(40).optional(),
   consultType: z.enum(['new_patient', 'follow_up']).optional(),
 })
 
@@ -703,7 +722,7 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
       .send('Too many order submissions from this network. Try again later.')
   }
   const raw = PublicPharmacyOrderBody.parse(req.body)
-  const { contactEmail, ...rest } = raw
+  const { contactEmail, contactPhone, ...rest } = raw
   const body = CreatePharmacyOrderBody.parse(rest)
   if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
   if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
@@ -712,6 +731,7 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
 
   const guest = await getOrCreateGuestPharmacyPatient({
     contactEmail,
+    contactPhone,
     displayName: body.signatureName,
     shippingAddress1: body.shippingAddress1!,
     shippingCity: body.shippingCity!,
@@ -747,7 +767,7 @@ app.post('/v1/public/orders/pharmacy/request', async (req, reply) => {
       .send('Too many order submissions from this network. Try again later.')
   }
   const raw = PublicPharmacyOrderRequestBody.parse(req.body)
-  const { contactEmail, consultType, ...rest } = raw
+  const { contactEmail, contactPhone, consultType, ...rest } = raw
   const body = CreatePharmacyOrderBody.parse(rest)
   if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
   if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
@@ -756,6 +776,7 @@ app.post('/v1/public/orders/pharmacy/request', async (req, reply) => {
 
   const guest = await getOrCreateGuestPharmacyPatient({
     contactEmail,
+    contactPhone,
     displayName: body.signatureName,
     shippingAddress1: body.shippingAddress1!,
     shippingCity: body.shippingCity!,
