@@ -81,6 +81,18 @@ test.describe('public smoke', () => {
     await expect(page).not.toHaveURL(/\/provider\/login/)
   })
 
+  /**
+   * Proves the suite is running against the marketing artifact, not the dev server, and pins the
+   * behaviour patients actually get. /patient renders MarketingLeaveToFullApp only when
+   * VITE_MARKETING_ONLY=1, which sends visitors to the full app or, when that is the same origin,
+   * home. On the dev build the same URL stays put and renders the "For patients" page — verified.
+   * If someone points playwright.config.ts back at `npm run dev`, this test goes red.
+   */
+  test('runs against the marketing build, not the dev server', async ({ page }) => {
+    await page.goto('/patient')
+    await expect(page).not.toHaveURL(/\/patient$/)
+  })
+
   test('contact page loads', async ({ page }) => {
     await page.goto('/contact')
     await expect(page.getByRole('heading', { name: /^Contact$/i })).toBeVisible({ timeout: 30_000 })
