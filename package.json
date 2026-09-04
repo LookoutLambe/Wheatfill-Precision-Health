@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "playwright test",
-    "check:catalog": "node scripts/check-catalog-sync.mjs"
+    "check:catalog": "node scripts/check-catalog-sync.mjs",
+    "serve:pages-like": "node scripts/serve-pages-like.mjs"
   },
   "dependencies": {
     "@medplum/core": "^5.1.9",

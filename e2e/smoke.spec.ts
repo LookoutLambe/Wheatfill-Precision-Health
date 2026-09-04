@@ -93,6 +93,26 @@ test.describe('public smoke', () => {
     await expect(page).not.toHaveURL(/\/patient$/)
   })
 
+  /**
+   * Deep links are the fragile part of hosting an SPA on GitHub Pages. Pages has no server-side
+   * routing: any direct URL 404s, and recovery depends on public/404.html stashing the path in
+   * sessionStorage and index.html restoring it with replaceState. Break either half and every
+   * shared or bookmarked link lands on the home page or a blank one.
+   *
+   * This only means anything because the harness serves the build the way Pages does — under
+   * `vite preview` the request never reaches 404.html, so the test would pass with that file
+   * deleted.
+   */
+  test('a direct deep link recovers to the right page', async ({ page }) => {
+    const res = await page.goto('/pricing')
+    // Pages really does answer 404 here; the page recovers itself from that.
+    expect(res?.status()).toBe(404)
+    await expect(page).toHaveURL(/\/pricing$/)
+    await expect(page.getByRole('heading', { name: /Transparent Pricing/i })).toBeVisible({
+      timeout: 30_000,
+    })
+  })
+
   test('contact page loads', async ({ page }) => {
     await page.goto('/contact')
     await expect(page.getByRole('heading', { name: /^Contact$/i })).toBeVisible({ timeout: 30_000 })

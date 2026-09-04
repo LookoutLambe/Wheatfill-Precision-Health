@@ -21,12 +21,13 @@ export default defineConfig({
    * none of which the dev server exercises. `vite preview` serves the built dist, so the suite
    * runs against the same bundle GitHub Pages publishes.
    *
-   * Caveat worth knowing: preview does SPA history fallback natively, whereas Pages relies on
-   * public/404.html plus the sessionStorage restore in index.html. Deep-link recovery is therefore
-   * still not covered here — it is the one production behaviour this cannot reproduce.
+   * Served by scripts/serve-pages-like.mjs rather than `vite preview`, because preview resolves an
+   * unknown path to index.html itself. Pages instead serves 404.html, which is where this site's
+   * deep-link recovery lives — so under preview a broken 404.html would pass while every shared
+   * link landed on a blank page.
    */
   webServer: {
-    command: 'npm run build:marketing && npm run preview -- --host 127.0.0.1 --port 4173',
+    command: 'npm run build:marketing && npm run serve:pages-like -- 4173',
     url: 'http://127.0.0.1:4173',
     env: {
       VITE_MARKETING_ONLY: '1',
