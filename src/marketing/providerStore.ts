@@ -16,171 +16,17 @@ export type MarketingIntegrations = {
 const KEY_INTEGRATIONS = 'wph_marketing_integrations_v1'
 const KEY_SESSION = 'wph_marketing_provider_session_v1'
 const KEY_SESSION_USER = 'wph_marketing_provider_user_v1'
-const KEY_CREDENTIALS = 'wph_marketing_provider_credentials_v1'
-const KEY_LOGIN_ALIASES = 'wph_marketing_provider_login_aliases_v1'
 
 export type MarketingProviderUser = 'admin' | 'brett' | 'bridgette'
 
-type CredentialStoreV1 = Record<string, { pwHash: string }>
-
-const DEFAULT_ADMIN_PASSWORD = 'demonstration'
-const DEFAULT_PROVIDER_PASSWORD = 'wheatfill'
-
-function toHex(bytes: ArrayBuffer) {
-  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function sha256(s: string) {
-  const enc = new TextEncoder().encode(s)
-  const hash = await crypto.subtle.digest('SHA-256', enc)
-  return toHex(hash)
-}
-
-function readCredentialStore(): CredentialStoreV1 {
-  try {
-    const raw = localStorage.getItem(KEY_CREDENTIALS)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as CredentialStoreV1
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function writeCredentialStore(next: CredentialStoreV1) {
-  localStorage.setItem(KEY_CREDENTIALS, JSON.stringify(next))
-}
-
-const SLOTS: MarketingProviderUser[] = ['admin', 'brett', 'bridgette']
-
-function defaultLoginAliases(): Record<MarketingProviderUser, string> {
-  return { admin: 'admin', brett: 'brett', bridgette: 'bridgette' }
-}
-
-function readLoginAliases(): Record<MarketingProviderUser, string> {
-  const defaults = defaultLoginAliases()
-  try {
-    const raw = localStorage.getItem(KEY_LOGIN_ALIASES)
-    if (!raw) return { ...defaults }
-    const parsed = JSON.parse(raw) as Partial<Record<MarketingProviderUser, string>>
-    return {
-      admin: String(parsed.admin || defaults.admin)
-        .trim()
-        .toLowerCase(),
-      brett: String(parsed.brett || defaults.brett)
-        .trim()
-        .toLowerCase(),
-      bridgette: String(parsed.bridgette || defaults.bridgette)
-        .trim()
-        .toLowerCase(),
-    }
-  } catch {
-    return { ...defaults }
-  }
-}
-
-function writeLoginAliases(next: Record<MarketingProviderUser, string>) {
-  localStorage.setItem(KEY_LOGIN_ALIASES, JSON.stringify(next))
-}
-
-/** Public login string for a slot (what Brett/Bridgette type at sign-in). */
-export function loginNameForSlot(slot: MarketingProviderUser): string {
-  const a = readLoginAliases()
-  return a[slot] || slot
-}
-
 /** Resolve sign-in username to internal slot. */
-export function resolveMarketingProviderSlot(loginNormalized: string): MarketingProviderUser | null {
-  const key = loginNormalized.trim().toLowerCase()
-  if (!key) return null
-  for (const slot of SLOTS) {
-    if (loginNameForSlot(slot) === key) return slot
-  }
-  return null
-}
-
-export async function ensureDefaultMarketingProviderUsers() {
-  const store = readCredentialStore()
-  if (store.admin?.pwHash && store.brett?.pwHash && store.bridgette?.pwHash) return
-  // Production builds: never seed client-side demo password hashes (staff must use API accounts).
-  if (import.meta.env.PROD) return
-
-  const adminHash = await sha256(DEFAULT_ADMIN_PASSWORD)
-  const providerHash = await sha256(DEFAULT_PROVIDER_PASSWORD)
-
-  const next: CredentialStoreV1 = {
-    ...store,
-    admin: { pwHash: store.admin?.pwHash || adminHash },
-    brett: { pwHash: store.brett?.pwHash || providerHash },
-    bridgette: { pwHash: store.bridgette?.pwHash || providerHash },
-  }
-  writeCredentialStore(next)
-}
-
 export function isAllowedMarketingProviderUser(u: string): u is MarketingProviderUser {
   return u === 'admin' || u === 'brett' || u === 'bridgette'
 }
 
 /** Server /auth/login username (matches DB) — not a display alias. */
-export function teamApiUsernameForSlot(slot: MarketingProviderUser): string {
-  return slot
-}
-
-export async function verifyMarketingProviderPassword(username: string, password: string) {
-  const slot = resolveMarketingProviderSlot(username)
-  if (!slot) return false
-  const store = readCredentialStore()
-  const entry = store[slot]
-  if (!entry?.pwHash) return false
-  return entry.pwHash === (await sha256(password))
-}
-
-export async function setMarketingProviderPassword(username: MarketingProviderUser, nextPassword: string) {
-  const store = readCredentialStore()
-  store[username] = { pwHash: await sha256(nextPassword) }
-  writeCredentialStore(store)
-}
-
-const LOGIN_NAME_RE = /^[a-z0-9][a-z0-9._-]{1,31}$/
-
 /** Fired on sign-in, sign-out, and login-alias changes. Provider workspace listens to refresh inbox, etc. */
 export const MARKETING_PROVIDER_AUTH_EVENT = 'wph_marketing_provider_auth'
-
-/**
- * Brett and Bridgette may change their sign-in username (alias). Session stays on internal slot.
- * Admin login name stays `admin`.
- */
-export async function renameMarketingProviderLogin(
-  slot: 'brett' | 'bridgette',
-  nextLogin: string,
-  currentPassword: string,
-): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const normalized = nextLogin.trim().toLowerCase()
-  if (!LOGIN_NAME_RE.test(normalized)) {
-    return {
-      ok: false,
-      reason: 'Username must be 2–32 characters: letters, numbers, dot, underscore, or hyphen (start with a letter or number).',
-    }
-  }
-  if (normalized === 'admin') {
-    return { ok: false, reason: 'That username is reserved.' }
-  }
-  const okPw = await verifyMarketingProviderPassword(loginNameForSlot(slot), currentPassword)
-  if (!okPw) {
-    return { ok: false, reason: 'Current password is incorrect.' }
-  }
-  const aliases = readLoginAliases()
-  for (const s of SLOTS) {
-    if (s === slot) continue
-    if (loginNameForSlot(s) === normalized) {
-      return { ok: false, reason: 'Another account already uses that username.' }
-    }
-  }
-  aliases[slot] = normalized
-  writeLoginAliases(aliases)
-  window.dispatchEvent(new Event(MARKETING_PROVIDER_AUTH_EVENT))
-  return { ok: true }
-}
 
 /** Never use example.com for catalog — it is a documentation placeholder and breaks real navigation. */
 function normalizeCatalogUrl(url: unknown): string {
@@ -274,23 +120,24 @@ export function getMarketingProviderUser() {
   return localStorage.getItem(KEY_SESSION_USER) || ''
 }
 
-/** Sign-in username for the current session (alias), for display. */
+/** Sign-in username for the current session, for display. */
 export function getMarketingProviderLoginDisplay(): string {
-  const slot = getMarketingProviderUser()
-  if (!isAllowedMarketingProviderUser(slot)) return ''
-  return loginNameForSlot(slot)
+  return getMarketingProviderUser()
 }
 
-/** `username` is whatever the user typed at login; it is resolved to a canonical slot for the session. */
+/**
+ * Records that the API accepted a sign-in, so the workspace can gate provider UI without a second
+ * round trip. This is a display/routing hint only — the credential of record is the JWT from
+ * /auth/login, and every privileged call is authorised by the server.
+ *
+ * The username is stored as issued by the API rather than mapped onto a fixed set of accounts, so
+ * staff added later through Staff users sign in and appear here exactly like the original three.
+ */
 export function setMarketingProviderAuthed(v: boolean, username?: string) {
   if (v) {
     localStorage.setItem(KEY_SESSION, '1')
-    if (username) {
-      const slot = resolveMarketingProviderSlot(username.trim().toLowerCase())
-      if (slot && isAllowedMarketingProviderUser(slot)) {
-        localStorage.setItem(KEY_SESSION_USER, slot)
-      }
-    }
+    const name = (username || '').trim().toLowerCase()
+    if (name) localStorage.setItem(KEY_SESSION_USER, name)
   } else {
     localStorage.removeItem(KEY_SESSION)
     localStorage.removeItem(KEY_SESSION_USER)
