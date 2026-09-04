@@ -4,6 +4,7 @@ import { DEFAULT_JWT_EXPIRES_IN, resolveTrustProxy } from './config/session.js'
 import { shippingCentsForPartnerSlug } from './domain/pharmacy-seed.js'
 import {
   CreatePharmacyOrderBody,
+  CONSULT_FEE_CENTS,
   runPharmacyOrderCheckout,
   type PharmacyPatientForOrder,
 } from './domain/pharmacyOrderCheckout.js'
@@ -696,6 +697,8 @@ async function getOrCreateGuestPharmacyPatient(input: {
 const PublicPharmacyOrderBody = CreatePharmacyOrderBody.extend({
   contactEmail: z.string().email(),
   contactPhone: z.string().max(40).optional(),
+  // The storefront adds this to the Venmo amount, so the order has to carry it too.
+  consultType: z.enum(['new_patient', 'follow_up']).optional(),
 })
 
 const PublicPharmacyOrderRequestBody = CreatePharmacyOrderBody.extend({
@@ -704,12 +707,18 @@ const PublicPharmacyOrderRequestBody = CreatePharmacyOrderBody.extend({
   consultType: z.enum(['new_patient', 'follow_up']).optional(),
 })
 
+/**
+ * Env vars still win so a fee can be changed without a deploy, but they now fall back to the shared
+ * constants rather than to zero. CONSULT_FEE_* is set nowhere, so every consult was previously
+ * recorded at $0 while the customer was asked to pay $110 or $85 for it.
+ */
 function consultFeeCentsForType(t?: 'new_patient' | 'follow_up'): number {
-  const rawNew = Number(process.env.CONSULT_FEE_NEW_CENTS || 0) || 0
-  const rawFu = Number(process.env.CONSULT_FEE_FOLLOWUP_CENTS || 0) || 0
-  if (t === 'new_patient') return Math.max(0, Math.round(rawNew))
-  if (t === 'follow_up') return Math.max(0, Math.round(rawFu))
-  return 0
+  if (!t) return 0
+  const fromEnv =
+    t === 'new_patient'
+      ? Number(process.env.CONSULT_FEE_NEW_CENTS || 0) || 0
+      : Number(process.env.CONSULT_FEE_FOLLOWUP_CENTS || 0) || 0
+  return Math.max(0, Math.round(fromEnv || CONSULT_FEE_CENTS[t]))
 }
 
 // Full catalog order + consents (website, no sign-in). Creates User + Order + payment session when payment is configured.
@@ -722,7 +731,7 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
       .send('Too many order submissions from this network. Try again later.')
   }
   const raw = PublicPharmacyOrderBody.parse(req.body)
-  const { contactEmail, contactPhone, ...rest } = raw
+  const { contactEmail, contactPhone, consultType, ...rest } = raw
   const body = CreatePharmacyOrderBody.parse(rest)
   if (!body.agreedToShippingTerms) return reply.badRequest('You must agree to shipping terms.')
   if (!body.shippingAddress1 || !body.shippingCity || !body.shippingState || !body.shippingPostalCode) {
@@ -743,6 +752,8 @@ app.post('/v1/public/orders/pharmacy', async (req, reply) => {
     body,
     patient: guest,
     guestContactEmail: contactEmail.trim(),
+    consultType,
+    consultFeeCents: consultFeeCentsForType(consultType),
   })
   if (!r.ok) return reply.status(r.status).send(r.message)
 

@@ -197,7 +197,14 @@ export default function OrderNowSummary() {
         ? apiPost('/v1/patient/orders/pharmacy', body)
         : apiPost(
             '/v1/public/orders/pharmacy',
-            { ...body, contactEmail: contactEmail.trim(), contactPhone: contactPhone.trim() },
+            {
+              ...body,
+              contactEmail: contactEmail.trim(),
+              contactPhone: contactPhone.trim(),
+              // Billed into the Venmo amount above, so the order must carry it or the recorded
+              // total comes up short by the consult fee.
+              ...(consultType === 'none' ? {} : { consultType }),
+            },
             '',
           )
 

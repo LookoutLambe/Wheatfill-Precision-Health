@@ -78,6 +78,27 @@ if (!frontSlug || !backSlug) {
   )
 }
 
+/** Consult fees are a third hand-synced number that lands in the Venmo amount. */
+const FEES_FRONT = 'src/config/consultFees.ts'
+const FEES_BACK = 'backend/src/domain/pharmacyOrderCheckout.ts'
+const frontFees = {
+  new_patient: read(FEES_FRONT).match(/new_patient:[^}]*cents:\s*(\d+)/)?.[1],
+  follow_up: read(FEES_FRONT).match(/follow_up:[^}]*cents:\s*(\d+)/)?.[1],
+}
+const backFees = {
+  new_patient: read(FEES_BACK).match(/new_patient:\s*(\d+)/)?.[1],
+  follow_up: read(FEES_BACK).match(/follow_up:\s*(\d+)/)?.[1],
+}
+for (const key of ['new_patient', 'follow_up']) {
+  if (!frontFees[key] || !backFees[key]) {
+    problems.push(`Could not read the ${key} consult fee from both files — update check-catalog-sync.mjs.`)
+  } else if (frontFees[key] !== backFees[key]) {
+    problems.push(
+      `Consult fee ${key} differs: storefront charges ${frontFees[key]} cents, server records ${backFees[key]} cents.`,
+    )
+  }
+}
+
 if (problems.length) {
   console.error('\ncatalog sync check FAILED:\n')
   for (const p of problems) console.error(`  - ${p}`)

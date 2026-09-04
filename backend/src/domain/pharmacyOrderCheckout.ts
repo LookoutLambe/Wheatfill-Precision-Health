@@ -24,6 +24,21 @@ export const CreatePharmacyOrderBody = z.object({
   shippingPostalCode: z.string().min(1).max(20).optional(),
 })
 
+/**
+ * Consultation fees, in cents. MUST match `src/config/consultFees.ts` — the storefront adds these
+ * to the amount the customer is asked to send via Venmo, so a different number here records an
+ * order that can never be reconciled against the payment. check-catalog-sync.mjs compares them.
+ *
+ * These were previously read only from CONSULT_FEE_NEW_CENTS / CONSULT_FEE_FOLLOWUP_CENTS, which
+ * are set nowhere, so every consult was recorded at zero.
+ */
+export const CONSULT_FEE_CENTS = {
+  new_patient: 11000,
+  follow_up: 8500,
+}
+
+export type PaidConsultType = keyof typeof CONSULT_FEE_CENTS
+
 export type PharmacyPatientForOrder = {
   id: string
   firstName: string | null
@@ -50,8 +65,11 @@ export async function runPharmacyOrderCheckout(input: {
   body: z.infer<typeof CreatePharmacyOrderBody>
   patient: PharmacyPatientForOrder
   guestContactEmail?: string
+  /** Visit selected at checkout. Billed here because the storefront already added it to the total. */
+  consultType?: PaidConsultType
+  consultFeeCents?: number
 }): Promise<PharmacyOrderCheckoutResult> {
-  const { body, patient, guestContactEmail } = input
+  const { body, patient, guestContactEmail, consultType } = input
   if (!body.agreedToShippingTerms) return { ok: false, status: 400, message: 'You must agree to shipping terms.' }
 
   const partner = await prisma.pharmacyPartner.findUnique({ where: { slug: body.partnerSlug } })
@@ -72,7 +90,10 @@ export async function runPharmacyOrderCheckout(input: {
   const subtotal = body.items.reduce((sum, it) => sum + bySku.get(it.sku)!.priceCents * it.quantity, 0)
   const shippingCents = shippingCentsForPartnerSlug(partner.slug)
   const shippingInsuranceCents = body.shippingInsurance ? Math.round(subtotal * 0.02) : 0
-  const total = subtotal + shippingCents + shippingInsuranceCents
+  const consultCents = consultType
+    ? (input.consultFeeCents ?? CONSULT_FEE_CENTS[consultType] ?? 0)
+    : 0
+  const total = subtotal + shippingCents + shippingInsuranceCents + consultCents
 
   const hasShip =
     (body.shippingAddress1 && body.shippingCity && body.shippingState && body.shippingPostalCode) || null
@@ -102,16 +123,30 @@ export async function runPharmacyOrderCheckout(input: {
       signatureName: body.signatureName.trim(),
       signatureDate: new Date(body.signatureDate),
       items: {
-        create: body.items.map((it) => {
-          const p = bySku.get(it.sku)!
-          return {
-            partnerSlug: partner.slug,
-            productSku: p.sku,
-            name: p.name,
-            unitPriceCents: p.priceCents,
-            quantity: it.quantity,
-          }
-        }),
+        create: [
+          ...body.items.map((it) => {
+            const p = bySku.get(it.sku)!
+            return {
+              partnerSlug: partner.slug,
+              productSku: p.sku,
+              name: p.name,
+              unitPriceCents: p.priceCents,
+              quantity: it.quantity,
+            }
+          }),
+          // The consult is a line on the order so staff see what the payment covers.
+          ...(consultCents > 0 && consultType
+            ? [
+                {
+                  partnerSlug: partner.slug,
+                  productSku: consultType === 'new_patient' ? 'consult_new_patient' : 'consult_follow_up',
+                  name: consultType === 'new_patient' ? 'New patient consultation' : 'Follow-up consultation',
+                  unitPriceCents: consultCents,
+                  quantity: 1,
+                },
+              ]
+            : []),
+        ],
       },
     },
     include: { items: true },
