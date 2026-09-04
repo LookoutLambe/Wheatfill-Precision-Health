@@ -67,6 +67,17 @@ if (!frontShip || !backShip) {
   )
 }
 
+/** The storefront's slug is what lands in `partnerSlug` on every order, so it must match the seed. */
+const frontSlug = read(FRONT).match(/DEFAULT_CATALOG_PARTNER_SLUG\s*=\s*'([^']+)'/)
+const backSlug = read(BACK).match(/CATALOG_SLUG\s*=\s*'([^']+)'/)
+if (!frontSlug || !backSlug) {
+  problems.push('Could not locate the catalog slug in both files — update check-catalog-sync.mjs.')
+} else if (frontSlug[1] !== backSlug[1]) {
+  problems.push(
+    `Catalog slug differs: storefront uses '${frontSlug[1]}', server seeds '${backSlug[1]}' — orders would target a partner that does not exist.`,
+  )
+}
+
 if (problems.length) {
   console.error('\ncatalog sync check FAILED:\n')
   for (const p of problems) console.error(`  - ${p}`)

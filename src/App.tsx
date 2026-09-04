@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect } from 'react'
-import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import Shell from './components/Shell'
 import ProviderShell from './components/ProviderShell'
@@ -18,7 +18,7 @@ const OrderingPortal = lazy(() => import('./pages/OrderingPortal'))
 const MedicationEducation = lazy(() => import('./pages/MedicationEducation'))
 const PharmacyOptions = lazy(() => import('./pages/PharmacyOptions'))
 const PharmacyPartner = lazy(() => import('./pages/PharmacyPartner'))
-const MountainViewPharmacy = lazy(() => import('./pages/MountainViewPharmacy'))
+const CatalogPriceList = lazy(() => import('./pages/CatalogPriceList'))
 const OrderNowSummary = lazy(() => import('./pages/OrderNowSummary'))
 const PatientPortalInfo = lazy(() => import('./pages/PatientPortalInfo'))
 import SignIn from './pages/SignIn'
@@ -27,6 +27,7 @@ const ProviderPayments = lazy(() => import('./pages/ProviderPayments'))
 import { RouteErrorBoundary } from './components/RouteErrorBoundary'
 import NotFound from './pages/NotFound'
 import { APP_URL, MARKETING_ONLY } from './config/mode'
+import { DEFAULT_CATALOG_PARTNER_SLUG } from './data/catalogHighlight'
 const MarketingProviderAdmin = lazy(() => import('./pages/MarketingProviderAdmin'))
 const MarketingProviderSecurity = lazy(() => import('./pages/MarketingProviderSecurity'))
 const ProviderTwpWorkspace = lazy(() => import('./pages/ProviderTwpWorkspace'))
@@ -64,10 +65,10 @@ function MarketingLeaveToFullApp({ path }: { path: string }) {
   )
 }
 
+/** Retired `/pharmacy/<slug>` links. The catalog is no longer addressed by a pharmacy name, so
+ *  everything here lands on the current catalog rather than reviving a dead slug. */
 function PharmacySlugRedirect() {
-  const { slug } = useParams()
-  if (!slug) return <Navigate to="/order-now" replace />
-  return <Navigate to={`/order-now/${encodeURIComponent(slug)}`} replace />
+  return <Navigate to={`/order-now/${DEFAULT_CATALOG_PARTNER_SLUG}`} replace />
 }
 
 export default function App() {
@@ -100,15 +101,24 @@ export default function App() {
 
           <Route path="/book" element={<BookOnline />} />
           <Route path="/order-now" element={<PharmacyOptions />} />
-          {/* Hallandale is hidden — redirect its links to Order Now / Mountain View. */}
+          {/* Hallandale is hidden — redirect its links to Order Now / the price list. */}
           <Route path="/order-now/hallandale" element={<Navigate to="/order-now" replace />} />
           <Route path="/order-now/hallandale/summary" element={<Navigate to="/order-now" replace />} />
+          {/* The catalog slug used to carry a pharmacy name; send old links to the current one. */}
+          <Route path="/order-now/mountain-view" element={<Navigate to={`/order-now/${DEFAULT_CATALOG_PARTNER_SLUG}`} replace />} />
+          <Route
+            path="/order-now/mountain-view/summary"
+            element={<Navigate to={`/order-now/${DEFAULT_CATALOG_PARTNER_SLUG}/summary`} replace />}
+          />
           <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
           <Route path="/order-now/:slug" element={<PharmacyPartner />} />
-          <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
-          <Route path="/pharmacy/hallandale" element={<Navigate to="/pharmacy/mountain-view" replace />} />
-          <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
-          <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
+          <Route path="/price-list" element={<CatalogPriceList />} />
+          {/* Retired pharmacy-named URLs. Kept as redirects so existing links and bookmarks
+              still land somewhere useful instead of 404ing. */}
+          <Route path="/pharmacy/mountain-view" element={<Navigate to="/price-list" replace />} />
+          <Route path="/pharmacy/hallandale" element={<Navigate to="/price-list" replace />} />
+          <Route path="/mountainviewpharmacy" element={<Navigate to="/price-list" replace />} />
+          <Route path="/pharmacy" element={<Navigate to="/price-list" replace />} />
           <Route path="/pharmacy/:slug" element={<PharmacySlugRedirect />} />
           <Route path="/signin" element={<MarketingLeaveToFullApp path="/signin" />} />
           <Route path="/patient" element={<MarketingLeaveToFullApp path="/patient" />} />
@@ -154,15 +164,24 @@ export default function App() {
         <Route path="/ordering" element={<OrderingPortal />} />
         <Route path="/medications" element={<MedicationEducation />} />
         <Route path="/order-now" element={<PharmacyOptions />} />
-        {/* Hallandale is hidden — redirect its links to Order Now / Mountain View. */}
+        {/* Hallandale is hidden — redirect its links to Order Now / the price list. */}
         <Route path="/order-now/hallandale" element={<Navigate to="/order-now" replace />} />
         <Route path="/order-now/hallandale/summary" element={<Navigate to="/order-now" replace />} />
+        {/* The catalog slug used to carry a pharmacy name; send old links to the current one. */}
+        <Route path="/order-now/mountain-view" element={<Navigate to={`/order-now/${DEFAULT_CATALOG_PARTNER_SLUG}`} replace />} />
+        <Route
+          path="/order-now/mountain-view/summary"
+          element={<Navigate to={`/order-now/${DEFAULT_CATALOG_PARTNER_SLUG}/summary`} replace />}
+        />
         <Route path="/order-now/:slug/summary" element={<OrderNowSummary />} />
         <Route path="/order-now/:slug" element={<PharmacyPartner />} />
-        <Route path="/pharmacy/mountain-view" element={<MountainViewPharmacy />} />
-        <Route path="/pharmacy/hallandale" element={<Navigate to="/pharmacy/mountain-view" replace />} />
-        <Route path="/mountainviewpharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
-        <Route path="/pharmacy" element={<Navigate to="/pharmacy/mountain-view" replace />} />
+        <Route path="/price-list" element={<CatalogPriceList />} />
+        {/* Retired pharmacy-named URLs. Kept as redirects so existing links and bookmarks
+            still land somewhere useful instead of 404ing. */}
+        <Route path="/pharmacy/mountain-view" element={<Navigate to="/price-list" replace />} />
+        <Route path="/pharmacy/hallandale" element={<Navigate to="/price-list" replace />} />
+        <Route path="/mountainviewpharmacy" element={<Navigate to="/price-list" replace />} />
+        <Route path="/pharmacy" element={<Navigate to="/price-list" replace />} />
         <Route path="/pharmacy/:slug" element={<PharmacySlugRedirect />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<Privacy />} />

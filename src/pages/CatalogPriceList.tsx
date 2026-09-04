@@ -16,7 +16,7 @@ function groupByFamily() {
   return { tirzepatide: t, semaglutide: s }
 }
 
-export default function MountainViewPharmacy() {
+export default function CatalogPriceList() {
   const [cartCount, setCartCount] = useState(() => countCartItems(SLUG))
   const [announce, setAnnounce] = useState('')
   const baseId = useId()
@@ -35,13 +35,13 @@ export default function MountainViewPharmacy() {
   }, [])
 
   return (
-    <div className="page mountainViewPharmacyPage">
-      <a href="#mountainview-main" className="mountainViewSkip">
+    <div className="page priceListPharmacyPage">
+      <a href="#price-list-main" className="priceListSkip">
         Skip to product list
       </a>
 
-      <nav className="mountainViewBreadcrumb" aria-label="Breadcrumb">
-        <ol className="mountainViewBreadcrumbList">
+      <nav className="priceListBreadcrumb" aria-label="Breadcrumb">
+        <ol className="priceListBreadcrumbList">
           <li>
             <Link to="/">Home</Link>
           </li>
@@ -54,21 +54,21 @@ export default function MountainViewPharmacy() {
         </ol>
       </nav>
 
-      <header className="mountainViewHeader">
-        <h1 className="mountainViewH1" id="mountainview-heading">
+      <header className="priceListHeader">
+        <h1 className="priceListH1" id="price-list-heading">
           {PARTNER}
         </h1>
-        <p className="muted mountainViewLead">
+        <p className="muted priceListLead">
           Representative GLP-1 vial SKUs and <strong>list prices</strong> for the compounding menu fulfilled through{' '}
           {PARTNER} when your clinician prescribes. You place orders with {PRACTICE_PUBLIC_NAME} on this site—not
           directly with the pharmacy website.
         </p>
-        <div className="btnRow mountainViewCtas" style={{ flexWrap: 'wrap' }}>
+        <div className="btnRow priceListCtas" style={{ flexWrap: 'wrap' }}>
           <Link
             to={`/order-now/${SLUG}`}
             className="btn btnPrimary"
             style={{ textDecoration: 'none' }}
-            aria-describedby="mountainview-heading"
+            aria-describedby="price-list-heading"
           >
             Open full catalog
           </Link>
@@ -86,7 +86,7 @@ export default function MountainViewPharmacy() {
 
       {announce ? (
         <div
-          className="mountainViewLive"
+          className="priceListLive"
           role="status"
           aria-live="polite"
           aria-atomic="true"
@@ -96,16 +96,16 @@ export default function MountainViewPharmacy() {
         </div>
       ) : null}
 
-      <p className="srOnly" id="mountainview-table-hint">
+      <p className="srOnly" id="price-list-table-hint">
         The following tables list product name, description, list price, and an add to cart button. Use Tab to move
         through the table. Scroll horizontally on small screens if needed.
       </p>
       <main
-        id="mountainview-main"
+        id="price-list-main"
         tabIndex={-1}
-        aria-labelledby="mountainview-heading"
-        className="mountainViewMain"
-        aria-describedby="mountainview-table-hint"
+        aria-labelledby="price-list-heading"
+        className="priceListMain"
+        aria-describedby="price-list-table-hint"
       >
         {(
           [
@@ -115,13 +115,13 @@ export default function MountainViewPharmacy() {
         ).map((section) => {
           const sectionId = `${baseId}-sec-${section.key}`
           return (
-            <section key={section.key} className="mountainViewSection card cardAccentSoft" aria-labelledby={sectionId}>
-              <h2 className="mountainViewH2" id={sectionId}>
+            <section key={section.key} className="priceListSection card cardAccentSoft" aria-labelledby={sectionId}>
+              <h2 className="priceListH2" id={sectionId}>
                 {section.label}
               </h2>
-              <div className="mountainViewTableWrap" role="region" aria-label={`${section.label} price list`} tabIndex={0}>
-                <table className="mountainViewTable">
-                  <caption className="mountainViewCaption">
+              <div className="priceListTableWrap" role="region" aria-label={`${section.label} price list`} tabIndex={0}>
+                <table className="priceListTable">
+                  <caption className="priceListCaption">
                     {section.label} — compounding with B6 and glycine as listed. The <strong>Per vial</strong> column
                     shows total mg of drug in the vial (mg/mL × mL) and approximate list price per mg for comparison
                     only. For titration education, use the <Link to="/medications#dosing-guide">dosing guide</Link>.
@@ -134,7 +134,7 @@ export default function MountainViewPharmacy() {
                       <th scope="col">Per vial</th>
                       <th scope="col">List price</th>
                       <th scope="col">
-                        <span className="mountainViewActionHead">Add</span>
+                        <span className="priceListActionHead">Add</span>
                       </th>
                     </tr>
                   </thead>
@@ -142,22 +142,22 @@ export default function MountainViewPharmacy() {
                     {section.rows.map((p) => {
                       return (
                         <tr key={p.sku}>
-                          <th scope="row" className="mountainViewProductName" data-label="Product">
+                          <th scope="row" className="priceListProductName" data-label="Product">
                             {p.name}
                           </th>
-                          <td className="muted mountainViewSub" data-label="Description">
+                          <td className="muted priceListSub" data-label="Description">
                             {p.subtitle}
                           </td>
-                          <td className="mountainViewDosingCell" data-label="Per vial">
+                          <td className="priceListDosingCell" data-label="Per vial">
                             <CatalogProductDosingHint name={p.name} priceCents={p.priceCents} layout="band" />
                           </td>
-                          <td className="mountainViewPrice" aria-label={`List price ${moneyWhole(p.priceCents)}`} data-label="List price">
+                          <td className="priceListPrice" aria-label={`List price ${moneyWhole(p.priceCents)}`} data-label="List price">
                             {moneyWhole(p.priceCents)}
                           </td>
                           <td data-label="Add">
                             <button
                               type="button"
-                              className="btn btnPrimary mountainViewAddBtn"
+                              className="btn btnPrimary priceListAddBtn"
                               onClick={() => onAdd(p.sku, p.name)}
                               aria-label={`Add ${p.name} for ${moneyWhole(p.priceCents)} to cart for ${PRACTICE_PUBLIC_NAME}`}
                             >
@@ -175,8 +175,8 @@ export default function MountainViewPharmacy() {
         })}
       </main>
 
-      <section className="card cardAccentNavy mountainViewNext" aria-labelledby="mountainview-next-heading">
-        <h2 className="mountainViewH2" id="mountainview-next-heading" style={{ margin: 0 }}>
+      <section className="card cardAccentNavy priceListNext" aria-labelledby="price-list-next-heading">
+        <h2 className="priceListH2" id="price-list-next-heading" style={{ margin: 0 }}>
           Next steps
         </h2>
         <p className="muted" style={{ marginTop: 10, marginBottom: 0, maxWidth: 720 }}>

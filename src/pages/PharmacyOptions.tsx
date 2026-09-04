@@ -4,7 +4,7 @@ import CatalogVialThumb from '../components/CatalogVialThumb'
 import Icon from '../components/Icon'
 import { PRACTICE_PUBLIC_NAME } from '../config/provider'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
-import { CATALOG_HIGHLIGHT_PRODUCTS } from '../data/catalogHighlight'
+import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 
@@ -25,7 +25,7 @@ export default function PharmacyOptions() {
   const [cartTick, setCartTick] = useState(0)
   const [mvPartner, setMvPartner] = useState<PartnerWithProducts | null>(null)
 
-  const mvSlug = 'mountain-view'
+  const mvSlug = DEFAULT_CATALOG_PARTNER_SLUG
 
   useEffect(() => {
     // Catalog is front-end controlled (the API backend can't be redeployed), so use the local list.
@@ -75,7 +75,7 @@ export default function PharmacyOptions() {
             </p>
             <p className="muted" style={{ marginTop: 14, fontSize: 14, marginBottom: 0 }}>
               Browse an accessible, table-style price list:{' '}
-              <Link to="/pharmacy/mountain-view" style={{ fontWeight: 800 }}>
+              <Link to="/price-list" style={{ fontWeight: 800 }}>
                 {resolvedFulfillmentPharmacyName()}
               </Link>
               .

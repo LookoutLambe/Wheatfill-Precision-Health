@@ -59,7 +59,7 @@ export const CATALOG_HIGHLIGHT_PRODUCTS: CatalogHighlightProduct[] = [
   },
 ]
 
-export const DEFAULT_CATALOG_PARTNER_SLUG = 'mountain-view'
+export const DEFAULT_CATALOG_PARTNER_SLUG = 'catalog'
 
 export function minCatalogPriceCentsForFamily(family: CatalogHighlightProduct['family']): number {
   const cents = CATALOG_HIGHLIGHT_PRODUCTS.filter((p) => p.family === family).map((p) => p.priceCents)

@@ -7,6 +7,10 @@ import { prisma } from '../db.js'
  */
 const PUBLIC_PARTNER_NAME = 'Wheatfill Precision Health'
 
+/** Primary catalog slug. Must match DEFAULT_CATALOG_PARTNER_SLUG in src/data/catalogHighlight.ts —
+ *  it is the value the storefront puts in `partnerSlug` on every order it submits. */
+const CATALOG_SLUG = 'catalog'
+
 /** Idempotent seed: ensure partners exist, then ensure their products exist. */
 export async function ensurePharmacySeed() {
   // Name is force-corrected on every boot so a legacy pharmacy name already sitting in the
@@ -26,7 +30,22 @@ export async function ensurePharmacySeed() {
     /* ignore if it doesn't exist */
   }
 
-  const mv = await ensurePartner('mountain-view', PUBLIC_PARTNER_NAME)
+  // The primary catalog used to be addressed by a pharmacy name. Rename the existing row in place
+  // rather than creating a second partner, so orders already pointing at it stay attached.
+  try {
+    const retired = await prisma.pharmacyPartner.findUnique({ where: { slug: 'mountain-view' } })
+    const current = await prisma.pharmacyPartner.findUnique({ where: { slug: CATALOG_SLUG } })
+    if (retired && !current) {
+      await prisma.pharmacyPartner.update({ where: { slug: 'mountain-view' }, data: { slug: CATALOG_SLUG } })
+    } else if (retired && current) {
+      // Both exist (a previous partial run): keep the current one and retire the old.
+      await prisma.pharmacyPartner.update({ where: { slug: 'mountain-view' }, data: { isActive: false } })
+    }
+  } catch {
+    /* first boot on an empty database — nothing to rename */
+  }
+
+  const mv = await ensurePartner(CATALOG_SLUG, PUBLIC_PARTNER_NAME)
   const hall = await ensurePartner('hallandale', PUBLIC_PARTNER_NAME)
 
   /**

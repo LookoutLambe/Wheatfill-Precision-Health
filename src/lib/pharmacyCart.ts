@@ -1,10 +1,14 @@
 export const PHARMACY_CART_LS_KEY = 'wph_pharmacy_cart_v1'
 
+/** Catalog slug retired when the pharmacy name came out of the URLs. A visitor mid-shop still has
+ *  their bag stored under it, so fall back to it once rather than silently emptying their cart. */
+const RETIRED_CART_SLUGS = ['mountain-view']
+
 export function readCartForSlug(slug: string): Record<string, number> {
   try {
     const raw = localStorage.getItem(PHARMACY_CART_LS_KEY)
     const all = raw ? (JSON.parse(raw) as Record<string, Record<string, number>>) : {}
-    const row = all[slug]
+    const row = all[slug] ?? RETIRED_CART_SLUGS.map((s) => all[s]).find((r) => r && Object.keys(r).length)
     return row && typeof row === 'object' ? { ...row } : {}
   } catch {
     return {}

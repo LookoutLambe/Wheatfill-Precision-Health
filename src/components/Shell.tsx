@@ -61,7 +61,8 @@ function headerCatalogSlugForPath(pathname: string): string {
   if (pathname === '/order-now' || pathname === '/order-now/') {
     return DEFAULT_CATALOG_PARTNER_SLUG
   }
-  // Branded pharmacy pages: /pharmacy/<slug> (e.g. /pharmacy/hallandale, /pharmacy/mountain-view).
+  // Retired pharmacy-named pages: /pharmacy/<slug>. These redirect; the slug is read only so the
+  // header shows the right catalog while the redirect resolves.
   const pm = /^\/pharmacy\/([^/]+)$/.exec(pathname)
   if (pm) {
     return pm[1]
