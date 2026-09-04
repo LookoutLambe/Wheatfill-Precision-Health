@@ -3,25 +3,39 @@
   "name": "Wheatfill Precision Health",
   "short_name": "WPH",
   "description": "Telehealth • Optimization • Longevity",
+  "lang": "en-US",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "browser"],
-  "background_color": "#ffffff",
-  "theme_color": "#c4b0b0",
+  "orientation": "portrait-primary",
+  "background_color": "#0b1524",
+  "theme_color": "#0b1524",
   "icons": [
     {
-      "src": "app-icon.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "app-icon.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
-

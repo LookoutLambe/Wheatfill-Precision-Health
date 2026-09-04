@@ -2,7 +2,7 @@
 
 // PWA service worker: fresh HTML navigations; cache hashed build assets only.
 
-const CACHE = 'wph-cache-v6-pwa';
+const CACHE = 'wph-cache-v7-pwa';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -11,7 +11,11 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE).then((cache) =>
       cache.addAll([
         './manifest.webmanifest',
-        './app-icon.png',
+        './icon-192.png',
+        './icon-512.png',
+        './icon-maskable-192.png',
+        './icon-maskable-512.png',
+        './apple-touch-icon.png',
         './favicon.svg',
         './404.html',
       ]),
