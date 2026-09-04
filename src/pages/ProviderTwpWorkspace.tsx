@@ -777,7 +777,7 @@ export default function ProviderTwpWorkspace() {
           </div>
 
           {inboxError ? (
-            <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 700, marginTop: 0 }}>
+            <p className="muted" style={{ color: 'var(--danger)', fontWeight: 700, marginTop: 0 }}>
               {inboxError}
             </p>
           ) : null}
@@ -1279,7 +1279,7 @@ export default function ProviderTwpWorkspace() {
           </div>
           <div className="divider" />
           {ordersError ? (
-            <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 700, margin: '0 0 10px' }}>
+            <p className="muted" style={{ color: 'var(--danger)', fontWeight: 700, margin: '0 0 10px' }}>
               {ordersError}
             </p>
           ) : null}

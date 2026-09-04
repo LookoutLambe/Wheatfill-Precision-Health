@@ -11,6 +11,7 @@
   --paper: #f2f4f8;
   --bg: var(--paper);
   --surface: #ffffff;
+  --card: var(--surface);   /* alias — several rules read var(--card) for card backgrounds */
   --border: rgba(11, 21, 36, 0.12);
   --border-strong: rgba(11, 21, 36, 0.22);
   --code-bg: rgba(11, 21, 36, 0.05);
@@ -21,8 +22,9 @@
   --red: #e23a2e;
   --red-2: #c02b20;
   --signal: var(--gold);
-  /* Data accent — instrument cyan (charts, precise numeric callouts) */
-  --data: #10a5b6;
+  /* Data accent — instrument teal (charts, precise numeric callouts).
+     Darkened from #10a5b6, which measured 2.97:1 on white and could not carry text. */
+  --data: #0e7490;              /* 5.36:1 on white */
   /* Gold accent (from the logo) — used on dark/ink surfaces instead of the red signal. */
   --gold: #d4af37;
   --gold-2: #b9932e;
@@ -55,6 +57,29 @@
   --pill-positive-fg: #0f5c46;
   --pill-positive-bg: #e6f4ee;
   --pill-positive-border: rgba(15, 92, 70, 0.26);
+
+  /* ——— Semantic state colors ———
+     Gold is the brand accent, not a state colour. As text on a light surface it fails WCAG
+     badly (--gold #d4af37 = 2.10:1, --gold-2 #b9932e = 2.89:1 against white), so error and
+     status text must not use it. Every value below clears 4.5:1 on both #fff and --paper.
+     Gold stays where it measures well: as a *background* under ink text (8.71:1), and on
+     the dark header/footer bands. */
+  --danger: #c02b20;            /* 5.82:1 on white — error text, destructive actions */
+  --danger-bg: #fdecea;
+  --danger-border: rgba(192, 43, 32, 0.28);
+
+  --success: #0f5c46;           /* 7.96:1 on white */
+  --success-bg: #e6f4ee;
+  --success-border: rgba(15, 92, 70, 0.26);
+
+  /* Text-safe gold, for "needs attention" states that should still read as brand gold. */
+  --warning-fg: #7d5e0e;        /* 6.04:1 on white, 5.44:1 on --warning-bg */
+  --warning-bg: #faf3dd;
+  --warning-border: rgba(185, 147, 46, 0.42);
+
+  /* Required-field markers. Was referenced across forms but never defined, so every "*"
+     rendered in the inherited body colour and did not read as a required marker. */
+  --accent-rose: var(--danger);
   --shadow:
     rgba(11, 21, 36, 0.10) 0 12px 24px -14px, rgba(11, 21, 36, 0.06) 0 4px 8px -4px;
 

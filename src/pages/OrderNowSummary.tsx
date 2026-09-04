@@ -636,7 +636,7 @@ export default function OrderNowSummary() {
             </div>
 
             {checkoutError ? (
-              <div style={{ marginTop: 14, color: 'var(--gold-2)', fontSize: 13, fontWeight: 800, whiteSpace: 'pre-line' }}>
+              <div style={{ marginTop: 14, color: 'var(--danger)', fontSize: 13, fontWeight: 800, whiteSpace: 'pre-line' }}>
                 {checkoutError}
               </div>
             ) : null}

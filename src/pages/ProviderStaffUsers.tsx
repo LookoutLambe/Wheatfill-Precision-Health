@@ -179,7 +179,7 @@ export default function ProviderStaffUsers() {
 
       {err ? (
         <section className="card cardAccentSoft">
-          <p className="muted" style={{ color: 'var(--gold-2)', fontWeight: 800, margin: 0 }}>
+          <p className="muted" style={{ color: 'var(--danger)', fontWeight: 800, margin: 0 }}>
             {err}
           </p>
         </section>

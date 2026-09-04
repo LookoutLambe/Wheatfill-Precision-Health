@@ -249,7 +249,7 @@ export default function ProviderOrderHistory() {
         </div>
         <div className="divider" />
         {ordersError ? (
-          <p style={{ color: 'var(--gold-2)', fontWeight: 700, margin: '0 0 10px' }}>{ordersError}</p>
+          <p style={{ color: 'var(--danger)', fontWeight: 700, margin: '0 0 10px' }}>{ordersError}</p>
         ) : null}
         {hasApiCredential() && !ordersLoading && orders.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>

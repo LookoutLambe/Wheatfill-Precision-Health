@@ -172,7 +172,7 @@ export default function Contact() {
           </p>
 
           {error ? (
-            <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>
+            <div style={{ marginTop: 10, color: 'var(--danger)', fontSize: 12, fontWeight: 800 }}>
               {error}
             </div>
           ) : null}

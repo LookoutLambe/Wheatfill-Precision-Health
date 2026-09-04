@@ -610,7 +610,7 @@ export default function BookOnline() {
             <div className="divider" />
 
             {availError ? (
-              <div style={{ marginBottom: 12, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>
+              <div style={{ marginBottom: 12, color: 'var(--danger)', fontSize: 12, fontWeight: 800 }}>
                 {availError}
               </div>
             ) : null}

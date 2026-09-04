@@ -34,7 +34,7 @@ export default function ApiConnectionHint() {
         </p>
       ) : null}
       {pointsToLocalFromPublic ? (
-        <p style={{ color: 'var(--gold-2)', fontWeight: 700, margin: '8px 0 0' }}>
+        <p style={{ color: 'var(--danger)', fontWeight: 700, margin: '8px 0 0' }}>
           This page is on the public web but the app is still pointed at <code>localhost</code>—browsers will not reach your
           machine from here. Set the repository secret <code>VITE_API_URL</code> to your <strong>https</strong> API in GitHub
           Actions, then redeploy, or one-time: open the site with{' '}

@@ -2181,7 +2181,7 @@ button.pill:active {
   height: 30px;
   border-radius: 8px;
   background: var(--pill-accent-bg);
-  color: var(--gold-2);
+  color: var(--warning-fg);
   flex: 0 0 auto;
 }
 @media (max-width: 560px) {
@@ -2246,7 +2246,7 @@ button.pill:active {
 }
 .contactInfoIcon--alert {
   background: var(--pill-accent-bg);
-  color: var(--gold-2);
+  color: var(--warning-fg);
 }
 
 /* ============================================================
@@ -2421,7 +2421,7 @@ button.pill:active {
   background: linear-gradient(180deg, rgba(212, 175, 55, 0.07), #ffffff 44%);
 }
 .appShell--provider .pillRed {
-  color: var(--gold-2);
+  color: var(--warning-fg);
   background: rgba(212, 175, 55, 0.14);
   border-color: rgba(212, 175, 55, 0.4);
 }
@@ -3728,7 +3728,7 @@ button.pill:active {
 }
 
 .landingPriceTable--tz .landingPricePrice {
-  color: var(--gold-2);
+  color: var(--warning-fg);
 }
 
 .landingShipBanner {
@@ -3746,7 +3746,7 @@ button.pill:active {
 .landingShipBannerIcon {
   display: inline-flex;
   align-items: center;
-  color: var(--gold-2);
+  color: var(--warning-fg);
   line-height: 1;
 }
 
@@ -3815,7 +3815,7 @@ button.pill:active {
 }
 
 .landingPenTitleAccent {
-  color: var(--gold-2);
+  color: var(--warning-fg);
   font-weight: 800;
 }
 
@@ -3884,7 +3884,7 @@ button.pill:active {
   flex: 0 0 auto;
   border-radius: 8px;
   background: var(--pill-accent-bg);
-  color: var(--gold-2);
+  color: var(--warning-fg);
   line-height: 1;
 }
 
@@ -3914,7 +3914,7 @@ button.pill:active {
 .landingPenNoteIcon {
   display: inline-flex;
   align-items: center;
-  color: var(--gold-2);
+  color: var(--warning-fg);
   line-height: 1.2;
 }
 
@@ -4630,7 +4630,7 @@ button.pill:active {
 .orderNowPartnerChipAction {
   font-size: 13px;
   font-weight: 700;
-  color: var(--gold-2);
+  color: var(--warning-fg);
 }
 
 .orderNowMiniCart {
@@ -5650,7 +5650,7 @@ button.pill:active {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gold-2);
+  color: var(--warning-fg);
 }
 
 .schedItem {
@@ -5704,7 +5704,7 @@ button.pill:active {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--gold-2);
+  color: var(--warning-fg);
 }
 
 .schedItemFlag--done {
@@ -6066,7 +6066,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
   font-weight: 800;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--gold-2);
+  color: var(--warning-fg);
 }
 
 .glp1convLive {

@@ -59,7 +59,7 @@ export default function PatientBackendLogin() {
         </div>
 
         {error ? (
-          <div style={{ marginTop: 12, color: 'var(--gold-2)', fontSize: 13, fontWeight: 800 }}>
+          <div style={{ marginTop: 12, color: 'var(--danger)', fontSize: 13, fontWeight: 800 }}>
             {error}
           </div>
         ) : null}

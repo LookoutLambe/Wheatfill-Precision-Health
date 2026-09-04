@@ -182,7 +182,7 @@ export default function MarketingProviderSecurity() {
           </label>
 
           {usernameError ? (
-            <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>{usernameError}</div>
+            <div style={{ marginTop: 10, color: 'var(--danger)', fontSize: 12, fontWeight: 800 }}>{usernameError}</div>
           ) : null}
           {usernameSaved ? (
             <div style={{ marginTop: 10, color: '#0f4c28', fontSize: 12, fontWeight: 800 }}>
@@ -291,7 +291,7 @@ export default function MarketingProviderSecurity() {
           </label>
         </div>
 
-        {error ? <div style={{ marginTop: 10, color: 'var(--gold-2)', fontSize: 12, fontWeight: 800 }}>{error}</div> : null}
+        {error ? <div style={{ marginTop: 10, color: 'var(--danger)', fontSize: 12, fontWeight: 800 }}>{error}</div> : null}
         {saved ? <div style={{ marginTop: 10, color: '#0f4c28', fontSize: 12, fontWeight: 800 }}>Saved.</div> : null}
         {!saved && blockedReason ? (
           <div className="muted" style={{ marginTop: 10, fontSize: 12, fontWeight: 700 }}>{blockedReason}</div>
