@@ -90,6 +90,8 @@ export async function ensurePharmacySeed() {
   await deactivateRetiredProducts(hall.id, hallProducts)
 }
 
+/** Must match the storefront's shipping line in `src/pages/OrderNowSummary.tsx` — the customer pays
+ *  the total shown there, so a different number here records an order that never reconciles. */
 export function shippingCentsForPartnerSlug(slug: string): number {
-  return slug === 'hallandale' ? 2500 : 0
+  return slug === 'hallandale' ? 2500 : 1000
 }

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { PRACTICE_PUBLIC_NAME, VENMO_ENABLED } from '../config/provider'
 import VenmoInstructions from '../components/VenmoInstructions'
+import { venmoPayUrl } from '../lib/venmo'
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../data/catalogHighlight'
 import { HALLANDALE_FALLBACK_PRODUCTS } from '../data/catalogHallandale'
@@ -200,33 +201,44 @@ export default function OrderNowSummary() {
     }
 
     // Venmo is peer-to-peer — there is no server confirmation, so the office reconciles on receipt.
-    // The order must be recorded BEFORE the pay link appears: paying for an order that was never
-    // recorded leaves the customer out of pocket with nothing for staff to fulfill.
-    setPlacingOrder(true)
-    ;(async () => {
-      try {
-        if (isPatientSession) {
-          await apiPost('/v1/patient/orders/pharmacy', body)
-        } else {
-          await apiPost(
+    const memo = sigName.trim()
+    const payUrl = venmoPayUrl(total, memo || 'Wheatfill Precision Health order')
+
+    const postOrder = () =>
+      isPatientSession
+        ? apiPost('/v1/patient/orders/pharmacy', body)
+        : apiPost(
             '/v1/public/orders/pharmacy',
             { ...body, contactEmail: contactEmail.trim(), contactPhone: contactPhone.trim() },
             '',
           )
+
+    setPlacingOrder(true)
+    ;(async () => {
+      try {
+        await postOrder()
+      } catch (first) {
+        // One retry covers the transient cases that made checkout fail for a real customer:
+        // a cold-starting API, or a redeploy swapping the server mid-request.
+        console.error('pharmacy order submit failed, retrying', first)
+        try {
+          await new Promise((r) => window.setTimeout(r, 1500))
+          await postOrder()
+        } catch (second) {
+          // Never block payment on this. `sendOrderNotification` below emails the practice the full
+          // order (items, patient, DOB, phone, ship-to) straight from the browser without touching the
+          // API, so staff still receive an unrecorded order and can enter it by hand.
+          console.error('pharmacy order submit failed after retry', second)
         }
-        sendOrderNotification('Venmo')
-        setVenmoInfo({ amountCents: total, memo: sigName.trim() })
-      } catch (e: unknown) {
-        // The raw reason is developer-facing (API host, env var names) — keep it out of a customer's
-        // checkout and in the console, where staff can still read it.
-        console.error('pharmacy order submit failed', e)
-        setCheckoutError(
-          'We could not record your order, so please do not send payment yet — you would be paying for an order we cannot see. ' +
-            'Please try again in a moment, or call the office and we will take your order over the phone.',
-        )
-      } finally {
-        setPlacingOrder(false)
       }
+
+      sendOrderNotification('Venmo')
+      setVenmoInfo({ amountCents: total, memo })
+      setPlacingOrder(false)
+      // Hand off to Venmo automatically — paying IS how the customer confirms the order. The panel
+      // is rendered first so the amount, username and note are still there if the app does not open
+      // or they come back.
+      window.location.href = payUrl
     })()
   }
 
@@ -646,7 +658,8 @@ export default function OrderNowSummary() {
               {venmoInfo ? (
                 <>
                   <p style={{ fontSize: 14, marginTop: 16, marginBottom: 0, fontWeight: 800 }}>
-                    Your order is recorded — complete payment with Venmo:
+                    Opening Venmo to complete your payment. The practice confirms your order once the
+                    payment arrives — if Venmo did not open, use the button below.
                   </p>
                   <VenmoInstructions amountCents={venmoInfo.amountCents} memo={venmoInfo.memo} />
                 </>
