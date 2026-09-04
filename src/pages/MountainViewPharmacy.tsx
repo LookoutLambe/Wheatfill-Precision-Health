@@ -5,13 +5,10 @@ import { CATALOG_HIGHLIGHT_PRODUCTS, DEFAULT_CATALOG_PARTNER_SLUG } from '../dat
 import { resolvedFulfillmentPharmacyName } from '../lib/practiceIntegrationDisplay'
 import { bumpCartSku, countCartItems } from '../lib/pharmacyCart'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
+import { moneyWhole } from '../lib/money'
 
 const SLUG = DEFAULT_CATALOG_PARTNER_SLUG
 const PARTNER = resolvedFulfillmentPharmacyName()
-
-function moneyWhole(cents: number) {
-  return `$${(cents / 100).toFixed(0)}`
-}
 
 function groupByFamily() {
   const t = CATALOG_HIGHLIGHT_PRODUCTS.filter((p) => p.family === 'tirzepatide')

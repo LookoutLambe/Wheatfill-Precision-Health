@@ -11,13 +11,10 @@ import { bumpCartSku, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet } from '../api/client'
 import CatalogProductDosingHint from '../components/CatalogProductDosingHint'
 import { CATALOG_OFFLINE_BODY_CATALOG_PAGE } from '../lib/catalogOfflineCopy'
+import { moneyWhole } from '../lib/money'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
-
-function moneyWhole(cents: number) {
-  return `$${(cents / 100).toFixed(0)}`
-}
 
 function vialFamilyForSku(sku: string): CatalogVialFamily {
   if (sku.startsWith('TZ')) return 'tirzepatide'

@@ -10,6 +10,8 @@ import ApiConnectionHint from '../components/ApiConnectionHint'
 import Page from '../components/Page'
 import { BrandSlogan } from '../components/BrandSlogan'
 import Glp1EligibilityCheck from '../components/Glp1EligibilityCheck'
+import { ymdLocal, timeLabel24To12 } from '../lib/dates'
+import { phoneOk, formatPhoneForStaff } from '../lib/phone'
 
 type UiApptType = 'New Patient Consultation' | 'Follow-Up Consultation'
 
@@ -24,13 +26,6 @@ type BookingReceipt = {
   notes: string
   calendarOk: boolean
   calendarNote?: string
-}
-
-function ymdLocal(d: Date) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
 }
 
 function formatDateLong(ymd: string) {
@@ -112,31 +107,6 @@ function buildMonthCellsVisible(month: Date, visibleDows: number[]) {
     }
   }
   return out
-}
-
-function timeLabel24To12(hhmm: string) {
-  const [hRaw, mRaw] = hhmm.split(':').map((x) => Number(x))
-  if (!Number.isFinite(hRaw) || !Number.isFinite(mRaw)) return hhmm
-  const h = Math.max(0, Math.min(23, hRaw | 0))
-  const m = Math.max(0, Math.min(59, mRaw | 0))
-  const suffix = h >= 12 ? 'PM' : 'AM'
-  const hour12 = ((h + 11) % 12) + 1
-  return `${hour12}:${String(m).padStart(2, '0')} ${suffix}`
-}
-
-/** 10 digits (US) or 11 starting with 1; also accepts a longer +international number. */
-function phoneOk(p: string) {
-  const digits = p.replace(/\D/g, '')
-  if (p.trim().startsWith('+')) return digits.length >= 8 && digits.length <= 15
-  return digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))
-}
-
-/** (303) 555-0100 for 10-digit US numbers; anything else is passed through as typed. */
-function formatPhoneForStaff(p: string) {
-  const d = p.replace(/\D/g, '')
-  const ten = d.length === 11 && d.startsWith('1') ? d.slice(1) : d
-  if (ten.length !== 10) return p.trim()
-  return `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`
 }
 
 export default function BookOnline() {

@@ -13,17 +13,11 @@ import { catalogPartnerTitle } from '../lib/orderNowDisplay'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
 import { apiGet, apiPost, fetchApiSession, type ApiSessionSnapshot } from '../api/client'
 import { CATALOG_OFFLINE_BODY_ORDER_SUMMARY } from '../lib/catalogOfflineCopy'
+import { moneyCents, moneyPlain } from '../lib/money'
+import { phoneOk } from '../lib/phone'
 
 type Product = { sku: string; name: string; subtitle: string; priceCents: number; currency: string }
 type PartnerResp = { partner: { slug: string; name: string; products: Product[] } }
-
-function moneyCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`
-}
-
-function moneyPlain(cents: number) {
-  return (cents / 100).toFixed(2)
-}
 
 /** Static catalog used when the live API is unreachable (e.g. cold-start), so checkout still works offline. */
 function offlinePartnerForSlug(slug: string): PartnerResp['partner'] | null {
@@ -82,12 +76,6 @@ export default function OrderNowSummary() {
   const isPatientSession =
     Boolean(apiSession?.ok && apiSession.authenticated && apiSession.role === 'patient')
   const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
-  /** 10 digits (US) or 11 starting with 1; also accepts a longer +international number. */
-  const phoneOk = (p: string) => {
-    const digits = p.replace(/\D/g, '')
-    if (p.trim().startsWith('+')) return digits.length >= 8 && digits.length <= 15
-    return digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))
-  }
 
   useEffect(() => {
     if (!slug) return

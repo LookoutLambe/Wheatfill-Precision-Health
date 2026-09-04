@@ -31,6 +31,7 @@ import {
 } from '../marketing/providerStore'
 import { loadMarketingWorkspaceState, saveMarketingWorkspaceState } from '../marketing/workspaceStore'
 import { type TeamInboxChangedDetail, WPH_TEAM_INBOX_CHANGED } from '../provider/teamInboxPoller'
+import { norm, includesAll } from '../lib/textSearch'
 
 type DemoPatient = { id: string; label: string }
 type DemoAppt = {
@@ -90,18 +91,6 @@ type ProviderOrderRow = {
     phone: string | null
   }
   pharmacyPartner: { id: string; name: string; slug: string } | null
-}
-
-function norm(s: unknown) {
-  return String(s ?? '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function includesAll(haystack: string, tokens: string[]) {
-  const h = norm(haystack)
-  return tokens.every((t) => h.includes(t))
 }
 
 function seedWorkspacePatients(): DemoPatient[] {

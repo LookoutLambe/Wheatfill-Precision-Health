@@ -30,6 +30,11 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Fails the deploy if the storefront catalog and the server's product table disagree.
+      # They drifted once in production: five SKUs were unsellable and shipping reconciled $10 short.
+      - name: Check catalog/server price sync
+        run: npm run check:catalog
+
       - name: Build
         env:
           VITE_MARKETING_ONLY: "1"

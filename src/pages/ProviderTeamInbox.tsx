@@ -19,6 +19,7 @@ import {
   MARKETING_PROVIDER_AUTH_EVENT,
 } from '../marketing/providerStore'
 import { type TeamInboxChangedDetail, WPH_TEAM_INBOX_CHANGED } from '../provider/teamInboxPoller'
+import { norm, includesAll } from '../lib/textSearch'
 
 type DemoMsg = {
   id: string
@@ -29,18 +30,6 @@ type DemoMsg = {
   meta?: any
   when: string
   status: 'new' | 'handled'
-}
-
-function norm(s: unknown) {
-  return String(s ?? '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function includesAll(haystack: string, tokens: string[]) {
-  const h = norm(haystack)
-  return tokens.every((t) => h.includes(t))
 }
 
 export default function ProviderTeamInbox() {

@@ -3,16 +3,13 @@ import { Link } from 'react-router-dom'
 import CatalogVialThumb, { type CatalogVialFamily } from './CatalogVialThumb'
 import Icon from './Icon'
 import { readCartForSlug, writeCartForSlug } from '../lib/pharmacyCart'
+import { moneyCents } from '../lib/money'
 
 export type CartLineProduct = {
   sku: string
   name: string
   subtitle: string
   priceCents: number
-}
-
-function moneyCents(cents: number) {
-  return `$${(cents / 100).toFixed(2)}`
 }
 
 function vialFamilyForSku(sku: string): CatalogVialFamily {

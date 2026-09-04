@@ -7,6 +7,7 @@ import {
   isMarketingProviderAuthed,
 } from '../marketing/providerStore'
 import { displayFulfillmentName } from '../lib/practiceIntegrationDisplay'
+import { norm, includesAll } from '../lib/textSearch'
 
 type ProviderOrderRow = {
   id: string
@@ -45,16 +46,6 @@ type ProviderOrderRow = {
   pharmacyPartner: { id: string; name: string; slug: string } | null
 }
 
-function norm(s: unknown) {
-  return String(s ?? '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-function includesAll(haystack: string, tokens: string[]) {
-  const h = norm(haystack)
-  return tokens.every((t) => h.includes(t))
-}
 function formatOrderPatient(o: ProviderOrderRow) {
   const p = o.patient
   const n = [p?.firstName, p?.lastName].filter(Boolean).join(' ').trim()
