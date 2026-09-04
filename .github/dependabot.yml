@@ -1,0 +1,10 @@
+# Nothing was bumping the action pins, so they sat on a deprecated runtime until a warning surfaced
+# in a failing run. Monthly (not weekly) to keep PR noise low — these move slowly.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

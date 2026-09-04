@@ -6,6 +6,12 @@ on:
 permissions:
   contents: read
 
+# CDK deploys mutate one CloudFormation stack; two dispatches racing it can leave the stack wedged
+# in UPDATE_IN_PROGRESS. Queue them, and never cancel one mid-deploy.
+concurrency:
+  group: medplum-cdk-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
