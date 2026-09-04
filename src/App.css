@@ -780,6 +780,41 @@ html.pharmacyCartOpen body {
   box-sizing: border-box;
 }
 
+/* ——— Provider workspace typography ———
+   The public site leads with the David Libre serif, which is a display face: good for a marketing
+   headline, wrong for a dense operational screen that staff read all day. Inside the provider shell
+   headings switch to Inter (already loaded, so no extra download) at a tighter tracking, and every
+   figure staff scan in a column — prices, totals, dates, times, counts — gets tabular numerals so
+   digits share one advance width and line up vertically instead of wandering. */
+.appShell--provider h1,
+.appShell--provider h2,
+.appShell--provider h3,
+.appShell--provider .cardTitle h2,
+.appShell--provider .cardTitle h3 {
+  font-family: var(--sans);
+  letter-spacing: -0.01em;
+}
+
+.appShell--provider h1 { font-weight: 750; }
+.appShell--provider h2,
+.appShell--provider h3 { font-weight: 700; }
+
+/* Figures line up column-to-column; lining figures keep digit height even. */
+.appShell--provider .table td,
+.appShell--provider .table th,
+.appShell--provider input[type='date'],
+.appShell--provider input[type='time'],
+.appShell--provider input[type='number'],
+.appShell--provider .schedItemTime,
+.appShell--provider .schedTodayTag,
+.teamWorkspacePage .teamWidgetScroll td,
+.orderNowSummaryLineTotal,
+.pharmacyDrawerLineTotal,
+.pharmacyDrawerTotalAmt {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
 /* Other children of a flex-column card must not shrink — only the scroll widget gives way. */
 .teamWorkspacePage .cardGrid > .card > :not(.teamWidgetScroll) {
   flex-shrink: 0;
@@ -1582,7 +1617,7 @@ a.btn:focus-visible {
 .landingAccordionSubhead {
   margin: 14px 0 6px;
   font-size: 15px;
-  font-weight: 750;
+  font-weight: 700;
   color: var(--text-h);
 }
 
@@ -3820,7 +3855,7 @@ button.pill:active {
 
 .landingPenTitleAccent {
   color: var(--warning-fg);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .landingPenLead {
@@ -6068,7 +6103,7 @@ html.wph-local-justify-prose .pageLanding .landingConsultLead {
 .glp1convEyebrow {
   font-family: var(--mono);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--warning-fg);

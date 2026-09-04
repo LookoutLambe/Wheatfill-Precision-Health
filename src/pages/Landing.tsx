@@ -452,6 +452,7 @@ export default function Landing() {
                   <div className="portrait">
                     <ImageKitImage
                       path="brett.png"
+                      ratio={1}
                       fallbackSrc={brettPortrait}
                       alt="Brett Wheatfill, FNP-C"
                       widths={[320, 640]}
@@ -474,6 +475,7 @@ export default function Landing() {
                   <div className="portrait">
                     <ImageKitImage
                       path="bridgette.png"
+                      ratio={369 / 571}
                       fallbackSrc={bridgettePortrait}
                       alt="Bridgette Wheatfill, RN"
                       widths={[320, 640]}
@@ -585,6 +587,7 @@ export default function Landing() {
               <div className="landingPenPromoArt">
                 <ImageKitImage
                   path="glp1-pen.png"
+                  ratio={405 / 622}
                   fallbackSrc={glp1PenImg}
                   alt="Auto-inject pen showing a 2.5 mg dose — simple, clear, confident"
                   className="landingPenImg"

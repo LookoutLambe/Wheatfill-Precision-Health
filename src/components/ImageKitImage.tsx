@@ -10,6 +10,12 @@ type ImageKitImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'src
   widths?: number[]
   /** Extra ImageKit transforms appended after `f-auto,q-auto` (e.g. "ar-4-5,fo-face"). */
   transform?: string
+  /**
+   * Intrinsic width / height of the source. Applied as `aspect-ratio` so the browser reserves the
+   * right box before the image arrives; without it the page reflows as each image loads. Expressed
+   * as a ratio rather than width/height attributes so it cannot fight a CSS-sized container.
+   */
+  ratio?: number
 }
 
 /**
@@ -23,12 +29,16 @@ export default function ImageKitImage({
   transform,
   alt = '',
   sizes,
+  ratio,
+  style,
   ...rest
 }: ImageKitImageProps) {
   const [failed, setFailed] = useState(false)
 
+  const boxStyle = ratio ? { aspectRatio: String(ratio), ...style } : style
+
   if (failed && fallbackSrc) {
-    return <img src={fallbackSrc} alt={alt} {...rest} />
+    return <img src={fallbackSrc} alt={alt} style={boxStyle} {...rest} />
   }
 
   const base = `f-auto,q-auto${transform ? `,${transform}` : ''}`
@@ -42,6 +52,7 @@ export default function ImageKitImage({
       sizes={sizes ?? '100vw'}
       alt={alt}
       loading={rest.loading ?? 'lazy'}
+      style={boxStyle}
       onError={() => setFailed(true)}
       {...rest}
     />
